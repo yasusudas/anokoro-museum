@@ -1,2 +1,2 @@
-# anokoro-museum-frontend
+# anokoro-museum
 team-2:watnowの2026夏ハッカソン用のプロダクト
