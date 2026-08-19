@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# コミット時に lint + build を実行する（CIと同じ品質ゲート）。
+# --no-verify でスキップ可能（緊急時のみ。PR本文に理由を書く）。
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+# mise（Nodeバージョンマネージャ）のshimsを優先する。無い環境ではPATHのnodeを使う。
+if [ -d "$HOME/.local/share/mise/shims" ]; then
+  export PATH="$HOME/.local/share/mise/shims:$PATH"
+fi
+
+echo "[pre-commit] npm run lint"
+npm run lint
+
+echo "[pre-commit] npm run build"
+npm run build
