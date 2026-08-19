@@ -1,0 +1,33 @@
+name: PR validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate branch name
+        env:
+          BRANCH_NAME: ${{ github.head_ref }}
+        run: |
+          case "$BRANCH_NAME" in
+            feature/*|fix/*|docs/*|chore/*|refactor/*|test/*|style/*|perf/*|codex/*)
+              ;;
+            *)
+              echo "Invalid branch name: $BRANCH_NAME"
+              echo "Use one of: feature/<kebab-case>, fix/<kebab-case>, docs/<kebab-case>, chore/<kebab-case>, refactor/<kebab-case>, test/<kebab-case>, style/<kebab-case>, perf/<kebab-case>, codex/<kebab-case>"
+              exit 1
+              ;;
+          esac
+
+          short_title="${BRANCH_NAME#*/}"
+          if ! printf '%s' "$short_title" | grep -Eq '^[a-z0-9]+(-[a-z0-9]+)*$'; then
+            echo "Invalid short title: $short_title"
+            echo "Use lowercase letters, numbers, and single hyphens only."
+            exit 1
+          fi
