@@ -14,7 +14,7 @@
 | [API_DESIGN.md](./API_DESIGN.md) | Server Actions・Route Handlers・Supabase の境界 | 開発者 |
 | [DATABASE_DESIGN.md](./DATABASE_DESIGN.md) | テーブル、制約、RLS | 開発者 |
 | [MIGRATIONS.md](./MIGRATIONS.md) | DB変更の作業手順 | 開発者 |
-| [CONVENTIONS.md](./conventions.md) | TypeScript・Next.js・命名規則 | 開発者 |
+| [CONVENTIONS.md](./CONVENTIONS.md) | TypeScript・Next.js・命名規則 | 開発者 |
 | [DEVELOPMENT_RULES.md](./DEVELOPMENT_RULES.md) | Git・コミット・PR・レビュー運用 | 全員 |
 | [REFERENCE_NOTES.md](./REFERENCE_NOTES.md) | 参考資料と採用・不採用の記録 | 全員 |
 
