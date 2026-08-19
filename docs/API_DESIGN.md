@@ -1,0 +1,69 @@
+# API設計
+
+この文書はブラウザ・Next.js・Supabase間の公開契約の正とする。現時点は設計案であり、実装時に入力schemaと戻り値を確定する。
+
+## 1. 提供形態
+
+| 方式 | 用途 | 原則 |
+| --- | --- | --- |
+| Server Component query | 公開展示、詳細、コメントの読み取り | server用Supabase clientからRLS付きで読む |
+| Server Action | ログイン後のフォーム・mutation | 入力検証、認証、更新、再検証をまとめる |
+| Route Handler | Webhook、外部クライアント、バイナリ応答 | 必要な場合だけ追加する |
+| Supabase PostgREST | repository内部のDBアクセス | ブラウザからの直接利用は単純・RLS安全な操作に限定 |
+| Supabase RPC | トランザクションや集計 | SQL側が適切な複数更新に限定 |
+
+「APIを作るため」だけにRoute Handlerを増やさず、Server ActionやRLS付きPostgRESTで足りるか先に検討する。
+
+## 2. 操作一覧
+
+| 操作 | 実装候補 | 認証 | 関連機能 |
+| --- | --- | --- | --- |
+| 公開展示一覧取得 | Server query | 不要 | F-02 |
+| 展示詳細取得 | Server query | 不要 | F-03 |
+| 生まれ年保存 | Server Action | 必要 | F-01 |
+| しんみり切替 | Server Action / RPC | 必要 | F-05 |
+| コメント投稿・削除 | Server Action | 必要 | F-06 |
+| 展示候補投稿 | Server Action | 必要 | F-07 |
+| 画像アップロード確定 | Server Action | 必要 | F-07 |
+| 審査状態変更 | Server Action | 運営 | F-08 |
+
+## 3. 共通入力・出力
+
+- IDはUUID文字列として検証する
+- 本文はtrim後に長さを検証する
+- Server Actionは例外文字列をそのまま返さず、識別可能なcodeを返す
+
+```ts
+type ActionResult<T> =
+  | { ok: true; data: T }
+  | {
+      ok: false;
+      error: {
+        code: "UNAUTHENTICATED" | "FORBIDDEN" | "VALIDATION_ERROR" | "CONFLICT" | "INTERNAL_ERROR";
+        message: string;
+        fieldErrors?: Record<string, string[]>;
+      };
+    };
+```
+
+内部ログには調査情報を残せるが、SQL、環境変数、stack trace、他ユーザーの情報をクライアントへ返さない。
+
+## 4. 認証・認可
+
+- 公開済み展示・コメントは匿名で読み取れる
+- 投稿、しんみり、コメントは `auth.uid()` と所有者をRLSで照合する
+- 審査操作はDBに保存した運営権限をサーバーとRLSの両方で検査する
+- service roleは管理用サーバー処理に限定し、通常ユーザー処理でRLSを迂回しない
+
+## 5. キャッシュと再検証
+
+- 一覧更新: 展示一覧tagまたは該当pathを再検証
+- 展示更新: 一覧と `/exhibits/{id}` を再検証
+- コメント更新: 該当展示のコメント境界だけを更新
+- しんみり件数: 楽観的UI後、サーバーの確定値へ収束させる
+
+具体APIは導入済みNext.jsのローカルドキュメントを確認して選択する。
+
+## 6. 将来のRoute Handler
+
+画像モデレーションWebhookなど外部から呼ばれる処理を追加するときは、メソッド、path、認証、冪等性、request/response例、timeout、retry方針をこの文書へ追記する。

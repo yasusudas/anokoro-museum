@@ -1,30 +1,51 @@
-# 命名・実装規則
+# Next.js / TypeScript コーディング規約
 
 ## 命名
 
-- React コンポーネント、型: `PascalCase`（`ExhibitCard`, `Exhibit`）
-- 関数、変数、フック: `camelCase`（`getExhibits`, `useHorizontalScroll`）
-- 定数: 通常は `camelCase`。環境変数だけ `SCREAMING_SNAKE_CASE`
-- ファイル、ディレクトリ、URL: `kebab-case`（`exhibit-card.tsx`, `/exhibits/new`）
-- DB のテーブル、列: `snake_case`（`nostalgia_reactions`, `birth_year`）
-- ID を含む名前は対象を明記する（`exhibitId`）。曖昧な `id` は短い局所スコープに限る。
+| 対象 | 規則 | 例 |
+| --- | --- | --- |
+| component / type / enum | `PascalCase` | `ExhibitCard`, `ExhibitStatus` |
+| function / variable | `camelCase` | `findPublishedExhibits` |
+| boolean | `is` / `has` / `can` / `should` | `isPublished`, `canModerate` |
+| hook | `use` + PascalCase相当 | `useHorizontalScroll` |
+| constant | 原則 `camelCase`、不変設定は `SCREAMING_SNAKE_CASE` | `categories`, `MAX_IMAGE_SIZE` |
+| component file | `kebab-case.tsx` | `exhibit-card.tsx` |
+| non-UI TypeScript | `kebab-case.ts` | `toggle-nostalgia.ts` |
+| route segment | `kebab-case` | `/exhibits/new` |
+| DB | `snake_case` | `nostalgia_reactions` |
 
-## TypeScript / React
+- 識別子とファイル名へ日本語・絵文字・空白を使わない
+- `id` は短い局所scope以外では対象を明示する（`exhibitId`）
+- handlerは結果を表す名前にする。曖昧な `handleClick` より `handleOpenExhibit` を使う
 
-- `any` は使わず、外部入力は実行時にも検証する。
-- Server Component を既定とし、状態・イベント・ブラウザ API が必要な境界だけ `"use client"` にする。
-- 表示文言に依存した分岐を避け、`categoryId` や列挙値で判定する。
-- DB 型は Supabase から生成し、手書きの重複型を増やさない。
-- mutation 後の成功・失敗を UI で通知する。楽観的更新はロールバック可能にする。
+## TypeScript
+
+- `strict` を維持し、`any` を使わない。未知の外部入力は `unknown` から検証する
+- DB生成型を再定義しない。ただしUI用DTOとdomain型はDB行から分離してよい
+- `as` による強制よりtype guard・schema validationを優先する
+- client/server境界を越える値はserializableにする
+- エラーを握りつぶさず、利用者向け結果と調査用ログを分ける
+
+## React / Next.js
+
+- Server Componentを既定とする
+- `"use client"` は必要な最小ファイルに置く
+- pageはrouteとcompositionに集中し、再利用部品とdomain logicを分離する
+- propsは変更不可として扱い、stateを直接変更しない
+- listのkeyに配列indexを使わず、安定したIDを使う
+- `<button>`、heading、landmark、labelなどネイティブHTMLの意味を優先する
+- `next/image`, metadata, Linkなど導入済みNext.jsの機能は、ローカル公式docsを確認して使う
 
 ## CSS
 
-- 色、余白、角丸、影は CSS カスタムプロパティでトークン化する。
-- グローバル CSS はリセットと全体トークンに限定し、画面固有の複雑なスタイルは CSS Modules に移す。
-- 動きには `prefers-reduced-motion` を考慮する。
+- 色、余白、影、z-indexなど繰り返す値はdesign tokenへ寄せる
+- `globals.css` はreset・token・全体レイアウトに限定し、機能固有CSSはmoduleへ移す
+- `!important` は原則使わない
+- hoverだけに依存せず、keyboard focusとtouch相当の操作を用意する
+- motionには `prefers-reduced-motion` を用意する
 
-## Git
+## import
 
-- 1コミットは1つの目的に絞る。
-- コミット例: `feat: add horizontal exhibit corridor`
-- PR には目的、画面差分、確認方法、DB/RLS 変更の有無を書く。
+- Node / package / project内部 / relative / styleの順でまとまりを作る
+- 循環依存を避ける。domainからpresentationやinfrastructureをimportしない
+- barrel exportは境界が明確になる場合だけ使い、依存元を隠しすぎない
