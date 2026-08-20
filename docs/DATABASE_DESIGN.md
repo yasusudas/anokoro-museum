@@ -1,98 +1,90 @@
 # データベース設計
 
-Supabase PostgreSQLの設計意図を管理する。実行されるschemaの正は `supabase/migrations/*.sql` とし、実装開始後は両者を同じPRで同期する。
+Supabase PostgreSQLの設計意図を管理する。ハッカソンの開発スピードを最優先とし、テーブル結合を最小限に抑えたフラットでシンプルな構成を採用する。
 
-## ER図（案）
+## ER図
 
 ```mermaid
 erDiagram
-  auth_users ||--|| profiles : has
-  profiles ||--o{ exhibits : submits
-  categories ||--o{ exhibits : classifies
-  exhibits ||--o{ exhibit_images : has
-  exhibits ||--o{ memories : receives
-  profiles ||--o{ memories : writes
-  exhibits ||--o{ nostalgia_reactions : receives
-  profiles ||--o{ nostalgia_reactions : reacts
-  profiles ||--o{ moderation_logs : performs
-  exhibits ||--o{ moderation_logs : records
+  auth_users ||--|| users : has
+  users ||--o{ items : submits
+  items ||--o{ comments : receives
+  users ||--o{ comments : writes
+  items ||--o{ shinmiri_reactions : receives
+  users ||--o{ shinmiri_reactions : reacts
 ```
 
 ## 共通ルール
 
 - table / column / constraint: `snake_case`
-- 主キー: UUIDの `id`
+- 主キー: UUIDの `id`（`uuid_generate_v4()`）
 - 時刻: `timestamptz` の `created_at`, `updated_at`
 - ユーザー参照: `auth.users(id)` へのUUID外部キー
-- 年だけを表す値: `smallint`。開始年は終了年以下というCHECKを持つ
-- ユーザー投稿は原則物理削除せず、`deleted_at` または状態で非表示にする
-- 全ユーザーデータtableでRLSを有効化する
+- 開発スピード優先のため、現在は**RLSを一時的に無効化**して進行（ハッカソン最終日の発表前に有効化予定）
+- リアルタイム通信: `comments`, `shinmiri_reactions` テーブルでSupabase Realtimeを有効化
 
 ## テーブル一覧
 
-| table | 役割 | 公開読取 |
+| table | 役割 | 備考 |
 | --- | --- | --- |
-| `profiles` | 生まれ年、表示名、role | 自分のみ |
-| `categories` | 展示カテゴリmaster | 可 |
-| `exhibits` | 展示本体と審査状態 | `published`のみ |
-| `exhibit_images` | 画像path、alt、出典・権利情報 | 公開展示分のみ |
-| `memories` | 展示コメント | 非削除かつ公開展示分 |
-| `nostalgia_reactions` | しんみり | 集計のみ公開 |
-| `moderation_logs` | 審査履歴 | 運営のみ |
+| `users` | ユーザー情報 | Authと連動。プロフィール情報（名前）を保持 |
+| `items` | 展示品本体 | 画像URLやカテゴリを別テーブルにせず直接保持 |
+| `comments` | コメント | Supabase Realtime通信対象 |
+| `shinmiri_reactions` | しんみり | Supabase Realtime通信対象 |
 
 ## 主要列
 
-### `profiles`
+### `users`
 
 | column | type | rule |
 | --- | --- | --- |
-| `id` | uuid | PK、`auth.users.id` |
-| `display_name` | text | 1〜40文字 |
-| `birth_year` | smallint nullable | 合理的な範囲をCHECK |
-| `role` | text | `user` / `moderator` / `admin` |
-| `created_at`, `updated_at` | timestamptz | NOT NULL |
+| `id` | uuid | PK、`auth.users.id` (ON DELETE CASCADE) |
+| `user_name` | varchar | NOT NULL |
+| `created_at`, `updated_at` | timestamptz | DEFAULT NOW() |
 
-### `categories`
+### `items`
 
-`id`, `slug`（UNIQUE）, `name`, `display_order`, `is_active`。初期値は「おかし」「たべもの」「テレビ」「おんがく」「ゲーム」「ほん」「できごと」「その他」。
+| column | type | rule |
+| --- | --- | --- |
+| `id` | uuid | PK、DEFAULT `uuid_generate_v4()` |
+| `user_id` | uuid | FK `users.id` (ON DELETE CASCADE) |
+| `title` | varchar | NOT NULL |
+| `description` | text | |
+| `category` | varchar | |
+| `image_url` | text | 画像のStorageパスまたはURL |
+| `year` | int | NOT NULL（流行した年代） |
+| `created_at` | timestamptz | DEFAULT NOW() |
 
-### `exhibits`
+### `comments`
 
-`id`, `title`, `slug`, `summary`, `description`, `category_id`, `start_birth_year`, `end_birth_year`, `status`, `submitted_by`, `published_at`, `created_at`, `updated_at`。
+| column | type | rule |
+| --- | --- | --- |
+| `id` | uuid | PK、DEFAULT `uuid_generate_v4()` |
+| `item_id` | uuid | FK `items.id` (ON DELETE CASCADE) |
+| `user_id` | uuid | FK `users.id` (ON DELETE CASCADE) |
+| `content` | text | NOT NULL |
+| `created_at` | timestamptz | DEFAULT NOW() |
 
-`status` は `draft`, `pending`, `changes_requested`, `published`, `rejected`, `archived` に限定する。`slug` は公開URL用にUNIQUEとする。
+### `shinmiri_reactions`
 
-### `exhibit_images`
+| column | type | rule |
+| --- | --- | --- |
+| `id` | uuid | PK、DEFAULT `uuid_generate_v4()` |
+| `item_id` | uuid | FK `items.id` (ON DELETE CASCADE) |
+| `user_id` | uuid | FK `users.id` (ON DELETE CASCADE) |
+| `created_at` | timestamptz | DEFAULT NOW() |
 
-`id`, `exhibit_id`, `storage_path`, `alt_text`, `source_name`, `source_url`, `license_note`, `display_order`, `created_at`。公開前に権利確認情報を必須とするかは運用決定後に制約化する。
+※制約: `UNIQUE(item_id, user_id)` を設定し、1ユーザーにつき1展示品1回までのリアクションをDBレベルで保証する。
 
-### `memories`
-
-`id`, `exhibit_id`, `author_id`, `body`, `created_at`, `deleted_at`, `moderated_at`, `moderated_by`。`body` は1〜500文字相当をアプリとDBで検証する。
-
-### `nostalgia_reactions`
-
-`exhibit_id`, `profile_id`, `created_at`。主キーまたはUNIQUEを `(exhibit_id, profile_id)` とし、1人1展示1件をDBで保証する。
-
-### `moderation_logs`
-
-`id`, `exhibit_id`, `actor_id`, `from_status`, `to_status`, `reason`, `created_at`。監査用途のため一般ユーザーによる更新・削除を許可しない。
-
-## RLS方針
+## RLS方針（※現在は全アクセス許可、発表・公開前に適用予定）
 
 | 対象 | SELECT | INSERT | UPDATE / DELETE |
 | --- | --- | --- | --- |
-| profiles | 本人 | Auth連動作成 | 本人。role変更不可 |
-| exhibits | 公開済み、本人の投稿、運営 | ログイン本人、初期状態制限 | 本人は公開前の許可項目、運営は審査 |
-| memories | 公開展示の非削除分 | ログイン本人 | 本人削除、運営非表示 |
-| reactions | 件数集計、自分の状態 | ログイン本人 | 本人のみ |
-| moderation_logs | 運営 | 運営または安全なDB関数 | 原則不可 |
+| `users` | 誰でも可 | Auth連動作成 | 本人のみ |
+| `items` | 誰でも可 | ログイン本人 | 本人のみ |
+| `comments` | 誰でも可 | ログイン本人 | 本人のみ |
+| `shinmiri_reactions` | 誰でも可 | ログイン本人 | 本人のみ |
 
 ## インデックス候補
 
-- `exhibits(status, category_id, published_at desc)`
-- `exhibits(start_birth_year, end_birth_year)`
-- `memories(exhibit_id, created_at desc)` WHERE `deleted_at is null`
-- `nostalgia_reactions(exhibit_id)`
-
-実データとquery planを確認せず過剰に追加しない。
+ハッカソン期間中はデータ量が限られるため、一旦インデックスは設定せずに進行する。必要に応じてパフォーマンスチューニング時に追加を検討する。
