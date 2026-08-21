@@ -5,18 +5,18 @@
 | 対象 | 規則 | 例 |
 | --- | --- | --- |
 | component / type / enum | `PascalCase` | `ExhibitCard`, `ExhibitStatus` |
-| function / variable | `camelCase` | `findPublishedExhibits` |
+| function / variable | `camelCase` | `findPublishedItems` |
 | boolean | `is` / `has` / `can` / `should` | `isPublished`, `canModerate` |
 | hook | `use` + PascalCase相当 | `useHorizontalScroll` |
 | constant | 原則 `camelCase`、不変設定は `SCREAMING_SNAKE_CASE` | `categories`, `MAX_IMAGE_SIZE` |
-| component file | `kebab-case.tsx` | `exhibit-card.tsx` |
-| non-UI TypeScript | `kebab-case.ts` | `toggle-nostalgia.ts` |
+| component file | `kebab-case.tsx` | `item-card.tsx` |
+| non-UI TypeScript | `kebab-case.ts` | `toggle-shinmiri.ts` |
 | route segment | `kebab-case` | `/exhibits/new` |
-| DB | `snake_case` | `nostalgia_reactions` |
+| DB | `snake_case` | `shinmiri_reactions` |
 
 - 識別子とファイル名へ日本語・絵文字・空白を使わない
-- `id` は短い局所scope以外では対象を明示する（`exhibitId`）
-- handlerは結果を表す名前にする。曖昧な `handleClick` より `handleOpenExhibit` を使う
+- `id` は短い局所scope以外では対象を明示する（`itemId`）
+- handlerは結果を表す名前にする。曖昧な `handleClick` より `handleOpenItem` を使う
 
 ## TypeScript
 

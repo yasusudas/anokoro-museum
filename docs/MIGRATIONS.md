@@ -15,7 +15,7 @@
 3. `supabase migration new <snake_case_name>` でファイルを作る。
 4. DDL、constraint、index、RLS、policyを書く。
 5. `supabase db reset` で最初から再構築できることを確認する。ローカルデータが消えるため対象環境を確認して実行する。
-6. 必要に応じて匿名・本人・他人・運営の各roleでRLSを検証する。
+6. 匿名・本人・他人の3パターンでRLSを検証する。
 7. 型生成を導入済みならDB型を再生成する。
 8. migration、設計書、検証内容を同じPRへ含める。
 
@@ -25,7 +25,7 @@
 - [ ] rollbackまたは修正方針を説明した
 - [ ] NOT NULL追加時の既存データを考慮した
 - [ ] 外部キーの削除挙動を明示した
-- [ ] RLSを有効化し、匿名・本人・他人・運営を確認した
+- [ ] RLSを有効化し、匿名・本人・他人を確認した
 - [ ] `DATABASE_DESIGN.md` と一致している
 - [ ] `supabase db reset` が成功した
 
