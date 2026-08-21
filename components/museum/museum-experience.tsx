@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import Link from "next/link";
 
+import { CommentThread } from "@/components/comments/comment-thread";
+
 type Exhibit = {
   id: string;
   number: string;
@@ -223,11 +225,7 @@ export function MuseumExperience() {
               <button className={shinmiriItems.includes(selected.id) ? "modal-like liked" : "modal-like"} onClick={() => toggleShinmiri(selected.id)}>
                 <NostalgiaIcon />しんみりした <b>{selected.shinmiriCount + (shinmiriItems.includes(selected.id) ? 1 : 0)}</b>
               </button>
-              <div className="thread-preview">
-                <span>みんなの思い出</span>
-                <p>「これ、学校帰りによく友達と話してたなあ…」</p>
-                <button>思い出を読む →</button>
-              </div>
+              <CommentThread itemId={selected.id} />
             </div>
           </section>
         </div>

@@ -14,6 +14,8 @@
 
 「APIを作るため」だけにRoute Handlerを増やさず、Server ActionやRLS付きPostgRESTで足りるか先に検討する。
 
+現在の展示詳細はClient Componentのモーダルで構成されているため、コメント読み取りは暫定的にServer Action `getCommentsAction`を介する。展示詳細をServer ComponentのURLへ分離した段階で、コメント読み取りをServer Component queryへ寄せる。
+
 ## 2. 操作一覧
 
 | 操作 | 実装候補 | 認証 | 関連機能 |
