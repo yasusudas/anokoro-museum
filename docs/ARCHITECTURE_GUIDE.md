@@ -10,17 +10,17 @@
 app/
   (museum)/
     page.tsx
-    exhibits/[exhibitId]/page.tsx
+    items/[itemId]/page.tsx
   login/page.tsx
-  exhibits/new/page.tsx
-  admin/exhibits/page.tsx
+  items/new/page.tsx
+  admin/items/page.tsx
 components/
   museum/                 # 回廊・額縁・展示UI
   forms/                  # 投稿・コメントフォーム
   ui/                     # 汎用的な小さい部品
 features/
-  exhibits/
-    domain/               # Exhibit、年代判定、状態遷移
+  items/
+    domain/               # Item、年代判定、状態遷移
     application/          # 投稿、審査などのuse case
     infrastructure/       # Supabase query / mapper
   memories/
@@ -60,11 +60,11 @@ docs/
 
 ### 公開展示一覧
 
-`app/(museum)/page.tsx` がsearch paramsを解釈し、`features/exhibits/infrastructure/find-published-exhibits.ts` を呼ぶ。年代との関連度計算が複雑になったら `domain` へ移す。横移動だけを `components/museum/exhibit-corridor.tsx` に分離する。
+`app/(museum)/page.tsx` がsearch paramsを解釈し、`features/items/infrastructure/find-published-items.ts` を呼ぶ。年代との関連度計算が複雑になったら `domain` へ移す。横移動だけを `components/museum/item-corridor.tsx` に分離する。
 
 ### しんみり
 
-UI → Server Action → applicationの `toggle-nostalgia` → repository。重複防止の最終保証はDBの一意制約に置く。UIは楽観的更新できるが失敗時に戻す。
+UI → Server Action → applicationの `toggle-shinmiri` → repository。重複防止の最終保証はDBの一意制約に置く。UIは楽観的更新できるが失敗時に戻す。
 
 ### 展示投稿
 

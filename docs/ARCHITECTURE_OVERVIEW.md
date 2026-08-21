@@ -49,13 +49,13 @@ flowchart LR
 sequenceDiagram
   participant U as 来場者
   participant P as Next.js Page
-  participant R as Exhibit Repository
+  participant R as Item Repository
   participant DB as Supabase
   U->>P: 年代・カテゴリ付きURLを開く
   P->>R: 公開展示を問い合わせる
   R->>DB: SELECT (RLS)
   DB-->>R: 一覧DTO
-  R-->>P: ExhibitSummary[]
+  R-->>P: ItemSummary[]
   P-->>U: 回廊をServer Render
 ```
 
@@ -69,7 +69,7 @@ sequenceDiagram
   participant DB as Supabase
   U->>C: しんみりを押す
   C->>C: 楽観的に表示更新
-  C->>A: toggleNostalgia(exhibitId)
+  C->>A: toggleShinmiri(itemId)
   A->>DB: insert / delete (JWT + RLS)
   DB-->>A: result
   alt 失敗
