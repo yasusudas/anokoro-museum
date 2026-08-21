@@ -87,7 +87,6 @@ sequenceDiagram
 ```mermaid
 stateDiagram-v2
   [*] --> published: 投稿者がフォーム送信
-  published --> published: 投稿者が編集
   published --> [*]: 投稿者が削除
 ```
 

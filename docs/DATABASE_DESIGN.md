@@ -110,16 +110,15 @@ erDiagram
 | table | SELECT | INSERT | UPDATE | DELETE |
 | --- | --- | --- | --- | --- |
 | `users` | 全員 | トリガー経由のみ | 本人 | 不可（`auth.users` 削除にCASCADE） |
-| `items` | 全員 | ログイン済み・本人名義 | 本人 | 本人 |
+| `items` | 全員 | ログイン済み・本人名義 | 不可（編集なし） | 本人 |
 | `comments` | 全員 | ログイン済み・本人名義 | 不可（編集なし） | 本人 |
 | `comment_likes` | 本人の行のみ | ログイン済み・本人名義 | 不可 | 本人 |
 | `shinmiri_reactions` | 全員 | ログイン済み・本人名義 | 不可 | 本人 |
 
 - INSERTは `WITH CHECK (auth.uid() = user_id)` で本人名義を強制する
-- UPDATE / DELETEは `USING (auth.uid() = user_id)` で所有者を照合する
+- DELETEは `USING (auth.uid() = user_id)` で所有者を照合する
 - `users` の所有者列は `id`、それ以外の所有者付きtableは `user_id` を使う
 - `comment_likes` の匿名件数は生テーブルを公開せず、集計RPC `get_comment_like_counts` から取得する
-- `items` のUPDATEは `title`、`description`、分類・画像・年代列だけに限定し、主キー・所有者・作成日時・更新日時は変更できない
 - 公開状態（status）を持たないため、SELECTに条件分岐は不要
 
 ## `users` の自動作成
@@ -131,7 +130,7 @@ RLS有効下ではクライアントから `users` をINSERTできない。`auth
 
 ## `updated_at` の更新
 
-`users` と `items` に `BEFORE UPDATE` トリガーを設定し、`now()` を代入する。`comments`、`comment_likes`、`shinmiri_reactions` は更新しないため不要。
+`users` に `BEFORE UPDATE` トリガーを設定し、`now()` を代入する。`items`、`comments`、`comment_likes`、`shinmiri_reactions` は更新しないため不要。
 
 ## インデックス
 
