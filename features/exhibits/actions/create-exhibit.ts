@@ -43,7 +43,6 @@ export async function createExhibitAction(
   const description = String(formData.get("description") ?? formData.get("body") ?? "").trim();
   const category = String(formData.get("category") ?? "").trim();
   const rawYear = String(formData.get("year") ?? "").trim();
-  const rawImageUrl = String(formData.get("imageUrl") ?? "").trim();
   const imageFile = formData.get("image");
 
   const currentYear = Number(
@@ -80,15 +79,13 @@ export async function createExhibitAction(
     }
   }
 
-  // 画像ファイルの検証
-  let isImageFileProvided = false;
-  if (imageFile && imageFile instanceof File && imageFile.size > 0) {
-    isImageFileProvided = true;
-    if (!ALLOWED_IMAGE_TYPES.includes(imageFile.type)) {
-      fieldErrors.image = ["JPEG、PNG、WebP形式の画像を選択してください。"];
-    } else if (imageFile.size > MAX_IMAGE_SIZE_BYTES) {
-      fieldErrors.image = ["画像サイズは5MB以下にしてください。"];
-    }
+  // 画像ファイルの検証（必須）
+  if (!imageFile || !(imageFile instanceof File) || imageFile.size === 0) {
+    fieldErrors.image = ["画像ファイルを選択してください。"];
+  } else if (!ALLOWED_IMAGE_TYPES.includes(imageFile.type)) {
+    fieldErrors.image = ["JPEG、PNG、WebP形式の画像を選択してください。"];
+  } else if (imageFile.size > MAX_IMAGE_SIZE_BYTES) {
+    fieldErrors.image = ["画像サイズは5MB以下にしてください。"];
   }
 
   if (Object.keys(fieldErrors).length > 0) {
@@ -102,53 +99,52 @@ export async function createExhibitAction(
     };
   }
 
+  const validImageFile = imageFile as File;
+
   // 4. 画像の保存とURL発行
-  let finalImageUrl: string | null = rawImageUrl || null;
+  let finalImageUrl: string;
   let uploadedStoragePath: string | null = null;
 
-  if (isImageFileProvided && imageFile instanceof File) {
-    try {
-      const ext = imageFile.name.split(".").pop()?.toLowerCase() || "jpg";
-      const fileName = `${user.id}/${Date.now()}_${crypto.randomUUID()}.${ext}`;
+  try {
+    const ext = validImageFile.name.split(".").pop()?.toLowerCase() || "jpg";
+    const fileName = `${user.id}/${Date.now()}_${crypto.randomUUID()}.${ext}`;
 
-      // Supabase Storage (exhibits バケット) にアップロード
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("exhibits")
-        .upload(fileName, imageFile, {
-          contentType: imageFile.type,
-          upsert: false,
-        });
+    // Supabase Storage (exhibits バケット) にアップロード
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("exhibits")
+      .upload(fileName, validImageFile, {
+        contentType: validImageFile.type,
+        upsert: false,
+      });
 
-      if (uploadError) {
-        console.error("Storage upload error:", uploadError);
-        // バケット未作成等のフォールバック: エラーで弾くかURL無しにする
-        return {
-          ok: false,
-          error: {
-            code: "INTERNAL_ERROR",
-            message: "画像のアップロードに失敗しました。時間をおいて再試行してください。",
-          },
-        };
-      }
-
-      uploadedStoragePath = uploadData.path;
-
-      // 公開URLを自動発行・取得
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("exhibits").getPublicUrl(uploadedStoragePath);
-
-      finalImageUrl = publicUrl;
-    } catch (e) {
-      console.error("Image processing error:", e);
+    if (uploadError) {
+      console.error("Storage upload error:", uploadError);
       return {
         ok: false,
         error: {
           code: "INTERNAL_ERROR",
-          message: "画像処理中にエラーが発生しました。",
+          message: "画像のアップロードに失敗しました。時間をおいて再試行してください。",
         },
       };
     }
+
+    uploadedStoragePath = uploadData.path;
+
+    // 公開URLを自動発行・取得
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("exhibits").getPublicUrl(uploadedStoragePath);
+
+    finalImageUrl = publicUrl;
+  } catch (e) {
+    console.error("Image processing error:", e);
+    return {
+      ok: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "画像処理中にエラーが発生しました。",
+      },
+    };
   }
 
   // 5. データベース (public.items) に展示情報を INSERT
