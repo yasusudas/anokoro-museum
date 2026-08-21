@@ -82,7 +82,7 @@ UI → Server Action → applicationの `toggle-shinmiri` → repository。重�
 
 ### 展示投稿
 
-投稿画面は `app/(museum)/exhibits/new/page.tsx` に置き、ページ側はルートとcompositionのみを担当する。モーダルで出すなら再利用UIは `components/forms/` か `components/museum/` に寄せる。フォーム入力をServer Actionで検証し、画像保存とDB保存はapplicationで調整する。片方だけ成功した場合に孤立ファイルを残さない処理を設計し、審査を持たないため、保存した時点で公開される。
+投稿画面をページとして切るなら `app/(museum)/items/new/page.tsx` に置き、ページ側はルートとcompositionのみを担当する。モーダルで出すなら再利用UIは `components/forms/` か `components/museum/` に寄せる。フォーム入力をServer Actionで検証し、画像をStorageへアップロードしてから展示をDBへ保存する。DB保存に失敗した場合はアップロード済みオブジェクトを削除し、孤立ファイルを残さない。画像、代替テキスト、権利確認が揃った時点で保存・公開する。
 
 ## 段階的導入
 

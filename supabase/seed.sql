@@ -7,6 +7,7 @@ insert into public.items (
   theme,
   image_path,
   image_alt,
+  image_rights_confirmed,
   birth_year_start,
   birth_year_end
 )
@@ -18,8 +19,9 @@ values
     '遠足の日、ちぎれないように端から大事に食べた、あの長いグミ。友だちと長さを比べるのも定番でした。',
     'おかし',
     'gummy',
-    null,
+    'seed/himo-q.svg',
     'ひもQをイメージしたアート',
+    true,
     2004,
     2008
   ),
@@ -30,8 +32,9 @@ values
     '放課後になると、みんなで妖怪メダルを見せ合った。あの召喚ソングは今でも口ずさめるかも。',
     'ゲーム',
     'watch',
-    null,
+    'seed/yokai-watch.svg',
     '妖怪ウォッチをイメージしたアート',
+    true,
     2004,
     2008
   ),
@@ -42,8 +45,9 @@ values
     '長い列に並んで、黒糖ミルクを片手に写真を撮った放課後。太いストローも含めて思い出。',
     'たべもの',
     'tapioca',
-    null,
+    'seed/tapioca.svg',
     'タピオカをイメージしたアート',
+    true,
     2002,
     2007
   ),
@@ -54,8 +58,9 @@ values
     '休み時間の図書室。貸出中なら次の巻を探して、最後のなぞなぞまでしっかり読んだ。',
     'ほん',
     'book',
-    null,
+    'seed/kaiketsu-zorori.svg',
     'かいけつゾロリをイメージしたアート',
+    true,
     2000,
     2009
   ),
@@ -66,8 +71,9 @@ values
     '運動会前、筋肉痛になるまで低い姿勢を練習した。クラス全員の掛け声が揃った瞬間は忘れられない。',
     'できごと',
     'soran',
-    null,
+    'seed/soran-bushi.svg',
     'ソーラン節をイメージしたアート',
+    true,
     1998,
     2009
   );
