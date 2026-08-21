@@ -6,6 +6,16 @@ import type { ActionResult } from "@/features/auth/types";
 import { createClient } from "@/lib/supabase/server";
 
 import { isUuid, validateCommentContent } from "../domain/comment";
+import {
+  deleteComment,
+  deleteCommentLike,
+  findCommentItemId,
+  findCommentLikeId,
+  findCommentOwner,
+  findItemId,
+  insertComment,
+  insertCommentLike,
+} from "../infrastructure/comment-commands";
 import { findComments } from "../infrastructure/find-comments";
 import type { CommentView } from "../types";
 
@@ -26,10 +36,6 @@ function revalidateCommentViews(itemId: string) {
   if (isUuid(itemId)) {
     revalidatePath(`/exhibits/${itemId}`);
   }
-}
-
-function isUniqueViolation(error: { code?: string } | null | undefined) {
-  return error?.code === "23505";
 }
 
 export async function getCommentsAction(itemId: string): Promise<ActionResult<CommentView[]>> {
@@ -77,34 +83,25 @@ export async function createCommentAction(
     };
   }
 
-  const { data: item, error: itemError } = await supabase
-    .from("items")
-    .select("id")
-    .eq("id", itemId)
-    .maybeSingle();
+  try {
+    const item = await findItemId(itemId);
 
-  if (itemError) {
-    console.error("Supabase item lookup error:", itemError);
-    return { ok: false, error: { code: "INTERNAL_ERROR", message: "コメントを投稿できませんでした" } };
-  }
+    if (!item) {
+      return { ok: false, error: { code: "NOT_FOUND", message: "展示が見つかりません" } };
+    }
 
-  if (!item) {
-    return { ok: false, error: { code: "NOT_FOUND", message: "展示が見つかりません" } };
-  }
+    const commentId = await insertComment({
+      itemId,
+      userId: user.id,
+      content: contentResult.content,
+    });
 
-  const { data: comment, error } = await supabase
-    .from("comments")
-    .insert({ item_id: itemId, user_id: user.id, content: contentResult.content })
-    .select("id")
-    .single();
-
-  if (error || !comment) {
+    revalidateCommentViews(itemId);
+    return { ok: true, data: { commentId } };
+  } catch (error) {
     console.error("Supabase comment insert error:", error);
     return { ok: false, error: { code: "INTERNAL_ERROR", message: "コメントを投稿できませんでした" } };
   }
-
-  revalidateCommentViews(itemId);
-  return { ok: true, data: { commentId: comment.id } };
 }
 
 export async function deleteCommentAction(formData: FormData): Promise<ActionResult> {
@@ -126,34 +123,24 @@ export async function deleteCommentAction(formData: FormData): Promise<ActionRes
     };
   }
 
-  const { data: comment, error: findError } = await supabase
-    .from("comments")
-    .select("item_id, user_id")
-    .eq("id", commentId)
-    .maybeSingle();
+  try {
+    const comment = await findCommentOwner(commentId);
 
-  if (findError) {
-    console.error("Supabase comment lookup error:", findError);
-    return { ok: false, error: { code: "INTERNAL_ERROR", message: "コメントを削除できませんでした" } };
-  }
+    if (!comment) {
+      return { ok: false, error: { code: "NOT_FOUND", message: "コメントが見つかりません" } };
+    }
 
-  if (!comment) {
-    return { ok: false, error: { code: "NOT_FOUND", message: "コメントが見つかりません" } };
-  }
+    if (comment.userId !== user.id) {
+      return { ok: false, error: { code: "FORBIDDEN", message: "このコメントは削除できません" } };
+    }
 
-  if (comment.user_id !== user.id) {
-    return { ok: false, error: { code: "FORBIDDEN", message: "このコメントは削除できません" } };
-  }
-
-  const { error } = await supabase.from("comments").delete().eq("id", commentId);
-
-  if (error) {
+    await deleteComment(commentId);
+    revalidateCommentViews(comment.itemId);
+    return { ok: true, data: undefined };
+  } catch (error) {
     console.error("Supabase comment delete error:", error);
     return { ok: false, error: { code: "INTERNAL_ERROR", message: "コメントを削除できませんでした" } };
   }
-
-  revalidateCommentViews(comment.item_id);
-  return { ok: true, data: undefined };
 }
 
 export async function toggleCommentLikeAction(
@@ -177,58 +164,26 @@ export async function toggleCommentLikeAction(
     };
   }
 
-  const { data: comment, error: commentError } = await supabase
-    .from("comments")
-    .select("id, item_id")
-    .eq("id", commentId)
-    .maybeSingle();
+  try {
+    const itemId = await findCommentItemId(commentId);
 
-  if (commentError) {
-    console.error("Supabase comment lookup error:", commentError);
-    return { ok: false, error: { code: "INTERNAL_ERROR", message: "いいねを更新できませんでした" } };
-  }
-
-  if (!comment) {
-    return { ok: false, error: { code: "NOT_FOUND", message: "コメントが見つかりません" } };
-  }
-
-  const { data: existingLike, error: likeLookupError } = await supabase
-    .from("comment_likes")
-    .select("id")
-    .eq("comment_id", commentId)
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (likeLookupError) {
-    console.error("Supabase comment like lookup error:", likeLookupError);
-    return { ok: false, error: { code: "INTERNAL_ERROR", message: "いいねを更新できませんでした" } };
-  }
-
-  if (existingLike) {
-    const { error } = await supabase.from("comment_likes").delete().eq("id", existingLike.id);
-    if (error) {
-      console.error("Supabase comment unlike error:", error);
-      return { ok: false, error: { code: "INTERNAL_ERROR", message: "いいねを解除できませんでした" } };
+    if (!itemId) {
+      return { ok: false, error: { code: "NOT_FOUND", message: "コメントが見つかりません" } };
     }
 
-    revalidateCommentViews(comment.item_id);
-    return { ok: true, data: { liked: false } };
-  }
+    const existingLikeId = await findCommentLikeId(commentId, user.id);
 
-  const { error } = await supabase
-    .from("comment_likes")
-    .insert({ comment_id: commentId, user_id: user.id });
-
-  if (error) {
-    if (isUniqueViolation(error)) {
-      revalidateCommentViews(comment.item_id);
-      return { ok: true, data: { liked: true } };
+    if (existingLikeId) {
+      await deleteCommentLike(existingLikeId);
+      revalidateCommentViews(itemId);
+      return { ok: true, data: { liked: false } };
     }
 
+    await insertCommentLike(commentId, user.id);
+    revalidateCommentViews(itemId);
+    return { ok: true, data: { liked: true } };
+  } catch (error) {
     console.error("Supabase comment like error:", error);
-    return { ok: false, error: { code: "CONFLICT", message: "いいねを更新できませんでした" } };
+    return { ok: false, error: { code: "INTERNAL_ERROR", message: "いいねを更新できませんでした" } };
   }
-
-  revalidateCommentViews(comment.item_id);
-  return { ok: true, data: { liked: true } };
 }

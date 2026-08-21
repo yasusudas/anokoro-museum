@@ -111,52 +111,52 @@ export type Database = {
       }
       items: {
         Row: {
-          birth_year_end: number
-          birth_year_start: number
+          birth_year_end: number | null
+          birth_year_start: number | null
           category: string
           created_at: string
           description: string
           id: string
-          image_alt: string
-          image_path: string
+          image_alt: string | null
+          image_path: string | null
           image_url: string | null
           image_rights_confirmed: boolean
           year: number | null
-          theme: string
+          theme: string | null
           title: string
           updated_at: string
           user_id: string | null
         }
         Insert: {
-          birth_year_end: number
-          birth_year_start: number
+          birth_year_end?: number | null
+          birth_year_start?: number | null
           category: string
           created_at?: string
           description: string
           id?: string
-          image_alt: string
-          image_path: string
+          image_alt?: string | null
+          image_path?: string | null
           image_url?: string | null
           image_rights_confirmed?: boolean
           year?: number | null
-          theme: string
+          theme?: string | null
           title: string
           updated_at?: string
           user_id?: string | null
         }
         Update: {
-          birth_year_end?: number
-          birth_year_start?: number
+          birth_year_end?: number | null
+          birth_year_start?: number | null
           category?: string
           created_at?: string
           description?: string
           id?: string
-          image_alt?: string
-          image_path?: string
+          image_alt?: string | null
+          image_path?: string | null
           image_url?: string | null
           image_rights_confirmed?: boolean
           year?: number | null
-          theme?: string
+          theme?: string | null
           title?: string
           updated_at?: string
           user_id?: string | null

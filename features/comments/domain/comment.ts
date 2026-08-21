@@ -42,6 +42,10 @@ export type CommentValidation =
   | { ok: true; content: string }
   | { ok: false; message: string };
 
+export function countCommentCharacters(value: string) {
+  return [...value].length;
+}
+
 export function validateCommentContent(value: unknown): CommentValidation {
   if (typeof value !== "string") {
     return { ok: false, message: "コメントを入力してください" };
@@ -49,11 +53,11 @@ export function validateCommentContent(value: unknown): CommentValidation {
 
   const content = value.trim();
 
-  if (content.length === 0) {
+  if (countCommentCharacters(content) === 0) {
     return { ok: false, message: "コメントを入力してください" };
   }
 
-  if (content.length > MAX_COMMENT_LENGTH) {
+  if (countCommentCharacters(content) > MAX_COMMENT_LENGTH) {
     return { ok: false, message: `コメントは${MAX_COMMENT_LENGTH}文字以内で入力してください` };
   }
 
