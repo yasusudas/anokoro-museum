@@ -8,14 +8,17 @@
 
 ```text
 app/
+  page.tsx
+  (auth)/
+    layout.tsx
+    sign-in/page.tsx
+    sign-up/page.tsx
   (museum)/
-    page.tsx
     items/[itemId]/page.tsx
-  login/page.tsx
-  items/new/page.tsx
+    items/new/page.tsx
 components/
   museum/                 # 回廊・額縁・展示UI
-  forms/                  # 投稿・コメントフォーム
+  auth/                   # ログイン・登録まわりのカードやフォーム
   ui/                     # 汎用的な小さい部品
 features/
   items/
@@ -63,7 +66,11 @@ docs/
 
 ### 公開展示一覧
 
-`app/(museum)/page.tsx` がsearch paramsを解釈し、`features/items/infrastructure/find-published-items.ts` を呼ぶ。年代との関連度計算が複雑になったら `domain` へ移す。横移動だけを `components/museum/item-corridor.tsx` に分離する。
+`app/page.tsx` は薄く保ち、表示の中心は `components/museum/museum-experience.tsx` に置く。年代との関連度計算が複雑になったら `domain` へ移す。横移動だけを `components/museum/item-corridor.tsx` に分離する。
+
+### 認証導線
+
+`app/(auth)/sign-in/page.tsx` と `app/(auth)/sign-up/page.tsx` は route group 配下に置き、共通の見た目は `components/auth/auth-card.tsx` に寄せる。入力フォームは `components/auth/*-form.tsx` に分け、ページ側はルーティングと composition だけにする。
 
 ### しんみり
 
