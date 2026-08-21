@@ -82,7 +82,7 @@ UI → Server Action → applicationの `toggle-shinmiri` → repository。重�
 
 ### 展示投稿
 
-投稿画面は `app/(museum)/exhibits/new/page.tsx` に置き、ページ側はルートとcompositionのみを担当する。再利用UIは `components/forms/` か `components/museum/` に寄せる。名前、説明、カテゴリ、画像ファイル、流行った年代をServer Actionで検証し、画像がJPEG、PNG、WebPのいずれか、かつ5MB以下の場合だけSupabase Storageへアップロードする。その後、Storage内のオブジェクトパスを `items.image_url` に設定して展示をDBへ保存・公開する。DB保存に失敗した場合はアップロード済みオブジェクトを削除し、孤立ファイルを残さない。
+投稿画面は `app/(museum)/exhibits/new/page.tsx` に置き、ページ側はルートとcompositionのみを担当する。再利用UIは `components/forms/` か `components/museum/` に寄せる。名前、説明、カテゴリ、画像ファイル、流行った年代をServer Actionで検証し、画像がJPEG、PNG、WebPのいずれか、かつ5MB以下の場合だけSupabase Storageへアップロードする。その後、Storage内の公開画像URLを `items.image_url` に設定して展示をDBへ保存・公開する。DB保存に失敗した場合はアップロード済みオブジェクトを削除し、孤立ファイルを残さない。
 
 ## 段階的導入
 
