@@ -23,6 +23,7 @@
 | しんみり切替 | Server Action / RPC | 必要 | F-05 |
 | コメント投稿・削除 | Server Action | 必要 | F-06 |
 | コメントいいね切替 | Server Action | 必要 | F-06 |
+| コメントいいね件数取得 | Supabase RPC `get_comment_like_counts` | 不要 | F-06 |
 | 展示候補投稿 | Server Action | 必要 | F-07 |
 | 画像アップロード確定 | Server Action | 必要 | F-07 |
 
@@ -51,6 +52,7 @@ type ActionResult<T> =
 
 - 展示・コメントは匿名で読み取れる
 - 投稿、しんみり、コメント、コメントいいねは `auth.uid()` と所有者をRLSで照合する
+- コメントいいね件数は生テーブルを直接読ませず、`comment_id` と件数だけを返すRPCで取得する
 - service roleは管理用サーバー処理に限定し、通常ユーザー処理でRLSを迂回しない
 - 運営ロールを持たないため、認可判定は所有者かどうかだけで完結する
 - 生まれ年はDBで管理しないため、対応するServer Actionを持たない

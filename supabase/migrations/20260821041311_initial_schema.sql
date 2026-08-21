@@ -18,11 +18,13 @@ create table public.items (
   theme varchar not null,
   image_path text,
   image_alt text,
+  image_rights_confirmed boolean not null default false,
   birth_year_start integer not null,
   birth_year_end integer not null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  check (birth_year_end >= birth_year_start)
+  check (birth_year_end >= birth_year_start),
+  check (image_path is null or image_rights_confirmed)
 );
 
 create table public.comments (
@@ -86,9 +88,8 @@ begin
     new.id,
     coalesce(
       nullif(btrim(new.raw_user_meta_data ->> 'user_name'), ''),
-      nullif(btrim(new.raw_user_meta_data ->> 'full_name'), ''),
-      nullif(split_part(new.email, '@', 1), ''),
-      'user'
+      nullif(btrim(new.raw_user_meta_data ->> 'display_name'), ''),
+      'あのころの来場者-' || left(replace(gen_random_uuid()::text, '-', ''), 8)
     )
   )
   on conflict (id) do nothing;
@@ -165,10 +166,25 @@ for delete
 to authenticated
 using ((select auth.uid()) = user_id);
 
-create policy "コメントいいねを読み取れる"
+create policy "本人のコメントいいねを読み取れる"
 on public.comment_likes
 for select
-using (true);
+to authenticated
+using ((select auth.uid()) = user_id);
+
+create function public.get_comment_like_counts(comment_ids uuid[])
+returns table (comment_id uuid, like_count bigint)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select requested.comment_id, count(likes.id)::bigint
+  from unnest(comment_ids) as requested(comment_id)
+  inner join public.comments as comments on comments.id = requested.comment_id
+  left join public.comment_likes as likes on likes.comment_id = comments.id
+  group by requested.comment_id;
+$$;
 
 create policy "本人名義でコメントいいねを付けられる"
 on public.comment_likes
@@ -200,10 +216,13 @@ to authenticated
 using ((select auth.uid()) = user_id);
 
 grant usage on schema public to anon, authenticated;
-grant select on public.users, public.items, public.comments, public.comment_likes, public.shinmiri_reactions to anon, authenticated;
+grant select on public.users, public.items, public.comments, public.shinmiri_reactions to anon, authenticated;
+grant select on public.comment_likes to authenticated;
 grant update on public.users to authenticated;
 grant insert, delete on public.items to authenticated;
 revoke update on public.items from authenticated;
-grant update (title, description, category, theme, image_path, image_alt, birth_year_start, birth_year_end)
+grant update (title, description, category, theme, image_path, image_alt, image_rights_confirmed, birth_year_start, birth_year_end)
 on public.items to authenticated;
 grant insert, delete on public.comments, public.comment_likes, public.shinmiri_reactions to authenticated;
+revoke all on function public.get_comment_like_counts(uuid[]) from public;
+grant execute on function public.get_comment_like_counts(uuid[]) to anon, authenticated;
