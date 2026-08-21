@@ -13,9 +13,13 @@ app/
     items/[itemId]/page.tsx
   login/page.tsx
   items/new/page.tsx
+  (auth)/
+    layout.tsx
+    sign-in/page.tsx
+    sign-up/page.tsx
 components/
   museum/                 # 回廊・額縁・展示UI
-  forms/                  # 投稿・コメントフォーム
+  auth/                   # ログイン・登録まわりのカードやフォーム
   ui/                     # 汎用的な小さい部品
 features/
   items/
@@ -63,7 +67,11 @@ docs/
 
 ### 公開展示一覧
 
-`app/(museum)/page.tsx` がsearch paramsを解釈し、`features/items/infrastructure/find-published-items.ts` を呼ぶ。年代との関連度計算が複雑になったら `domain` へ移す。横移動だけを `components/museum/item-corridor.tsx` に分離する。
+現状の `app/page.tsx` は薄く保ち、表示の中心を `components/museum/museum-experience.tsx` に置く。routeを分割する段階では `app/(museum)/page.tsx` がsearch paramsを解釈し、`features/items/infrastructure/find-published-items.ts` を呼ぶ。年代との関連度計算が複雑になったら `domain` へ移し、横移動は `components/museum/exhibit-corridor.tsx` に分離する。
+
+### 認証導線
+
+`app/(auth)/sign-in/page.tsx` と `app/(auth)/sign-up/page.tsx` は route group 配下に置き、共通の見た目は `components/auth/auth-card.tsx` に寄せる。入力フォームは `components/auth/*-form.tsx` に分け、ページ側はルーティングと composition だけにする。
 
 ### しんみり
 
@@ -75,7 +83,7 @@ UI → Server Action → applicationの `toggle-shinmiri` → repository。重�
 
 ### 展示投稿
 
-フォーム入力をServer Actionで検証し、画像保存とDB保存をapplicationで調整する。片方だけ成功した場合に孤立ファイルを残さない処理を設計する。審査を持たないため、保存した時点で公開される。
+投稿画面をページとして切るなら `app/(museum)/exhibits/new/page.tsx` に置き、ページ側はルートとcompositionのみを担当する。モーダルで出すなら再利用UIは `components/forms/` か `components/museum/` に寄せる。フォーム入力をServer Actionで検証し、画像保存とDB保存はapplicationで調整する。片方だけ成功した場合に孤立ファイルを残さない処理を設計し、審査を持たないため保存した時点で公開する。
 
 ## 段階的導入
 

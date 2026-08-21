@@ -8,8 +8,12 @@ create table public.users (
 create table public.items (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references public.users (id) on delete cascade,
-  title varchar not null,
-  description text not null,
+  title varchar not null check (
+    char_length(regexp_replace(replace(title, chr(12288), ' '), '^[[:space:]]+|[[:space:]]+$', '', 'g')) >= 1
+  ),
+  description text not null check (
+    char_length(regexp_replace(replace(description, chr(12288), ' '), '^[[:space:]]+|[[:space:]]+$', '', 'g')) >= 1
+  ),
   category varchar not null check (category in ('おかし', 'ゲーム', 'たべもの', 'ほん', 'できごと')),
   theme varchar not null,
   image_path text,
@@ -25,7 +29,11 @@ create table public.comments (
   id uuid primary key default gen_random_uuid(),
   item_id uuid not null references public.items (id) on delete cascade,
   user_id uuid not null references public.users (id) on delete cascade,
-  content text not null check (char_length(btrim(content, E' \t\n\r')) between 1 and 500),
+  content text not null check (
+    char_length(
+      regexp_replace(replace(content, chr(12288), ' '), '^[[:space:]]+|[[:space:]]+$', '', 'g')
+    ) between 1 and 500
+  ),
   created_at timestamptz not null default now()
 );
 
@@ -194,5 +202,8 @@ using ((select auth.uid()) = user_id);
 grant usage on schema public to anon, authenticated;
 grant select on public.users, public.items, public.comments, public.comment_likes, public.shinmiri_reactions to anon, authenticated;
 grant update on public.users to authenticated;
-grant insert, update, delete on public.items to authenticated;
+grant insert, delete on public.items to authenticated;
+revoke update on public.items from authenticated;
+grant update (title, description, category, theme, image_path, image_alt, birth_year_start, birth_year_end)
+on public.items to authenticated;
 grant insert, delete on public.comments, public.comment_likes, public.shinmiri_reactions to authenticated;

@@ -54,8 +54,8 @@ erDiagram
 | --- | --- | --- |
 | `id` | uuid | PK、DEFAULT `gen_random_uuid()` |
 | `user_id` | uuid | FK `users.id` (ON DELETE CASCADE)、NULL可 |
-| `title` | varchar | NOT NULL |
-| `description` | text | NOT NULL |
+| `title` | varchar | NOT NULL。Unicode空白を除くtrim後が1文字以上 |
+| `description` | text | NOT NULL。Unicode空白を除くtrim後が1文字以上 |
 | `category` | varchar | NOT NULL。CHECK制約で `おかし` / `ゲーム` / `たべもの` / `ほん` / `できごと` に限定 |
 | `theme` | varchar | NOT NULL。画像未設定時のフォールバックアート識別子（`gummy`, `watch` など） |
 | `image_path` | text | Supabase Storageのオブジェクトキー。外部URLは保存しない |
@@ -78,7 +78,7 @@ erDiagram
 | `id` | uuid | PK、DEFAULT `gen_random_uuid()` |
 | `item_id` | uuid | FK `items.id` (ON DELETE CASCADE)、NOT NULL |
 | `user_id` | uuid | FK `users.id` (ON DELETE CASCADE)、NOT NULL |
-| `content` | text | NOT NULL。CHECK制約で trim後1〜500文字 |
+| `content` | text | NOT NULL。CHECK制約でUnicode空白を除くtrim後1〜500文字 |
 | `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
 
 編集を提供しないため `updated_at` を持たない。本人削除は物理削除とする。
@@ -119,6 +119,7 @@ erDiagram
 
 - INSERTは `WITH CHECK (auth.uid() = user_id)` で本人名義を強制する
 - UPDATE / DELETEは `USING (auth.uid() = user_id)` で所有者を照合する
+- `items` のUPDATEは `title`、`description`、分類・画像・年代列だけに限定し、主キー・所有者・作成日時・更新日時は変更できない
 - 公開状態（status）を持たないため、SELECTに条件分岐は不要
 
 ## `users` の自動作成
