@@ -15,7 +15,7 @@ const ALLOWED_CATEGORIES = [
 ];
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export async function createExhibitAction(
   formData: FormData
@@ -83,7 +83,7 @@ export async function createExhibitAction(
   if (imageFile && imageFile instanceof File && imageFile.size > 0) {
     isImageFileProvided = true;
     if (!ALLOWED_IMAGE_TYPES.includes(imageFile.type)) {
-      fieldErrors.image = ["JPEG、PNG、WebP、GIF形式の画像を選択してください。"];
+      fieldErrors.image = ["JPEG、PNG、WebP形式の画像を選択してください。"];
     } else if (imageFile.size > MAX_IMAGE_SIZE_BYTES) {
       fieldErrors.image = ["画像サイズは5MB以下にしてください。"];
     }
