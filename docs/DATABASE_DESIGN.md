@@ -55,9 +55,9 @@ erDiagram
 | `id` | uuid | PK、DEFAULT `gen_random_uuid()` |
 | `user_id` | uuid | FK `users.id` (ON DELETE CASCADE)、NULL可 |
 | `title` | varchar | NOT NULL |
-| `description` | text | |
+| `description` | text | NOT NULL |
 | `category` | varchar | NOT NULL。CHECK制約で `おかし` / `ゲーム` / `たべもの` / `ほん` / `できごと` に限定 |
-| `theme` | varchar | 画像未設定時のフォールバックアート識別子（`gummy`, `watch` など） |
+| `theme` | varchar | NOT NULL。画像未設定時のフォールバックアート識別子（`gummy`, `watch` など） |
 | `image_path` | text | Supabase Storageのオブジェクトキー。外部URLは保存しない |
 | `image_alt` | text | 画像の代替テキスト（F-03） |
 | `birth_year_start` | int | NOT NULL。主に記憶を共有する来場者の生まれ年の開始 |
