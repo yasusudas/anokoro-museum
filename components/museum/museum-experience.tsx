@@ -18,6 +18,7 @@ type Exhibit = {
 
 type ExhibitComment = {
   id: string;
+  author: string;
   content: string;
 };
 
@@ -30,6 +31,12 @@ const exhibits: Exhibit[] = [
 ];
 
 const categories = ["すべて", "おかし", "ゲーム", "たべもの", "ほん", "できごと"];
+
+const builtInComment: ExhibitComment = {
+  id: "built-in-comment",
+  author: "あのころの来場者",
+  content: "「これ、学校帰りによく友達と話してたなあ…」",
+};
 
 function ArrowIcon({ direction = "right" }: { direction?: "left" | "right" }) {
   return (
@@ -57,6 +64,8 @@ function ExhibitArt({ theme }: { theme: string }) {
 
 export function MuseumExperience() {
   const corridorRef = useRef<HTMLDivElement>(null);
+  const modalCloseRef = useRef<HTMLButtonElement>(null);
+  const commentIdRef = useRef(0);
   const [activeCategory, setActiveCategory] = useState("すべて");
   const [selected, setSelected] = useState<Exhibit | null>(null);
   const [shinmiriItems, setShinmiriItems] = useState<string[]>([]);
@@ -71,6 +80,16 @@ export function MuseumExperience() {
     });
   }, []);
 
+  const closeModal = useCallback(() => {
+    setSelected(null);
+    setCommentDraft("");
+  }, []);
+
+  const handleOpenExhibit = (item: Exhibit) => {
+    setCommentDraft("");
+    setSelected(item);
+  };
+
   useEffect(() => {
     const corridor = corridorRef.current;
     if (!corridor) return;
@@ -83,6 +102,13 @@ export function MuseumExperience() {
     };
 
     const arrows = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && selected) {
+        event.preventDefault();
+        closeModal();
+        return;
+      }
+
+      if (selected) return;
       if (event.key === "ArrowRight") move(1);
       if (event.key === "ArrowLeft") move(-1);
     };
@@ -94,7 +120,11 @@ export function MuseumExperience() {
       corridor.removeEventListener("wheel", horizontalWheel);
       window.removeEventListener("keydown", arrows);
     };
-  }, [move]);
+  }, [closeModal, move, selected]);
+
+  useEffect(() => {
+    if (selected) modalCloseRef.current?.focus();
+  }, [selected]);
 
   const toggleShinmiri = (id: string) =>
     setShinmiriItems((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
@@ -105,13 +135,21 @@ export function MuseumExperience() {
 
     if (!selected || !content) return;
 
-    const comment = { id: crypto.randomUUID(), content };
+    commentIdRef.current += 1;
+    const id = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `comment-${Date.now()}-${commentIdRef.current}`;
+    const comment = { id, author: "あなた", content };
     setCommentsByExhibit((current) => ({
       ...current,
       [selected.id]: [...(current[selected.id] ?? []), comment],
     }));
     setCommentDraft("");
   };
+
+  const selectedComments = selected
+    ? [builtInComment, ...(commentsByExhibit[selected.id] ?? [])]
+    : [];
 
   return (
     <main className="museum-shell">
@@ -170,7 +208,7 @@ export function MuseumExperience() {
           <section className="gallery" aria-live="polite">
             {visible.map((item) => (
               <article className="exhibit" key={item.id}>
-                <button className="frame" onClick={() => setSelected(item)} aria-label={`${item.title}の詳細を見る`}>
+                <button className="frame" onClick={() => handleOpenExhibit(item)} aria-label={`${item.title}の詳細を見る`}>
                   <span className="frame-inner">
                     <ExhibitArt theme={item.theme} />
                   </span>
@@ -218,9 +256,9 @@ export function MuseumExperience() {
       </div>
 
       {selected && (
-        <div className="modal-backdrop" onMouseDown={() => setSelected(null)}>
+        <div className="modal-backdrop" onMouseDown={closeModal}>
           <section className="detail-modal" role="dialog" aria-modal="true" aria-label={`${selected.title}の展示詳細`} onMouseDown={(event) => event.stopPropagation()}>
-            <button className="modal-close" onClick={() => setSelected(null)} aria-label="閉じる">
+            <button ref={modalCloseRef} className="modal-close" onClick={closeModal} aria-label="閉じる">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M18 6 6 18M6 6l12 12" />
               </svg>
@@ -256,16 +294,12 @@ export function MuseumExperience() {
             </div>
             <aside className="modal-comments" aria-label="コメント欄">
               <div className="modal-comments-heading">
-                <h3>{1 + (commentsByExhibit[selected.id]?.length ?? 0)}件のコメント</h3>
+                <h3>{selectedComments.length}件のコメント</h3>
               </div>
               <div className="modal-comment-list">
-                <article className="modal-comment">
-                  <span>あのころの来場者</span>
-                  <p>「これ、学校帰りによく友達と話してたなあ…」</p>
-                </article>
-                {(commentsByExhibit[selected.id] ?? []).map((comment) => (
+                {selectedComments.map((comment) => (
                   <article className="modal-comment" key={comment.id}>
-                    <span>あなた</span>
+                    <span>{comment.author}</span>
                     <p>{comment.content}</p>
                   </article>
                 ))}

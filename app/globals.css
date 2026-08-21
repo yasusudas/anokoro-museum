@@ -435,7 +435,7 @@ button:focus-visible {
 }
 
 .nostalgia.liked {
-  color: #568e98;
+  color: #356b75;
 }
 
 .floor {
@@ -915,8 +915,9 @@ button:focus-visible {
   display: grid;
   place-items: center;
   border: 0;
+  border-radius: 4px;
   background: transparent;
-  color: #d4c7b6;
+  color: #f5ebdc;
   cursor: pointer;
   transition: color .2s, background-color .2s;
 }
@@ -925,13 +926,13 @@ button:focus-visible {
   width: 20px;
   height: 20px;
   fill: none;
-  stroke: currentColor;
+  stroke: currentcolor;
   stroke-linecap: round;
   stroke-width: 1.5;
 }
 
 .modal-close:hover {
-  background: rgba(255, 250, 241, .08);
+  background: rgba(39, 32, 26, .62);
   color: #fff8eb;
 }
 
@@ -1013,7 +1014,7 @@ button:focus-visible {
 }
 
 .modal-like.liked {
-  color: #568e98;
+  color: #356b75;
   background: #e1f1f3;
 }
 
@@ -1085,7 +1086,6 @@ button:focus-visible {
   line-height: 1.9;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
-  word-break: break-word;
 }
 
 .modal-comment-form {
@@ -1147,6 +1147,11 @@ button:focus-visible {
 .modal-comment-button:hover {
   background: #d6b46f;
   color: #30271f;
+}
+
+.modal-comment-button:focus-visible {
+  outline: 2px solid #d6b46f;
+  outline-offset: 2px;
 }
 
 .modal-comment-button:disabled {
@@ -1263,7 +1268,21 @@ button:focus-visible {
     overflow-y: auto
   }
 
+  .modal-close {
+    position: sticky;
+    grid-column: 1;
+    grid-row: 1 / -1;
+    justify-self: end;
+    align-self: start;
+    top: 12px;
+    margin: 12px 12px 0 0;
+    border: 1px solid rgba(245, 235, 220, .16);
+    background: rgba(39, 32, 26, .58)
+  }
+
   .modal-main {
+    grid-column: 1;
+    grid-row: 1;
     overflow: visible
   }
 
@@ -1277,6 +1296,8 @@ button:focus-visible {
   }
 
   .modal-comments {
+    grid-column: 1;
+    grid-row: 2;
     min-height: 360px;
     border-top: 1px solid #9e8971;
     border-left: 0
