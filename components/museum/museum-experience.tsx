@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 
 import Link from "next/link";
 
@@ -14,6 +14,11 @@ type Exhibit = {
   description: string;
   shinmiriCount: number;
   theme: string;
+};
+
+type ExhibitComment = {
+  id: string;
+  content: string;
 };
 
 const exhibits: Exhibit[] = [
@@ -37,8 +42,7 @@ function ArrowIcon({ direction = "right" }: { direction?: "left" | "right" }) {
 function NostalgiaIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 20.4s-7-4.3-7-10A4.2 4.2 0 0 1 12 7.3a4.2 4.2 0 0 1 7 3.1c0 5.7-7 10-7 10Z" />
-      <path d="M8.4 11.2c.4-1.1 1.1-1.7 2.1-1.9" />
+      <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21.2l7.8-7.7 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z" />
     </svg>
   );
 }
@@ -56,6 +60,8 @@ export function MuseumExperience() {
   const [activeCategory, setActiveCategory] = useState("すべて");
   const [selected, setSelected] = useState<Exhibit | null>(null);
   const [shinmiriItems, setShinmiriItems] = useState<string[]>([]);
+  const [commentsByExhibit, setCommentsByExhibit] = useState<Record<string, ExhibitComment[]>>({});
+  const [commentDraft, setCommentDraft] = useState("");
   const [showGuide, setShowGuide] = useState(true);
   const visible = activeCategory === "すべて" ? exhibits : exhibits.filter((item) => item.category === activeCategory);
   const move = useCallback((direction: number) => {
@@ -92,6 +98,20 @@ export function MuseumExperience() {
 
   const toggleShinmiri = (id: string) =>
     setShinmiriItems((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+
+  const handleCommentSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const content = commentDraft.trim();
+
+    if (!selected || !content) return;
+
+    const comment = { id: crypto.randomUUID(), content };
+    setCommentsByExhibit((current) => ({
+      ...current,
+      [selected.id]: [...(current[selected.id] ?? []), comment],
+    }));
+    setCommentDraft("");
+  };
 
   return (
     <main className="museum-shell">
@@ -201,39 +221,78 @@ export function MuseumExperience() {
         <div className="modal-backdrop" onMouseDown={() => setSelected(null)}>
           <section className="detail-modal" role="dialog" aria-modal="true" aria-label={`${selected.title}の展示詳細`} onMouseDown={(event) => event.stopPropagation()}>
             <button className="modal-close" onClick={() => setSelected(null)} aria-label="閉じる">
-              ×
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
             </button>
-            <div className="modal-art">
-              <div className="frame modal-frame">
-                <span className="frame-inner">
-                  <ExhibitArt theme={selected.theme} />
-                </span>
+            <div className="modal-main">
+              <div className="modal-art">
+                <div className="frame modal-frame">
+                  <span className="frame-inner">
+                    <ExhibitArt theme={selected.theme} />
+                  </span>
+                </div>
+              </div>
+              <div className="modal-content">
+                <p className="eyebrow">
+                  EXHIBIT {selected.number} · {selected.category}
+                </p>
+                <div className="modal-title-row">
+                  <div>
+                    <h2>{selected.title}</h2>
+                    <p className="modal-subtitle">{selected.subtitle}</p>
+                  </div>
+                  <button className={shinmiriItems.includes(selected.id) ? "modal-like liked" : "modal-like"} onClick={() => toggleShinmiri(selected.id)}>
+                    <NostalgiaIcon />
+                    <span>しんみり</span>
+                    <b>{selected.shinmiriCount + (shinmiriItems.includes(selected.id) ? 1 : 0)}</b>
+                  </button>
+                </div>
+                <p className="modal-memory">{selected.description}</p>
+                <div className="memory-tag">
+                  主に <b>{selected.year}年生まれ</b> の記憶
+                </div>
               </div>
             </div>
-            <div className="modal-content">
-              <p className="eyebrow">
-                EXHIBIT {selected.number} · {selected.category}
-              </p>
-              <h2>{selected.title}</h2>
-              <p className="modal-subtitle">{selected.subtitle}</p>
-              <p className="modal-memory">{selected.description}</p>
-              <div className="memory-tag">
-                主に <b>{selected.year}年生まれ</b> の記憶
+            <aside className="modal-comments" aria-label="コメント欄">
+              <div className="modal-comments-heading">
+                <h3>{1 + (commentsByExhibit[selected.id]?.length ?? 0)}件のコメント</h3>
               </div>
-              <button className={shinmiriItems.includes(selected.id) ? "modal-like liked" : "modal-like"} onClick={() => toggleShinmiri(selected.id)}>
-                <NostalgiaIcon />しんみりした <b>{selected.shinmiriCount + (shinmiriItems.includes(selected.id) ? 1 : 0)}</b>
-              </button>
-              <div className="thread-preview">
-                <span>みんなの思い出</span>
-                <p>「これ、学校帰りによく友達と話してたなあ…」</p>
-                <button>思い出を読む →</button>
+              <div className="modal-comment-list">
+                <article className="modal-comment">
+                  <span>あのころの来場者</span>
+                  <p>「これ、学校帰りによく友達と話してたなあ…」</p>
+                </article>
+                {(commentsByExhibit[selected.id] ?? []).map((comment) => (
+                  <article className="modal-comment" key={comment.id}>
+                    <span>あなた</span>
+                    <p>{comment.content}</p>
+                  </article>
+                ))}
               </div>
-            </div>
+              <form className="modal-comment-form" onSubmit={handleCommentSubmit}>
+                <label htmlFor={`comment-${selected.id}`}>コメントを入力</label>
+                <textarea
+                  id={`comment-${selected.id}`}
+                  value={commentDraft}
+                  onChange={(event) => setCommentDraft(event.target.value)}
+                  placeholder="あなたの思い出を書いてください"
+                  maxLength={500}
+                  rows={3}
+                />
+                <div className="modal-comment-actions">
+                  <small>{commentDraft.length} / 500</small>
+                  <button className="modal-comment-button" type="submit" disabled={!commentDraft.trim()}>
+                    コメントする
+                  </button>
+                </div>
+              </form>
+            </aside>
           </section>
         </div>
       )}
 
-      {showGuide && (
+      {showGuide && !selected && (
         <div className="guide-toast">
           <span>← →</span>
           <div>
