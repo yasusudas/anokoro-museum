@@ -1256,7 +1256,7 @@ button:focus-visible {
   justify-content: space-between;
   gap: 8px;
   color: #d7b97f;
-  font-size: 12px;
+  font-size: .75rem;
   letter-spacing: .08em;
 }
 
@@ -1269,7 +1269,7 @@ button:focus-visible {
 
 .comment-meta time {
   color: #cbbca9;
-  font-size: 8px;
+  font-size: .75rem;
   white-space: nowrap;
 }
 
@@ -1461,7 +1461,7 @@ button:focus-visible {
 
 .comment-form-footer small {
   color: #cbbca9;
-  font: 9px Arial, sans-serif;
+  font: .75rem Arial, sans-serif;
 }
 
 .comment-form-footer button {
