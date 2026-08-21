@@ -5,7 +5,7 @@ const UUID_PATTERN =
 
 const URL_CAPTURE_PATTERN = /(https?:\/\/[^\s<]+)/g;
 const ASCII_URL_CODE_POINT_PATTERN = /[A-Za-z0-9\-._~:/?#\[\]@!$&'()*+,;=%]/;
-const UNICODE_URL_CODE_POINT_PATTERN = /[^\x00-\x7F]/u;
+const UNICODE_URL_CODE_POINT_PATTERN = /[\p{L}\p{N}\p{M}]/u;
 const TRAILING_URL_MARKERS = new Set([
   ".",
   ",",
