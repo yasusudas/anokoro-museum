@@ -37,15 +37,24 @@ export async function findComments(itemId: string): Promise<CommentView[]> {
       : Promise.resolve({ data: [], error: null }),
   ]);
 
-  if (likeCountsResult.error || likedCommentsResult.error) {
-    throw new Error("コメントのいいね情報取得に失敗しました");
+  if (likeCountsResult.error) {
+    console.error("Supabase comment like counts query error:", likeCountsResult.error);
+  }
+
+  if (likedCommentsResult.error) {
+    console.error("Supabase liked comments query error:", likedCommentsResult.error);
   }
 
   const likeCounts = new Map(
-    (likeCountsResult.data ?? []).map((row) => [row.comment_id, row.like_count]),
+    (likeCountsResult.error ? [] : likeCountsResult.data ?? []).map((row) => [
+      row.comment_id,
+      row.like_count,
+    ]),
   );
   const likedCommentIds = new Set(
-    (likedCommentsResult.data ?? []).map((row) => row.comment_id),
+    (likedCommentsResult.error ? [] : likedCommentsResult.data ?? []).map(
+      (row) => row.comment_id,
+    ),
   );
 
   return comments.map((comment) => ({

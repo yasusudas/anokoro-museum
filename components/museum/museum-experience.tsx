@@ -24,8 +24,7 @@ function ArrowIcon({ direction = "right" }: { direction?: "left" | "right" }) {
 function NostalgiaIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 20.4s-7-4.3-7-10A4.2 4.2 0 0 1 12 7.3a4.2 4.2 0 0 1 7 3.1c0 5.7-7 10-7 10Z" />
-      <path d="M8.4 11.2c.4-1.1 1.1-1.7 2.1-1.9" />
+      <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21.2l7.8-7.7 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z" />
     </svg>
   );
 }
@@ -92,6 +91,7 @@ function ExhibitArt({ theme, title }: { theme: string; title: string }) {
 
 export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperienceProps) {
   const corridorRef = useRef<HTMLDivElement>(null);
+  const modalCloseRef = useRef<HTMLButtonElement>(null);
   const searchParams = useSearchParams();
   const requestedExhibitId = searchParams.get("exhibit");
   const requestedExhibit = requestedExhibitId
@@ -128,6 +128,14 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
     });
   }, []);
 
+  const closeModal = useCallback(() => {
+    setSelected(null);
+  }, []);
+
+  const handleOpenExhibit = (item: ExhibitItem) => {
+    setSelected(item);
+  };
+
   useEffect(() => {
     const corridor = corridorRef.current;
     if (!corridor) return;
@@ -140,6 +148,13 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
     };
 
     const arrows = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && selected) {
+        event.preventDefault();
+        closeModal();
+        return;
+      }
+
+      if (selected) return;
       if (event.key === "ArrowRight") move(1);
       if (event.key === "ArrowLeft") move(-1);
     };
@@ -151,7 +166,11 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
       corridor.removeEventListener("wheel", horizontalWheel);
       window.removeEventListener("keydown", arrows);
     };
-  }, [move]);
+  }, [closeModal, move, selected]);
+
+  useEffect(() => {
+    if (selected) modalCloseRef.current?.focus();
+  }, [selected]);
 
   const toggleShinmiri = (id: string) =>
     setShinmiriItems((current) =>
@@ -280,11 +299,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
           <section className="gallery" aria-live="polite">
             {visible.map((item) => (
               <article className="exhibit" key={item.id}>
-                <button
-                  className="frame"
-                  onClick={() => setSelected(item)}
-                  aria-label={`${item.title}の詳細を見る`}
-                >
+                <button className="frame" onClick={() => handleOpenExhibit(item)} aria-label={`${item.title}の詳細を見る`}>
                   <span className="frame-inner">
                     {item.imageUrl ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
@@ -347,7 +362,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
       </div>
 
       {selected && (
-        <div className="modal-backdrop" onMouseDown={() => setSelected(null)}>
+        <div className="modal-backdrop" onMouseDown={closeModal}>
           <section
             className="detail-modal"
             role="dialog"
@@ -355,58 +370,60 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
             aria-label={`${selected.title}の展示詳細`}
             onMouseDown={(event) => event.stopPropagation()}
           >
-            <button className="modal-close" onClick={() => setSelected(null)} aria-label="閉じる">
-              ×
+            <button ref={modalCloseRef} className="modal-close" onClick={closeModal} aria-label="閉じる">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
             </button>
-            <div className="modal-art">
-              <div className="frame modal-frame">
-                <span className="frame-inner">
-                  {selected.imageUrl ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={selected.imageUrl}
-                      alt={selected.title}
-                      className="frame-photo"
-                    />
+            <div className="modal-main">
+              <div className="modal-art">
+                <div className="frame modal-frame">
+                  <span className="frame-inner">
+                    {selected.imageUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={selected.imageUrl} alt={selected.title} className="frame-photo" />
+                    ) : (
+                      <ExhibitArt theme={selected.theme} title={selected.title} />
+                    )}
+                  </span>
+                </div>
+              </div>
+              <div className="modal-content">
+                <p className="eyebrow">
+                  EXHIBIT {selected.number} · {selected.category}
+                </p>
+                <div className="modal-title-row">
+                  <div>
+                    <h2>{selected.title}</h2>
+                    <p className="modal-subtitle">{selected.subtitle}</p>
+                  </div>
+                  <button
+                    className={shinmiriItems.includes(selected.id) ? "modal-like liked" : "modal-like"}
+                    onClick={() => toggleShinmiri(selected.id)}
+                  >
+                    <NostalgiaIcon />
+                    <span>しんみり</span>
+                    <b>{selected.shinmiriCount + (shinmiriItems.includes(selected.id) ? 1 : 0)}</b>
+                  </button>
+                </div>
+                <p className="modal-memory">{selected.description}</p>
+                <div className="memory-tag">
+                  {selected.year ? (
+                    <>主に <b>{selected.year}年</b> の記憶</>
                   ) : (
-                    <ExhibitArt theme={selected.theme} title={selected.title} />
+                    <><b>あのころ</b> の記憶</>
                   )}
-                </span>
+                </div>
               </div>
             </div>
-            <div className="modal-content">
-              <p className="eyebrow">
-                EXHIBIT {selected.number} · {selected.category}
-              </p>
-              <h2>{selected.title}</h2>
-              <p className="modal-subtitle">{selected.subtitle}</p>
-              <p className="modal-memory">{selected.description}</p>
-              <div className="memory-tag">
-                {selected.year ? (
-                  <>
-                    主に <b>{selected.year}年</b> の記憶
-                  </>
-                ) : (
-                  <>
-                    <b>あのころ</b> の記憶
-                  </>
-                )}
-              </div>
-              <button
-                className={shinmiriItems.includes(selected.id) ? "modal-like liked" : "modal-like"}
-                onClick={() => toggleShinmiri(selected.id)}
-              >
-                <NostalgiaIcon />
-                しんみりした{" "}
-                <b>{selected.shinmiriCount + (shinmiriItems.includes(selected.id) ? 1 : 0)}</b>
-              </button>
-              <CommentThread itemId={selected.id} />
-            </div>
+            <aside className="modal-comments" aria-label="コメント欄">
+              <CommentThread key={selected.id} itemId={selected.id} />
+            </aside>
           </section>
         </div>
       )}
 
-      {showGuide && (
+      {showGuide && !selected && (
         <div className="guide-toast">
           <span>← →</span>
           <div>

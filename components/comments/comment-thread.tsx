@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/browser";
@@ -42,6 +42,14 @@ function formatCommentDate(value: string) {
   }).format(new Date(value));
 }
 
+function CommentHeartIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21.2l7.8-7.7 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z" />
+    </svg>
+  );
+}
+
 export function CommentThread({ itemId }: CommentThreadProps) {
   const [comments, setComments] = useState<CommentView[]>([]);
   const [content, setContent] = useState("");
@@ -50,12 +58,8 @@ export function CommentThread({ itemId }: CommentThreadProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [busyCommentId, setBusyCommentId] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
-
-  const draftKey = useMemo(
-    () => `comment-draft:${viewerId ?? "anonymous"}:${itemId}`,
-    [itemId, viewerId],
-  );
 
   const loadComments = useCallback(async ({ showLoading = true }: { showLoading?: boolean } = {}) => {
     if (showLoading) {
@@ -119,31 +123,8 @@ export function CommentThread({ itemId }: CommentThreadProps) {
     };
   }, [itemId, loadComments]);
 
-  useEffect(() => {
-    const draftTimer = window.setTimeout(() => {
-      try {
-        const draft = window.localStorage.getItem(draftKey);
-        setContent(draft ?? "");
-      } catch {
-        setContent("");
-      }
-    }, 0);
-
-    return () => window.clearTimeout(draftTimer);
-  }, [draftKey]);
-
   function handleContentChange(value: string) {
     setContent(value);
-
-    try {
-      if (value) {
-        window.localStorage.setItem(draftKey, value);
-      } else {
-        window.localStorage.removeItem(draftKey);
-      }
-    } catch {
-      // 下書き保存に失敗しても投稿自体は継続する
-    }
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -176,6 +157,7 @@ export function CommentThread({ itemId }: CommentThreadProps) {
   }
 
   async function handleDelete(comment: CommentView) {
+    setOpenMenuId(null);
     if (!window.confirm("このコメントを削除しますか？")) return;
 
     setBusyCommentId(comment.id);
@@ -228,11 +210,7 @@ export function CommentThread({ itemId }: CommentThreadProps) {
         setComments((current) =>
           current.map((currentComment) =>
             currentComment.id === comment.id
-              ? {
-                  ...currentComment,
-                  isLikedByCurrentUser: previousLiked,
-                  likeCount: previousLikeCount,
-                }
+              ? { ...currentComment, isLikedByCurrentUser: previousLiked, likeCount: previousLikeCount }
               : currentComment,
           ),
         );
@@ -240,33 +218,13 @@ export function CommentThread({ itemId }: CommentThreadProps) {
         return;
       }
 
-      const confirmedLiked = result.data.liked;
-      setComments((current) =>
-        current.map((currentComment) =>
-          currentComment.id === comment.id
-            ? {
-                ...currentComment,
-                isLikedByCurrentUser: confirmedLiked,
-                likeCount: Math.max(
-                  0,
-                  previousLikeCount +
-                    (confirmedLiked === previousLiked ? 0 : confirmedLiked ? 1 : -1),
-                ),
-              }
-            : currentComment,
-        ),
-      );
       await loadComments({ showLoading: false });
     } catch (error) {
       console.error("Failed to toggle comment like:", error);
       setComments((current) =>
         current.map((currentComment) =>
           currentComment.id === comment.id
-            ? {
-                ...currentComment,
-                isLikedByCurrentUser: previousLiked,
-                likeCount: previousLikeCount,
-              }
+            ? { ...currentComment, isLikedByCurrentUser: previousLiked, likeCount: previousLikeCount }
             : currentComment,
         ),
       );
@@ -279,54 +237,79 @@ export function CommentThread({ itemId }: CommentThreadProps) {
   return (
     <section className="comment-thread" aria-labelledby="comment-thread-title">
       <div className="comment-thread-heading">
-        <span id="comment-thread-title">みんなの思い出</span>
-        <small>{comments.length}件</small>
+        <h3 id="comment-thread-title">{comments.length}件のコメント</h3>
       </div>
 
-      {isLoading ? (
-        <p className="comment-status">コメントを読み込んでいます…</p>
-      ) : comments.length === 0 ? (
-        <p className="comment-status">まだコメントはありません。最初の思い出を書いてみませんか？</p>
-      ) : (
-        <div className="comment-list">
-          {comments.map((comment) => (
-            <article className="comment-card" key={comment.id}>
-              <div className="comment-meta">
-                <b>{comment.authorName}</b>
-                <time dateTime={comment.createdAt}>{formatCommentDate(comment.createdAt)}</time>
-              </div>
-              <p className="comment-content">{renderCommentContent(comment.content)}</p>
-              <div className="comment-actions">
+      <div className="comment-feed">
+        {isLoading ? (
+          <p className="comment-status">コメントを読み込んでいます…</p>
+        ) : comments.length === 0 ? (
+          <p className="comment-status">まだコメントはありません。最初の思い出を書いてみませんか？</p>
+        ) : (
+          <div className="comment-list">
+            {comments.map((comment) => (
+              <article
+                className="comment-card"
+                key={comment.id}
+                onMouseLeave={() => setOpenMenuId(null)}
+                onBlur={(event) => {
+                  if (!event.currentTarget.contains(event.relatedTarget)) setOpenMenuId(null);
+                }}
+              >
+                <div className="comment-meta">
+                  <b>{comment.authorName}</b>
+                  <div className="comment-meta-actions">
+                    <time dateTime={comment.createdAt}>{formatCommentDate(comment.createdAt)}</time>
+                    {comment.canDelete && (
+                      <div className="comment-menu">
+                        <button
+                          type="button"
+                          className="comment-menu-trigger"
+                          onClick={() => setOpenMenuId((current) => current === comment.id ? null : comment.id)}
+                          aria-label="コメントの操作を開く"
+                          aria-expanded={openMenuId === comment.id}
+                        >
+                          …
+                        </button>
+                        {openMenuId === comment.id && (
+                          <div className="comment-menu-popup">
+                            <button
+                              type="button"
+                              className="comment-delete"
+                              onClick={() => void handleDelete(comment)}
+                              disabled={busyCommentId === comment.id}
+                            >
+                              削除
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <p className="comment-content">{renderCommentContent(comment.content)}</p>
                 <button
                   type="button"
                   className={comment.isLikedByCurrentUser ? "comment-like liked" : "comment-like"}
                   onClick={() => void handleLike(comment)}
                   disabled={busyCommentId === comment.id}
                   aria-pressed={comment.isLikedByCurrentUser}
+                  aria-label={`このコメントにいいね ${comment.likeCount}件`}
                 >
-                  いいね {comment.likeCount}
+                  <CommentHeartIcon />
+                  <span>{comment.likeCount}</span>
                 </button>
-                {comment.canDelete && (
-                  <button
-                    type="button"
-                    className="comment-delete"
-                    onClick={() => void handleDelete(comment)}
-                    disabled={busyCommentId === comment.id}
-                  >
-                    削除
-                  </button>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
 
       {isViewerLoading ? (
         <p className="comment-status">投稿状態を確認しています…</p>
       ) : viewerId ? (
         <form className="comment-form" onSubmit={handleSubmit}>
-          <label htmlFor={`comment-content-${itemId}`}>思い出を残す</label>
+          <label htmlFor={`comment-content-${itemId}`}>コメントを書く</label>
           <textarea
             id={`comment-content-${itemId}`}
             name="content"
