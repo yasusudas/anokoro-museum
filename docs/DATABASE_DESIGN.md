@@ -57,22 +57,19 @@ erDiagram
 | `title` | varchar | NOT NULL。Unicode空白を除くtrim後が1文字以上 |
 | `description` | text | NOT NULL。Unicode空白を除くtrim後が1文字以上 |
 | `category` | varchar | NOT NULL。CHECK制約で `おかし` / `ゲーム` / `たべもの` / `ほん` / `できごと` に限定 |
-| `theme` | varchar | NOT NULL。表示テーマ識別子（`gummy`, `watch` など） |
-| `image_path` | text | NOT NULL。Supabase Storageのオブジェクトキー。外部URLは保存しない |
-| `image_alt` | text | NOT NULL。Unicode空白を除くtrim後が1文字以上 |
-| `image_rights_confirmed` | boolean | NOT NULLかつ`true`。投稿者の権利確認を必須にする |
-| `birth_year_start` | int | NOT NULL。1900年以上で、日本時間の現在年以下 |
-| `birth_year_end` | int | NOT NULL。開始年以上で、日本時間の現在年以下 |
+| `theme` | varchar | 表示テーマ識別子（`gummy`, `watch` など。未設定時はコードでフォールバック） |
+| `image_url` / `image_path` | text | 写真のURL（外部URLまたはSupabase Storageキー） |
+| `image_alt` | text | 代替テキスト（任意・NULL可） |
+| `image_rights_confirmed` | boolean | 投稿者の権利確認 |
+| `year` / `birth_year_start` | int | 展示品の年代（西暦4桁、例: `2004`）または対象生まれ年 |
+| `birth_year_end` | int | 終了年（範囲指定時のみ） |
 | `created_at`, `updated_at` | timestamptz | NOT NULL DEFAULT `now()` |
 
-制約:
+制約・運用:
 
-- `image_path` と `image_alt` は空文字・空白だけを拒否する
-- `CHECK (image_rights_confirmed)` により、権利確認済みの画像だけを保存する
-- `CHECK (birth_year_start >= 1900)` と、INSERT / UPDATE時に日本時間の現在年を検査するtriggerにより、対象生まれ年を1900年から現在年までに限定する
+- `image_url` は額縁に飾る展示写真のURLを保持する。未指定時はテーマアートが表示される
+- `year` は展示アイテムの流行年または対象年代を表す
 - `user_id` が `NULL` の行は seed で投入した初期展示を表す。RLSの所有者判定が成立しないため、誰も更新・削除できない
-
-`birth_year_start` / `birth_year_end` は**主に記憶を共有する来場者の生まれ年の範囲**であり、展示自体が流行した年ではない。F-01で端末内に保持する来場者自身の生まれ年とは別の概念である。
 
 ### `comments`
 
