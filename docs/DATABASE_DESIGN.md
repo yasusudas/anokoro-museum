@@ -58,17 +58,16 @@ erDiagram
 | `description` | text | NOT NULL。Unicode空白を除くtrim後が1文字以上 |
 | `category` | varchar | NOT NULL。CHECK制約で `おかし` / `ゲーム` / `たべもの` / `ほん` / `できごと` に限定 |
 | `theme` | varchar | 表示テーマ識別子（`gummy`, `watch` など。未設定時はコードでフォールバック） |
-| `image_url` / `image_path` | text | 写真のURL（外部URLまたはSupabase Storageキー） |
+| `image_url` | text | 写真のURL（外部URLまたはSupabase Storageキー） |
 | `image_alt` | text | 代替テキスト（任意・NULL可） |
 | `image_rights_confirmed` | boolean | 投稿者の権利確認 |
-| `year` / `birth_year_start` | int | 展示品の年代（西暦4桁、例: `2004`）または対象生まれ年 |
-| `birth_year_end` | int | 終了年（範囲指定時のみ） |
+| `year` | int | 展示品の年代（西暦4桁、例: `2004`） |
 | `created_at`, `updated_at` | timestamptz | NOT NULL DEFAULT `now()` |
 
 制約・運用:
 
 - `image_url` は額縁に飾る展示写真のURLを保持する。未指定時はテーマアートが表示される
-- `year` は展示アイテムの流行年または対象年代を表す
+- `year` は展示アイテムの年代（流行年や発売年など）を表す
 - `user_id` が `NULL` の行は seed で投入した初期展示を表す。RLSの所有者判定が成立しないため、誰も更新・削除できない
 
 ### `comments`
