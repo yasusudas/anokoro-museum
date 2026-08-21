@@ -46,7 +46,9 @@ export async function createExhibitAction(
   const rawImageUrl = String(formData.get("imageUrl") ?? "").trim();
   const imageFile = formData.get("image");
 
-  const currentYear = new Date().getFullYear();
+  const currentYear = Number(
+    new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", year: "numeric" }).format(new Date())
+  );
   const fieldErrors: Record<string, string[]> = {};
 
   // 3. バリデーション

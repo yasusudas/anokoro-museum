@@ -13,12 +13,12 @@ CREATE POLICY "Public Access"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'exhibits');
 
--- 2. ログイン済みユーザーが画像をアップロードできるポリシー
+-- 2. ログイン済みユーザーが画像をアップロードできるポリシー（自分のUIDフォルダ配下に限定）
 DROP POLICY IF EXISTS "Authenticated users can upload exhibits" ON storage.objects;
 CREATE POLICY "Authenticated users can upload exhibits"
 ON storage.objects FOR INSERT
 TO authenticated
-WITH CHECK (bucket_id = 'exhibits');
+WITH CHECK (bucket_id = 'exhibits' AND (storage.foldername(name))[1] = auth.uid()::text);
 
 -- 3. 投稿者が自分の画像を削除できるポリシー
 DROP POLICY IF EXISTS "Users can delete own exhibits" ON storage.objects;
