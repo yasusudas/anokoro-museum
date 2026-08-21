@@ -1,8 +1,12 @@
 "use client";
 
+import { useState } from "react";
+
 const categories = ["おかし", "ゲーム", "たべもの", "ほん", "できごと"];
 
 export function MemoryPostForm() {
+  const [hasImage, setHasImage] = useState(false);
+
   return (
     <form className="post-form" onSubmit={(event) => event.preventDefault()}>
       <div className="post-field post-field-wide">
@@ -42,8 +46,19 @@ export function MemoryPostForm() {
       <label className="post-dropzone" htmlFor="memory-image">
         <span>画像を追加</span>
         <strong>ドラッグ & ドロップか、クリックで選択</strong>
-        <small>あとで差し替えやすいように、仮置きでも問題ありません。</small>
-        <input id="memory-image" name="image" type="file" accept="image/*" />
+        <small>著作権・商標・肖像権を確認した画像だけ追加できます。</small>
+        <input
+          id="memory-image"
+          name="image"
+          type="file"
+          accept="image/*"
+          onChange={(event) => setHasImage(Boolean(event.currentTarget.files?.length))}
+        />
+      </label>
+
+      <label className="post-consent">
+        <input name="imageRightsConfirmed" type="checkbox" required={hasImage} disabled={!hasImage} />
+        <span>この画像の利用条件を確認し、公開する権利があることを確認しました。</span>
       </label>
 
       <div className="post-actions">

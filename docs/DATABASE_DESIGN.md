@@ -19,7 +19,7 @@ erDiagram
 ## 共通ルール
 
 - table / column / constraint: `snake_case`
-- 展示品を表すtableは `items` に固定する。設計書・UI・URLの内部識別子もすべて `item` 系で統一する
+- 展示品を表すDB tableは `items` に固定する。アプリケーション層・UI・URLの用語は `exhibit` 系で統一し、DB列名の `item_id` とは区別する
 - 主キー: UUIDの `id`（`gen_random_uuid()`。拡張機能が不要なため `uuid_generate_v4()` は使わない）
 - 時刻: `timestamptz`。更新される可能性のあるtableだけ `updated_at` を持つ
 - ユーザー参照: `auth.users(id)` を起点としたUUID外部キー
@@ -54,12 +54,13 @@ erDiagram
 | --- | --- | --- |
 | `id` | uuid | PK、DEFAULT `gen_random_uuid()` |
 | `user_id` | uuid | FK `users.id` (ON DELETE CASCADE)、NULL可 |
-| `title` | varchar | NOT NULL |
-| `description` | text | |
+| `title` | varchar | NOT NULL。Unicode空白を除くtrim後が1文字以上 |
+| `description` | text | NOT NULL。Unicode空白を除くtrim後が1文字以上 |
 | `category` | varchar | NOT NULL。CHECK制約で `おかし` / `ゲーム` / `たべもの` / `ほん` / `できごと` に限定 |
-| `theme` | varchar | 画像未設定時のフォールバックアート識別子（`gummy`, `watch` など） |
+| `theme` | varchar | NOT NULL。画像未設定時のフォールバックアート識別子（`gummy`, `watch` など） |
 | `image_path` | text | Supabase Storageのオブジェクトキー。外部URLは保存しない |
 | `image_alt` | text | 画像の代替テキスト（F-03） |
+| `image_rights_confirmed` | boolean | NOT NULL DEFAULT `false`。画像設定時は投稿者の権利確認を必須にする |
 | `birth_year_start` | int | NOT NULL。主に記憶を共有する来場者の生まれ年の開始 |
 | `birth_year_end` | int | NOT NULL。主に記憶を共有する来場者の生まれ年の終了 |
 | `created_at`, `updated_at` | timestamptz | NOT NULL DEFAULT `now()` |
@@ -67,6 +68,7 @@ erDiagram
 制約:
 
 - `CHECK (birth_year_end >= birth_year_start)`
+- `CHECK (image_path IS NULL OR image_rights_confirmed)`
 - `user_id` が `NULL` の行は seed で投入した初期展示を表す。RLSの所有者判定が成立しないため、誰も更新・削除できない
 
 `birth_year_start` / `birth_year_end` は**主に記憶を共有する来場者の生まれ年の範囲**であり、展示自体が流行した年ではない。F-01で端末内に保持する来場者自身の生まれ年とは別の概念である。
@@ -78,7 +80,7 @@ erDiagram
 | `id` | uuid | PK、DEFAULT `gen_random_uuid()` |
 | `item_id` | uuid | FK `items.id` (ON DELETE CASCADE)、NOT NULL |
 | `user_id` | uuid | FK `users.id` (ON DELETE CASCADE)、NOT NULL |
-| `content` | text | NOT NULL。CHECK制約で trim後1〜500文字 |
+| `content` | text | NOT NULL。CHECK制約でUnicode空白を除くtrim後1〜500文字 |
 | `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
 
 編集を提供しないため `updated_at` を持たない。本人削除は物理削除とする。
@@ -114,18 +116,21 @@ erDiagram
 | `users` | 全員 | トリガー経由のみ | 本人 | 不可（`auth.users` 削除にCASCADE） |
 | `items` | 全員 | ログイン済み・本人名義 | 本人 | 本人 |
 | `comments` | 全員 | ログイン済み・本人名義 | 不可（編集なし） | 本人 |
-| `comment_likes` | 全員 | ログイン済み・本人名義 | 不可 | 本人 |
+| `comment_likes` | 本人の行のみ | ログイン済み・本人名義 | 不可 | 本人 |
 | `shinmiri_reactions` | 全員 | ログイン済み・本人名義 | 不可 | 本人 |
 
 - INSERTは `WITH CHECK (auth.uid() = user_id)` で本人名義を強制する
 - UPDATE / DELETEは `USING (auth.uid() = user_id)` で所有者を照合する
+- `users` の所有者列は `id`、それ以外の所有者付きtableは `user_id` を使う
+- `comment_likes` の匿名件数は生テーブルを公開せず、集計RPC `get_comment_like_counts` から取得する
+- `items` のUPDATEは `title`、`description`、分類・画像・年代列だけに限定し、主キー・所有者・作成日時・更新日時は変更できない
 - 公開状態（status）を持たないため、SELECTに条件分岐は不要
 
 ## `users` の自動作成
 
 RLS有効下ではクライアントから `users` をINSERTできない。`auth.users` へのINSERTに対する `SECURITY DEFINER` トリガーを唯一の作成経路とする。
 
-- `user_name` は `raw_user_meta_data` から取得し、無い場合はメールアドレスのローカル部などを既定値にする
+- `user_name` は利用者が指定した `user_name` / `display_name` から取得し、無い場合はメールアドレスを使わずランダムな既定名を生成する
 - トリガーが無いと、サインアップ直後の投稿・コメントが外部キー違反で失敗する
 
 ## `updated_at` の更新
@@ -147,7 +152,7 @@ RLS有効下ではクライアントから `users` をINSERTできない。`auth
 
 ## コメントいいね件数の取得
 
-`comments` に非正規化したカウント列を持たせず、`comment_likes` を集計する。コメントごとの問い合わせを繰り返さず、一覧に含まれる `comment_id` ごとの件数を1回のgrouped queryで取得する。
+`comments` に非正規化したカウント列を持たせず、`get_comment_like_counts` RPCで集計する。生のいいね行を匿名へ公開せず、`comment_id` と件数だけを返す。
 
 ## Realtime
 
@@ -162,7 +167,7 @@ MVPでは有効化しない。PRDのMVP対象外にリアルタイム機能が�
 | 運営 / モデレーターのロール | 権限判定が「本人かどうか」だけになる |
 | 展示の公開状態（`status`）と審査フロー | 投稿は即時公開される |
 | コメントの論理削除・運営による非表示 | 不適切な投稿へ運営が対処する手段がない |
-| 画像の出典・権利確認（`image_source` / `rights_confirmed`） | 権利確認は投稿者の自己申告に依存する |
+| 画像の出典情報 | 出典URLやライセンス情報の管理は行わず、`image_rights_confirmed` による投稿者の自己申告だけを必須にする |
 | 生まれ年のDB保存 | F-01は端末内の一時保存に留まり、再ログインでは復元されない |
-| 展示のslug | URLは `/items/{uuid}` になる。後からslugを導入すると既存URLが変わる |
+| 展示のslug | URLは `/exhibits/{uuid}` になる。後からslugを導入すると既存URLが変わる |
 | コメントの論理削除 | 物理削除のため、後から論理削除へ移行してもデータを復元できない |

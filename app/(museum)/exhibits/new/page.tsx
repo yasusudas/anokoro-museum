@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { MemoryPostForm } from "@/components/forms/memory-post-form";
 
-export default function NewItemPage() {
+export default function NewExhibitPage() {
   return (
     <main className="post-shell">
       <section className="post-hero">

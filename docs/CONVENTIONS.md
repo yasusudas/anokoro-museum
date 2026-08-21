@@ -4,14 +4,14 @@
 
 | 対象 | 規則 | 例 |
 | --- | --- | --- |
-| component / type / enum | `PascalCase` | `ItemCard`, `ItemStatus` |
+| component / type / enum | `PascalCase` | `ExhibitCard`, `ExhibitStatus` |
 | function / variable | `camelCase` | `findPublishedItems` |
 | boolean | `is` / `has` / `can` / `should` | `isPublished`, `canModerate` |
 | hook | `use` + PascalCase相当 | `useHorizontalScroll` |
 | constant | 原則 `camelCase`、不変設定は `SCREAMING_SNAKE_CASE` | `categories`, `MAX_IMAGE_SIZE` |
 | component file | `kebab-case.tsx` | `item-card.tsx` |
 | non-UI TypeScript | `kebab-case.ts` | `toggle-shinmiri.ts` |
-| route segment | `kebab-case` | `/items/new` |
+| route segment | `kebab-case` | `/exhibits/new` |
 | DB | `snake_case` | `shinmiri_reactions` |
 
 - 識別子とファイル名へ日本語・絵文字・空白を使わない

@@ -17,7 +17,7 @@ docs/update-database-design
 codex/add-item-thread
 ```
 
-`feature/AddItemThread`、`feature/add_item_thread`、`feature/展示追加` は使用しない。
+`feature/AddExhibitThread`、`feature/add_exhibit_thread`、`feature/展示追加` は使用しない。
 
 ## コミットメッセージ
 

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import Link from "next/link";
 
-type Item = {
+type Exhibit = {
   id: string;
   number: string;
   title: string;
@@ -16,7 +16,7 @@ type Item = {
   theme: string;
 };
 
-const items: Item[] = [
+const exhibits: Exhibit[] = [
   { id: "himo-q", number: "01", title: "ひもQ", subtitle: "なが〜いグミ、覚えてる？", category: "おかし", year: "2004–2008", description: "遠足の日、ちぎれないように端から大事に食べた、あの長いグミ。友だちと長さを比べるのも定番でした。", shinmiriCount: 248, theme: "gummy" },
   { id: "yokai", number: "02", title: "妖怪ウォッチ", subtitle: "ともだち、召喚！", category: "ゲーム", year: "2004–2008", description: "放課後になると、みんなで妖怪メダルを見せ合った。あの召喚ソングは今でも口ずさめるかも。", shinmiriCount: 196, theme: "watch" },
   { id: "tapioca", number: "03", title: "タピオカ", subtitle: "平成最後の放課後ドリンク", category: "たべもの", year: "2002–2007", description: "長い列に並んで、黒糖ミルクを片手に写真を撮った放課後。太いストローも含めて思い出。", shinmiriCount: 174, theme: "tapioca" },
@@ -43,7 +43,7 @@ function NostalgiaIcon() {
   );
 }
 
-function ItemArt({ theme }: { theme: string }) {
+function ExhibitArt({ theme }: { theme: string }) {
   if (theme === "gummy") return <div className="art art-gummy"><span className="gummy-line one" /><span className="gummy-line two" /><strong>ひもQ</strong><small>超ひも級！</small></div>;
   if (theme === "watch") return <div className="art art-watch"><span className="watch-face"><i>✦</i></span><strong>妖怪<br />ウォッチ</strong></div>;
   if (theme === "tapioca") return <div className="art art-tapioca"><span className="straw" /><span className="cup"><i /><i /><i /><i /><i /><i /></span><strong>TAPIOCA</strong></div>;
@@ -54,10 +54,10 @@ function ItemArt({ theme }: { theme: string }) {
 export function MuseumExperience() {
   const corridorRef = useRef<HTMLDivElement>(null);
   const [activeCategory, setActiveCategory] = useState("すべて");
-  const [selected, setSelected] = useState<Item | null>(null);
+  const [selected, setSelected] = useState<Exhibit | null>(null);
   const [shinmiriItems, setShinmiriItems] = useState<string[]>([]);
   const [showGuide, setShowGuide] = useState(true);
-  const visible = activeCategory === "すべて" ? items : items.filter((item) => item.category === activeCategory);
+  const visible = activeCategory === "すべて" ? exhibits : exhibits.filter((item) => item.category === activeCategory);
   const move = useCallback((direction: number) => {
     corridorRef.current?.scrollBy({
       left: direction * Math.min(window.innerWidth * 0.72, 760),
@@ -107,7 +107,7 @@ export function MuseumExperience() {
         <nav aria-label="メインナビゲーション">
           <button className="nav-active">展示をめぐる</button>
           <button onClick={() => setShowGuide(true)}>はじめての方へ</button>
-          <Link className="nav-cta" href="/items/new">
+          <Link className="nav-cta" href="/exhibits/new">
             思い出を展示する <span>＋</span>
           </Link>
         </nav>
@@ -182,7 +182,7 @@ export function MuseumExperience() {
                 <div className="spotlight" />
                 <button className="frame" onClick={() => setSelected(item)} aria-label={`${item.title}の詳細を見る`}>
                   <span className="frame-inner">
-                    <ItemArt theme={item.theme} />
+                    <ExhibitArt theme={item.theme} />
                   </span>
                 </button>
                 <div className="exhibit-label">
@@ -207,7 +207,7 @@ export function MuseumExperience() {
                 展示しませんか？
               </h2>
               <p>誰かにとっては、忘れられない思い出かもしれません。</p>
-              <Link className="end-panel-link" href="/items/new">
+              <Link className="end-panel-link" href="/exhibits/new">
                 思い出を展示する ＋
               </Link>
             </article>
@@ -236,7 +236,7 @@ export function MuseumExperience() {
             <div className="modal-art">
               <div className="frame modal-frame">
                 <span className="frame-inner">
-                  <ItemArt theme={selected.theme} />
+                  <ExhibitArt theme={selected.theme} />
                 </span>
               </div>
             </div>

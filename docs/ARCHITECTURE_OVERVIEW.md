@@ -55,7 +55,7 @@ sequenceDiagram
   P->>R: 公開展示を問い合わせる
   R->>DB: SELECT (RLS)
   DB-->>R: 一覧DTO
-  R-->>P: ItemSummary[]
+  R-->>P: ExhibitSummary[]
   P-->>U: 回廊をServer Render
 ```
 
