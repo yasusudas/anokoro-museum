@@ -16,15 +16,19 @@ create table public.items (
   ),
   category varchar not null check (category in ('おかし', 'ゲーム', 'たべもの', 'ほん', 'できごと')),
   theme varchar not null,
-  image_path text,
-  image_alt text,
-  image_rights_confirmed boolean not null default false,
+  image_path text not null check (
+    char_length(regexp_replace(replace(image_path, chr(12288), ' '), '^[[:space:]]+|[[:space:]]+$', '', 'g')) >= 1
+  ),
+  image_alt text not null check (
+    char_length(regexp_replace(replace(image_alt, chr(12288), ' '), '^[[:space:]]+|[[:space:]]+$', '', 'g')) >= 1
+  ),
+  image_rights_confirmed boolean not null default false check (image_rights_confirmed),
   birth_year_start integer not null,
   birth_year_end integer not null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  check (birth_year_end >= birth_year_start),
-  check (image_path is null or image_rights_confirmed)
+  check (birth_year_start >= 1900),
+  check (birth_year_end >= birth_year_start)
 );
 
 create table public.comments (
@@ -32,7 +36,8 @@ create table public.comments (
   item_id uuid not null references public.items (id) on delete cascade,
   user_id uuid not null references public.users (id) on delete cascade,
   content text not null check (
-    char_length(
+    char_length(content) <= 500
+    and char_length(
       regexp_replace(replace(content, chr(12288), ' '), '^[[:space:]]+|[[:space:]]+$', '', 'g')
     ) between 1 and 500
   ),
@@ -75,6 +80,28 @@ create trigger set_items_updated_at
 before update on public.items
 for each row
 execute function public.set_updated_at();
+
+create function public.validate_item_birth_year_range()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+declare
+  current_year integer := extract(year from timezone('Asia/Tokyo', current_timestamp))::integer;
+begin
+  if new.birth_year_start > current_year or new.birth_year_end > current_year then
+    raise exception 'birth_year_range must not exceed the current year (%).', current_year
+      using errcode = '22023';
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger validate_items_birth_year_range
+before insert or update of birth_year_start, birth_year_end on public.items
+for each row
+execute function public.validate_item_birth_year_range();
 
 create function public.handle_new_user()
 returns trigger
@@ -180,7 +207,10 @@ security definer
 set search_path = public
 as $$
   select requested.comment_id, count(likes.id)::bigint
-  from unnest(comment_ids) as requested(comment_id)
+  from (
+    select distinct input.comment_id
+    from unnest(comment_ids) as input(comment_id)
+  ) as requested
   inner join public.comments as comments on comments.id = requested.comment_id
   left join public.comment_likes as likes on likes.comment_id = comments.id
   group by requested.comment_id;
