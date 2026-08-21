@@ -41,6 +41,20 @@ export async function signInAction(formData: FormData): Promise<ActionResult> {
   });
 
   if (error) {
+    console.error("Supabase signIn error:", error);
+
+    const errorMessage = error.message.toLowerCase();
+
+    if (errorMessage.includes("email not confirmed")) {
+      return {
+        ok: false,
+        error: {
+          code: "UNAUTHENTICATED",
+          message: "メールアドレスの確認が完了していません。設定変更前に登録されたアカウントの場合は、新しく新規登録をお試しください",
+        },
+      };
+    }
+
     return {
       ok: false,
       error: {

@@ -61,7 +61,11 @@ export async function signUpAction(formData: FormData): Promise<ActionResult> {
   });
 
   if (error) {
-    if (error.message.toLowerCase().includes("already registered") || error.code === "user_already_exists") {
+    console.error("Supabase signUp error:", error);
+
+    const errorMessage = error.message.toLowerCase();
+
+    if (errorMessage.includes("already registered") || error.code === "user_already_exists") {
       return {
         ok: false,
         error: {
@@ -74,11 +78,34 @@ export async function signUpAction(formData: FormData): Promise<ActionResult> {
       };
     }
 
+    if (errorMessage.includes("invalid") && errorMessage.includes("email")) {
+      return {
+        ok: false,
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "有効なメールアドレスを入力してください（例: @gmail.com などの実在ドメイン）",
+          fieldErrors: {
+            email: ["有効なメールアドレスを入力してください"],
+          },
+        },
+      };
+    }
+
+    if (errorMessage.includes("rate limit") || error.code === "over_email_send_rate_limit") {
+      return {
+        ok: false,
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "メール送信の制限に達しました。少し時間をおいてから再度お試しください",
+        },
+      };
+    }
+
     return {
       ok: false,
       error: {
         code: "INTERNAL_ERROR",
-        message: "登録に失敗しました。時間をおいて再度お試しください",
+        message: error.message || "登録に失敗しました。時間をおいて再度お試しください",
       },
     };
   }
