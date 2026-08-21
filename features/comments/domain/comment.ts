@@ -67,7 +67,10 @@ function countChar(value: string, character: string) {
 }
 
 function isUrlCodePoint(character: string) {
-  return /[A-Za-z0-9\-._~:/?#\[\]@!$&'()*+,;=%]/.test(character);
+  return (
+    /[A-Za-z0-9\-._~:/?#\[\]@!$&'()*+,;=%]/.test(character) ||
+    /[\p{L}\p{N}\p{M}]/u.test(character)
+  );
 }
 
 function splitUrlMatch(rawUrl: string): { href: string; trailing: string } {
