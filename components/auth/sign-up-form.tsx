@@ -1,15 +1,20 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useTransition, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { signUpAction } from "@/features/auth/actions/sign-up";
 
 type SignUpErrors = {
   name?: string;
   email?: string;
   password?: string;
   confirmPassword?: string;
+  general?: string;
 };
 
 export function SignUpForm() {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<SignUpErrors>({});
@@ -48,11 +53,40 @@ export function SignUpForm() {
       nextErrors.confirmPassword = "パスワードが一致しません";
     }
 
-    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
+
+    setErrors({});
+
+    startTransition(async () => {
+      const result = await signUpAction(formData);
+
+      if (!result.ok) {
+        setErrors({
+          name: result.error.fieldErrors?.name?.[0],
+          email: result.error.fieldErrors?.email?.[0],
+          password: result.error.fieldErrors?.password?.[0],
+          confirmPassword: result.error.fieldErrors?.confirmPassword?.[0],
+          general: result.error.message,
+        });
+        return;
+      }
+
+      router.push("/");
+      router.refresh();
+    });
   }
 
   return (
     <form className="auth-form" onSubmit={handleSubmit} noValidate>
+      {errors.general && (
+        <p className="auth-error" role="alert">
+          {errors.general}
+        </p>
+      )}
+
       <div className="auth-field">
         <label htmlFor="sign-up-name">表示名</label>
         <input
@@ -61,10 +95,15 @@ export function SignUpForm() {
           type="text"
           autoComplete="nickname"
           placeholder="田中太郎"
+          disabled={isPending}
           aria-invalid={Boolean(errors.name)}
           aria-describedby={errors.name ? "sign-up-name-error" : undefined}
         />
-        {errors.name && <p className="auth-error" id="sign-up-name-error" role="alert">{errors.name}</p>}
+        {errors.name && (
+          <p className="auth-error" id="sign-up-name-error" role="alert">
+            {errors.name}
+          </p>
+        )}
       </div>
 
       <div className="auth-field">
@@ -75,10 +114,15 @@ export function SignUpForm() {
           type="email"
           autoComplete="email"
           placeholder="name@example.com"
+          disabled={isPending}
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? "sign-up-email-error" : undefined}
         />
-        {errors.email && <p className="auth-error" id="sign-up-email-error" role="alert">{errors.email}</p>}
+        {errors.email && (
+          <p className="auth-error" id="sign-up-email-error" role="alert">
+            {errors.email}
+          </p>
+        )}
       </div>
 
       <div className="auth-field">
@@ -90,6 +134,7 @@ export function SignUpForm() {
             type={showPassword ? "text" : "password"}
             autoComplete="new-password"
             placeholder="8文字以上"
+            disabled={isPending}
             aria-invalid={Boolean(errors.password)}
             aria-describedby={errors.password ? "sign-up-password-error" : undefined}
           />
@@ -98,17 +143,22 @@ export function SignUpForm() {
             type="button"
             aria-label={showPassword ? "パスワードを隠す" : "パスワードを表示"}
             aria-pressed={showPassword}
+            disabled={isPending}
             onClick={() => setShowPassword((visible) => !visible)}
           >
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+              <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6Z" />
               <circle cx="12" cy="12" r="2.5" />
               {showPassword && <path d="m4 4 16 16" />}
             </svg>
           </button>
         </div>
         <span className="auth-field-hint">半角英数字で入力</span>
-        {errors.password && <p className="auth-error" id="sign-up-password-error" role="alert">{errors.password}</p>}
+        {errors.password && (
+          <p className="auth-error" id="sign-up-password-error" role="alert">
+            {errors.password}
+          </p>
+        )}
       </div>
 
       <div className="auth-field">
@@ -120,6 +170,7 @@ export function SignUpForm() {
             type={showConfirmPassword ? "text" : "password"}
             autoComplete="new-password"
             placeholder="もう一度入力"
+            disabled={isPending}
             aria-invalid={Boolean(errors.confirmPassword)}
             aria-describedby={errors.confirmPassword ? "sign-up-confirm-password-error" : undefined}
           />
@@ -128,20 +179,25 @@ export function SignUpForm() {
             type="button"
             aria-label={showConfirmPassword ? "パスワードを隠す" : "パスワードを表示"}
             aria-pressed={showConfirmPassword}
+            disabled={isPending}
             onClick={() => setShowConfirmPassword((visible) => !visible)}
           >
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+              <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6Z" />
               <circle cx="12" cy="12" r="2.5" />
               {showConfirmPassword && <path d="m4 4 16 16" />}
             </svg>
           </button>
         </div>
-        {errors.confirmPassword && <p className="auth-error" id="sign-up-confirm-password-error" role="alert">{errors.confirmPassword}</p>}
+        {errors.confirmPassword && (
+          <p className="auth-error" id="sign-up-confirm-password-error" role="alert">
+            {errors.confirmPassword}
+          </p>
+        )}
       </div>
 
-      <button className="auth-submit" type="submit">
-        アカウントを制作
+      <button className="auth-submit" type="submit" disabled={isPending}>
+        {isPending ? "アカウントを作成中..." : "アカウントを制作"}
       </button>
     </form>
   );
