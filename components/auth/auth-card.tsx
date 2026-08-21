@@ -46,7 +46,7 @@ export function AuthCard({
         <div className="auth-card">
           <span className="auth-badge">{eyebrow}</span>
           <h1>{title}</h1>
-          <p className="auth-lead">{lead}</p>
+          {lead && <p className="auth-lead">{lead}</p>}
           {children}
           <p className="auth-note">
             {footerLabel} <ActionLink href={footerHref}>{footerLinkLabel}</ActionLink>
