@@ -237,7 +237,17 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                   aria-label={`${item.title}の詳細を見る`}
                 >
                   <span className="frame-inner">
-                    <ExhibitArt theme={item.theme} title={item.title} />
+                    {item.imageUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={item.imageUrl}
+                        alt={item.title}
+                        className="frame-photo"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <ExhibitArt theme={item.theme} title={item.title} />
+                    )}
                   </span>
                 </button>
                 <div className="exhibit-label">
@@ -302,7 +312,16 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
             <div className="modal-art">
               <div className="frame modal-frame">
                 <span className="frame-inner">
-                  <ExhibitArt theme={selected.theme} title={selected.title} />
+                  {selected.imageUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={selected.imageUrl}
+                      alt={selected.title}
+                      className="frame-photo"
+                    />
+                  ) : (
+                    <ExhibitArt theme={selected.theme} title={selected.title} />
+                  )}
                 </span>
               </div>
             </div>

@@ -1,6 +1,5 @@
 -- ==========================================
 -- 初期展示データ（seed.sql）
--- user_id が NULL の展示はシステム提供の初期展示を表します
 -- ==========================================
 
 INSERT INTO public.items (
@@ -9,12 +8,8 @@ INSERT INTO public.items (
   title,
   description,
   category,
-  theme,
-  image_path,
-  image_alt,
-  image_rights_confirmed,
-  birth_year_start,
-  birth_year_end,
+  image_url,
+  year,
   created_at
 ) VALUES
   (
@@ -23,12 +18,8 @@ INSERT INTO public.items (
     'ひもQ',
     '遠足の日、ちぎれないように端から大事に食べた、あの長いグミ。友だちと長さを比べるのも定番でした。',
     'おかし',
-    'gummy',
-    'seeds/himo-q.png',
-    'ひもQの展示アート',
-    true,
+    'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=600&auto=format&fit=crop&q=80',
     2004,
-    2008,
     '2026-08-01 00:00:00+09'
   ),
   (
@@ -37,12 +28,8 @@ INSERT INTO public.items (
     '妖怪ウォッチ',
     '放課後になると、みんなで妖怪メダルを見せ合った。あの召喚ソングは今でも口ずさめるかも。',
     'ゲーム',
-    'watch',
-    'seeds/yokai.png',
-    '妖怪ウォッチの展示アート',
-    true,
-    2004,
-    2008,
+    'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop&q=80',
+    2013,
     '2026-08-01 01:00:00+09'
   ),
   (
@@ -51,12 +38,8 @@ INSERT INTO public.items (
     'タピオカ',
     '長い列に並んで、黒糖ミルクを片手に写真を撮った放課後。太いストローも含めて思い出。',
     'たべもの',
-    'tapioca',
-    'seeds/tapioca.png',
-    'タピオカの展示アート',
-    true,
-    2002,
-    2007,
+    'https://images.unsplash.com/photo-1541658016709-82535e94bc69?w=600&auto=format&fit=crop&q=80',
+    2018,
     '2026-08-01 02:00:00+09'
   ),
   (
@@ -65,12 +48,8 @@ INSERT INTO public.items (
     'かいけつゾロリ',
     '休み時間の図書室。貸出中なら次の巻を探して、最後のなぞなぞまでしっかり読んだ。',
     'ほん',
-    'book',
-    'seeds/zoro.png',
-    'かいけつゾロリの展示アート',
-    true,
+    'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=600&auto=format&fit=crop&q=80',
     2000,
-    2009,
     '2026-08-01 03:00:00+09'
   ),
   (
@@ -79,21 +58,13 @@ INSERT INTO public.items (
     'ソーラン節',
     '運動会前、筋肉痛になるまで低い姿勢を練習した。クラス全員の掛け声が揃った瞬間は忘れられない。',
     'できごと',
-    'soran',
-    'seeds/soran.png',
-    'ソーラン節の展示アート',
-    true,
-    1998,
-    2009,
+    'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=600&auto=format&fit=crop&q=80',
+    2005,
     '2026-08-01 04:00:00+09'
   )
 ON CONFLICT (id) DO UPDATE SET
   title = EXCLUDED.title,
   description = EXCLUDED.description,
   category = EXCLUDED.category,
-  theme = EXCLUDED.theme,
-  image_path = EXCLUDED.image_path,
-  image_alt = EXCLUDED.image_alt,
-  image_rights_confirmed = EXCLUDED.image_rights_confirmed,
-  birth_year_start = EXCLUDED.birth_year_start,
-  birth_year_end = EXCLUDED.birth_year_end;
+  image_url = EXCLUDED.image_url,
+  year = EXCLUDED.year;

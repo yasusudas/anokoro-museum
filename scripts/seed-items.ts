@@ -26,7 +26,7 @@ const exhibits = [
     description: "遠足の日、ちぎれないように端から大事に食べた、あの長いグミ。友だちと長さを比べるのも定番でした。",
     category: "おかし",
     year: 2004,
-    image_url: null,
+    image_url: "https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=600&auto=format&fit=crop&q=80",
     created_at: "2026-08-01T00:00:00+09:00",
   },
   {
@@ -36,7 +36,7 @@ const exhibits = [
     description: "放課後になると、みんなで妖怪メダルを見せ合った。あの召喚ソングは今でも口ずさめるかも。",
     category: "ゲーム",
     year: 2013,
-    image_url: null,
+    image_url: "https://images.unsplash.com/photo-1612287233207-63a2c5a0e5b7?w=600&auto=format&fit=crop&q=80",
     created_at: "2026-08-01T01:00:00+09:00",
   },
   {
@@ -46,7 +46,7 @@ const exhibits = [
     description: "長い列に並んで、黒糖ミルクを片手に写真を撮った放課後。太いストローも含めて思い出。",
     category: "たべもの",
     year: 2018,
-    image_url: null,
+    image_url: "https://images.unsplash.com/photo-1558857563-b37fe8240409?w=600&auto=format&fit=crop&q=80",
     created_at: "2026-08-01T02:00:00+09:00",
   },
   {
@@ -56,7 +56,7 @@ const exhibits = [
     description: "休み時間の図書室。貸出中なら次の巻を探して、最後のなぞなぞまでしっかり読んだ。",
     category: "ほん",
     year: 2000,
-    image_url: null,
+    image_url: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=600&auto=format&fit=crop&q=80",
     created_at: "2026-08-01T03:00:00+09:00",
   },
   {
@@ -66,28 +66,68 @@ const exhibits = [
     description: "運動会前、筋肉痛になるまで低い姿勢を練習した。クラス全員の掛け声が揃った瞬間は忘れられない。",
     category: "できごと",
     year: 2005,
-    image_url: null,
+    image_url: "https://images.unsplash.com/photo-1533105079780-92b9be482077?w=600&auto=format&fit=crop&q=80",
     created_at: "2026-08-01T04:00:00+09:00",
+  },
+  {
+    id: "052dd450-347a-4166-8b4c-da075e9a796d",
+    user_id: dummyUserId,
+    title: "おいでよ どうぶつの森",
+    description: "DSを持ち寄って、友達の村に遊びに行ったりカブを売買したりして通信プレイに夢中になりました。",
+    category: "ゲーム",
+    year: 2005,
+    image_url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop&q=80",
+    created_at: "2026-08-21T07:07:46.552256+00:00",
+  },
+  {
+    id: "5a802a54-d1eb-490d-a167-53714978ffeb",
+    user_id: dummyUserId,
+    title: "ニンテンドーDS Lite",
+    description: "授業の休み時間にピクトチャットを開いて、教室の隅の友達とこっそりお絵かきチャットをしてました。",
+    category: "ガジェット",
+    year: 2006,
+    image_url: "https://images.unsplash.com/photo-1592840496694-26d035b52b48?w=600&auto=format&fit=crop&q=80",
+    created_at: "2026-08-21T07:07:46.552256+00:00",
+  },
+  {
+    id: "3bf75231-81b2-4701-a1f5-2a28ec4918b5",
+    user_id: dummyUserId,
+    title: "スライド式ガラケー",
+    description: "メアド交換は赤外線通信！携帯をピタッとくっつけて受信して、キラキラのデコメで返信するのが定番でした。",
+    category: "ガジェット",
+    year: 2007,
+    image_url: "https://images.unsplash.com/photo-1520923642038-b4259acecbd7?w=600&auto=format&fit=crop&q=80",
+    created_at: "2026-08-21T07:07:46.552256+00:00",
+  },
+  {
+    id: "d84e958f-2699-457e-8955-04b5be1c581b",
+    user_id: dummyUserId,
+    title: "前略プロフィール",
+    description: "自分の「プロフ」を作って、友達にURLを教え合うのが流行ってました。質問項目を埋めるのに必死だった思い出。",
+    category: "インターネット",
+    year: 2008,
+    image_url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80",
+    created_at: "2026-08-21T07:07:46.552256+00:00",
   },
 ];
 
 async function run() {
-  console.log("Seeding exhibits to DB...");
+  console.log("Seeding exhibits with image URLs to Supabase DB...");
   for (const exhibit of exhibits) {
     const { error } = await supabase
       .from("items")
       .upsert(exhibit, { onConflict: "id" });
 
     if (error) {
-      console.error(`Error inserting ${exhibit.title}:`, error);
+      console.error(`Error updating ${exhibit.title}:`, error);
     } else {
-      console.log(`✓ Inserted / Updated: ${exhibit.title}`);
+      console.log(`✓ Updated image_url for: ${exhibit.title}`);
     }
   }
 
   const { data: allItems } = await supabase
     .from("items")
-    .select("id, title, category, year, description")
+    .select("id, title, category, year, image_url")
     .order("created_at", { ascending: true });
 
   console.log(`\n🎉 Total items in DB: ${allItems?.length}`);
