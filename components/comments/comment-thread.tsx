@@ -11,27 +11,26 @@ import {
   getCommentsAction,
   toggleCommentLikeAction,
 } from "@/features/comments/application/comments";
-import { MAX_COMMENT_LENGTH } from "@/features/comments/domain/comment";
+import { MAX_COMMENT_LENGTH, splitCommentContent } from "@/features/comments/domain/comment";
 import type { CommentView } from "@/features/comments/types";
 
 type CommentThreadProps = {
   itemId: string;
 };
 
-const URL_PATTERN = /(https?:\/\/[^\s<]+)/g;
 const COMMENT_REQUEST_ERROR = "通信に失敗しました。もう一度お試しください";
 
 function renderCommentContent(content: string) {
-  return content.split(URL_PATTERN).map((part, index) => {
-    if (/^https?:\/\//.test(part)) {
+  return splitCommentContent(content).map((part, index) => {
+    if (part.type === "url") {
       return (
-        <a key={`${part}-${index}`} href={part} target="_blank" rel="noreferrer">
-          {part}
+        <a key={`${part.value}-${index}`} href={part.value} target="_blank" rel="noreferrer">
+          {part.value}
         </a>
       );
     }
 
-    return <span key={`${part}-${index}`}>{part}</span>;
+    return <span key={`${part.value}-${index}`}>{part.value}</span>;
   });
 }
 

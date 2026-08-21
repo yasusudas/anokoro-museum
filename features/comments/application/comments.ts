@@ -28,6 +28,10 @@ function revalidateCommentViews(itemId: string) {
   }
 }
 
+function isUniqueViolation(error: { code?: string } | null | undefined) {
+  return error?.code === "23505";
+}
+
 export async function getCommentsAction(itemId: string): Promise<ActionResult<CommentView[]>> {
   if (!isUuid(itemId)) {
     return { ok: true, data: [] };
@@ -216,6 +220,11 @@ export async function toggleCommentLikeAction(
     .insert({ comment_id: commentId, user_id: user.id });
 
   if (error) {
+    if (isUniqueViolation(error)) {
+      revalidateCommentViews(comment.item_id);
+      return { ok: true, data: { liked: true } };
+    }
+
     console.error("Supabase comment like error:", error);
     return { ok: false, error: { code: "CONFLICT", message: "いいねを更新できませんでした" } };
   }
