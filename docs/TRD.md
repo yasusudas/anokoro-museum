@@ -54,7 +54,7 @@
 
 - 全ユーザーデータ系テーブルでRLSを有効化する
 - 認可はUI表示制御ではなくDB/RLSまたはサーバーで強制する
-- ファイルはMIME、拡張子、サイズを検証し、推測困難な保存名を使う
+- 投稿画像はJPEG、PNG、WebP、5MB以下に限定する。Server ActionでMIME、拡張子、サイズを検証し、推測困難な保存名でSupabase Storageへ保存する
 - コメント表示時はReactの標準エスケープを維持し、任意HTMLを許可しない
 - URLのリンク化はHTTP/HTTPSに限定し、`target="_blank"` では `rel="noopener noreferrer"` を必ず付ける
 - 秘密値を `NEXT_PUBLIC_*` に置かない
@@ -79,7 +79,6 @@ PR前の最低条件は `lint` と `build`。テスト導入後はCIとローカ
 ## 6. 未解決事項
 
 - OAuthプロバイダーの選定
-- 画像アップロードの検証項目（MIME・容量・拡張子）の確定値
 - アナリティクス製品とCookie同意の要否
 - Preview / Productionへのmigration適用担当と自動化方式
 
