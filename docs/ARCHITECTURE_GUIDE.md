@@ -8,7 +8,11 @@
 
 ```text
 app/
-  page.tsx
+  (museum)/
+    page.tsx
+    items/[itemId]/page.tsx
+  login/page.tsx
+  items/new/page.tsx
   (auth)/
     layout.tsx
     sign-in/page.tsx
@@ -18,9 +22,13 @@ components/
   auth/                   # ログイン・登録まわりのカードやフォーム
   ui/                     # 汎用的な小さい部品
 features/
-  exhibits/
-    domain/               # Exhibit、年代判定、状態遷移
-    application/          # 投稿、審査などのuse case
+  items/
+    domain/               # Item、年代判定、入力検証
+    application/          # 投稿、削除などのuse case
+    infrastructure/       # Supabase query / mapper
+  comments/
+    domain/               # Comment、本文・URLの入力検証
+    application/          # 投稿、削除、いいね切替
     infrastructure/       # Supabase query / mapper
   memories/
   auth/
@@ -59,7 +67,7 @@ docs/
 
 ### 公開展示一覧
 
-`app/page.tsx` は薄く保ち、表示の中心は `components/museum/museum-experience.tsx` に置く。年代との関連度計算が複雑になったら `domain` へ移す。横移動だけを `components/museum/exhibit-corridor.tsx` に分離する。
+現状の `app/page.tsx` は薄く保ち、表示の中心を `components/museum/museum-experience.tsx` に置く。routeを分割する段階では `app/(museum)/page.tsx` がsearch paramsを解釈し、`features/items/infrastructure/find-published-items.ts` を呼ぶ。年代との関連度計算が複雑になったら `domain` へ移し、横移動は `components/museum/exhibit-corridor.tsx` に分離する。
 
 ### 認証導線
 
@@ -67,11 +75,15 @@ docs/
 
 ### しんみり
 
-UI → Server Action → applicationの `toggle-nostalgia` → repository。重複防止の最終保証はDBの一意制約に置く。UIは楽観的更新できるが失敗時に戻す。
+UI → Server Action → applicationの `toggle-shinmiri` → repository。重複防止の最終保証はDBの一意制約に置く。UIは楽観的更新できるが失敗時に戻す。
+
+### コメント
+
+詳細ページはServer Componentでコメントといいね件数をまとめて読み、入力・削除・いいね切替だけをClient ComponentからServer Actionへ渡す。本文の整形はdomainで行い、UIではReactの標準エスケープを維持してURLだけをリンク要素へ分割する。
 
 ### 展示投稿
 
-投稿画面をページとして切るなら `app/(museum)/exhibits/new/page.tsx` に置き、ページ側はルートと composition のみを担当する。モーダルで出すなら再利用UIは `components/forms/` か `components/museum/` に置き、必要なら `app/(museum)` 側から呼び出す。フォーム入力は Server Action で検証し、画像保存と DB 保存は application で調整する。片方だけ成功した場合に孤立ファイルを残さない処理を設計する。公開状態は必ず `pending` から開始する。
+投稿画面をページとして切るなら `app/(museum)/exhibits/new/page.tsx` に置き、ページ側はルートとcompositionのみを担当する。モーダルで出すなら再利用UIは `components/forms/` か `components/museum/` に寄せる。フォーム入力をServer Actionで検証し、画像保存とDB保存はapplicationで調整する。片方だけ成功した場合に孤立ファイルを残さない処理を設計し、審査を持たないため保存した時点で公開する。
 
 ## 段階的導入
 
