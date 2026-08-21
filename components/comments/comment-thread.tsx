@@ -19,6 +19,7 @@ type CommentThreadProps = {
 };
 
 const COMMENT_REQUEST_ERROR = "通信に失敗しました。もう一度お試しください";
+const OFFLINE_COMMENT_ERROR = "オフラインのため送信できません。接続を確認してからもう一度お試しください";
 
 function renderCommentContent(content: string) {
   return splitCommentContent(content).map((part, index) => {
@@ -151,6 +152,11 @@ export function CommentThread({ itemId }: CommentThreadProps) {
     setErrorMessage("");
 
     try {
+      if (!window.navigator.onLine) {
+        setErrorMessage(OFFLINE_COMMENT_ERROR);
+        return;
+      }
+
       const formData = new FormData(event.currentTarget);
       const result = await createCommentAction(formData);
 

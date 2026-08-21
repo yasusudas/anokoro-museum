@@ -94,10 +94,12 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
   const corridorRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
   const requestedExhibitId = searchParams.get("exhibit");
+  const requestedExhibit = requestedExhibitId
+    ? initialExhibits.find((item) => item.id === requestedExhibitId) ?? null
+    : null;
+  const isRequestedExhibitMissing = Boolean(requestedExhibitId) && !requestedExhibit;
   const [activeCategory, setActiveCategory] = useState("すべて");
-  const [selected, setSelected] = useState<ExhibitItem | null>(() =>
-    initialExhibits.find((item) => item.id === requestedExhibitId) ?? null,
-  );
+  const [selected, setSelected] = useState<ExhibitItem | null>(() => requestedExhibit);
   const [shinmiriItems, setShinmiriItems] = useState<string[]>([]);
   const [showGuide, setShowGuide] = useState(true);
   const [isPending, startTransition] = useTransition();
@@ -165,6 +167,21 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
       }
     });
   };
+
+  if (isRequestedExhibitMissing) {
+    return (
+      <main className="museum-shell">
+        <section className="end-panel" role="alert" aria-labelledby="exhibit-not-found-title">
+          <span>EXHIBIT NOT FOUND</span>
+          <h2 id="exhibit-not-found-title">展示が見つかりません</h2>
+          <p>指定された展示は削除されたか、存在しません。</p>
+          <Link className="end-panel-link" href="/">
+            展示を見に戻る
+          </Link>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="museum-shell">

@@ -4,6 +4,8 @@ const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const URL_CAPTURE_PATTERN = /(https?:\/\/[^\s<]+)/g;
+const ASCII_URL_CODE_POINT_PATTERN = /[A-Za-z0-9\-._~:/?#\[\]@!$&'()*+,;=%]/;
+const UNICODE_URL_CODE_POINT_PATTERN = /[^\x00-\x7F]/u;
 const TRAILING_URL_MARKERS = new Set([
   ".",
   ",",
@@ -67,7 +69,10 @@ function countChar(value: string, character: string) {
 }
 
 function isUrlCodePoint(character: string) {
-  return /[A-Za-z0-9\-._~:/?#\[\]@!$&'()*+,;=%]/.test(character);
+  return (
+    ASCII_URL_CODE_POINT_PATTERN.test(character) ||
+    UNICODE_URL_CODE_POINT_PATTERN.test(character)
+  );
 }
 
 function splitUrlMatch(rawUrl: string): { href: string; trailing: string } {

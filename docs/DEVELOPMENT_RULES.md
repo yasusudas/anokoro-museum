@@ -70,10 +70,11 @@ type: 日本語で変更内容を一文
 
 ```bash
 npm run lint
+npm run test
 npm run build
 ```
 
-- コミット時のpre-commitフックとCI（`.github/workflows/ci.yml`）が同じ2コマンドを実行する。
+- コミット時のpre-commitフックとCI（`.github/workflows/ci.yml`）が同じ3コマンドを実行する。
 - フックは初回のみ `./scripts/setup-hooks` で有効化する（`core.hooksPath=.githooks`）。
 - ブランチ名は `.github/workflows/pr-validation.yml` がPR時に検証する。命名は本ファイルの「ブランチ」節に従う。
 - コミットメッセージのAIツール表記は `.githooks/commit-msg` が拒否する。
