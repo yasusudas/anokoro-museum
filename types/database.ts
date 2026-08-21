@@ -119,7 +119,9 @@ export type Database = {
           id: string
           image_alt: string
           image_path: string
+          image_url: string | null
           image_rights_confirmed: boolean
+          year: number | null
           theme: string
           title: string
           updated_at: string
@@ -134,7 +136,9 @@ export type Database = {
           id?: string
           image_alt: string
           image_path: string
+          image_url?: string | null
           image_rights_confirmed?: boolean
+          year?: number | null
           theme: string
           title: string
           updated_at?: string
@@ -149,7 +153,9 @@ export type Database = {
           id?: string
           image_alt?: string
           image_path?: string
+          image_url?: string | null
           image_rights_confirmed?: boolean
+          year?: number | null
           theme?: string
           title?: string
           updated_at?: string
@@ -369,4 +375,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
