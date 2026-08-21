@@ -120,7 +120,6 @@ export type Database = {
           image_alt: string | null
           image_path: string | null
           image_url: string | null
-          image_rights_confirmed: boolean
           year: number | null
           theme: string | null
           title: string
@@ -137,7 +136,6 @@ export type Database = {
           image_alt?: string | null
           image_path?: string | null
           image_url?: string | null
-          image_rights_confirmed?: boolean
           year?: number | null
           theme?: string | null
           title: string
@@ -154,7 +152,6 @@ export type Database = {
           image_alt?: string | null
           image_path?: string | null
           image_url?: string | null
-          image_rights_confirmed?: boolean
           year?: number | null
           theme?: string | null
           title?: string
