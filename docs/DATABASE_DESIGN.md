@@ -59,7 +59,6 @@ erDiagram
 | `category` | varchar | NOT NULL。CHECK制約で `おかし` / `ゲーム` / `たべもの` / `ほん` / `できごと` / `ガジェット` / `インターネット` に限定 |
 | `theme` | varchar | 表示テーマ識別子（`gummy`, `watch` など。未設定時はコードでフォールバック） |
 | `image_url` | text | Supabase Storage内の画像オブジェクトパス。投稿時は必須 |
-| `image_rights_confirmed` | boolean | 現行スキーマとの互換用。利用者へ確認操作は求めない |
 | `year` | int | 展示品の年代（西暦4桁、例: `2004`） |
 | `created_at`, `updated_at` | timestamptz | NOT NULL DEFAULT `now()` |
 

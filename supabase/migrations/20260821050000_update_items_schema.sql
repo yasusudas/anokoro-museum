@@ -20,14 +20,6 @@ BEGIN
     ALTER TABLE public.items ADD COLUMN year INT;
   END IF;
 
-  -- image_rights_confirmed 列が存在しない場合は追加
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = 'items' AND column_name = 'image_rights_confirmed'
-  ) THEN
-    ALTER TABLE public.items ADD COLUMN image_rights_confirmed BOOLEAN DEFAULT TRUE;
-  END IF;
-
   -- theme 列を NULL 可に変更（コード側でのフォールバック判定に対応）
   IF EXISTS (
     SELECT 1 FROM information_schema.columns
