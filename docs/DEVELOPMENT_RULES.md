@@ -11,10 +11,10 @@
 - 1ブランチ・1PRは1つの目的に絞る
 
 ```text
-feature/add-exhibit-thread
+feature/add-item-thread
 fix/modal-focus-trap
 docs/update-database-design
-codex/add-exhibit-thread
+codex/add-item-thread
 ```
 
 `feature/AddExhibitThread`、`feature/add_exhibit_thread`、`feature/展示追加` は使用しない。
