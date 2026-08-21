@@ -38,9 +38,9 @@ export async function getExhibits(): Promise<ExhibitItem[]> {
     `)
     .order("created_at", { ascending: true });
 
-  if (itemsError || !items) {
+  if (itemsError) {
     console.error("Error fetching exhibits:", itemsError);
-    return [];
+    throw new Error("展示データの取得に失敗しました。時間をおいて再試行してください。");
   }
 
   // 2. 各アイテムのしんみりリアクション数を取得

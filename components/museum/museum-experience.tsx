@@ -96,6 +96,8 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
   const [showGuide, setShowGuide] = useState(true);
   const [isPending, startTransition] = useTransition();
 
+  const [signOutError, setSignOutError] = useState<string | null>(null);
+
   const exhibits = initialExhibits;
 
   // カテゴリ一覧を動的に生成
@@ -149,8 +151,12 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
     );
 
   const handleSignOut = () => {
+    setSignOutError(null);
     startTransition(async () => {
-      await signOutAction();
+      const result = await signOutAction();
+      if (result && !result.ok) {
+        setSignOutError(result.error.message || "ログアウトに失敗しました。もう一度お試しください。");
+      }
     });
   };
 
@@ -178,7 +184,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
         </nav>
 
         {currentUser ? (
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", position: "relative" }}>
             <span style={{ fontSize: "0.875rem", color: "var(--fg-muted, #888)" }}>
               {currentUser.userName}
             </span>
@@ -190,6 +196,26 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
             >
               {isPending ? "..." : "ログアウト"}
             </button>
+            {signOutError && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "100%",
+                  right: 0,
+                  marginTop: "0.5rem",
+                  padding: "0.5rem 0.75rem",
+                  background: "rgba(220, 50, 50, 0.9)",
+                  color: "#fff",
+                  fontSize: "0.8rem",
+                  borderRadius: "4px",
+                  whiteSpace: "nowrap",
+                  zIndex: 10,
+                }}
+                role="alert"
+              >
+                {signOutError}
+              </div>
+            )}
           </div>
         ) : (
           <Link className="login-button" href="/sign-in">
