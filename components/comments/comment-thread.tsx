@@ -42,6 +42,14 @@ function formatCommentDate(value: string) {
   }).format(new Date(value));
 }
 
+function CommentHeartIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21.2l7.8-7.7 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z" />
+    </svg>
+  );
+}
+
 export function CommentThread({ itemId }: CommentThreadProps) {
   const [comments, setComments] = useState<CommentView[]>([]);
   const [content, setContent] = useState("");
@@ -50,6 +58,7 @@ export function CommentThread({ itemId }: CommentThreadProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [busyCommentId, setBusyCommentId] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
   const loadComments = useCallback(async ({ showLoading = true }: { showLoading?: boolean } = {}) => {
@@ -148,6 +157,7 @@ export function CommentThread({ itemId }: CommentThreadProps) {
   }
 
   async function handleDelete(comment: CommentView) {
+    setOpenMenuId(null);
     if (!window.confirm("このコメントを削除しますか？")) return;
 
     setBusyCommentId(comment.id);
@@ -200,11 +210,7 @@ export function CommentThread({ itemId }: CommentThreadProps) {
         setComments((current) =>
           current.map((currentComment) =>
             currentComment.id === comment.id
-              ? {
-                  ...currentComment,
-                  isLikedByCurrentUser: previousLiked,
-                  likeCount: previousLikeCount,
-                }
+              ? { ...currentComment, isLikedByCurrentUser: previousLiked, likeCount: previousLikeCount }
               : currentComment,
           ),
         );
@@ -212,33 +218,13 @@ export function CommentThread({ itemId }: CommentThreadProps) {
         return;
       }
 
-      const confirmedLiked = result.data.liked;
-      setComments((current) =>
-        current.map((currentComment) =>
-          currentComment.id === comment.id
-            ? {
-                ...currentComment,
-                isLikedByCurrentUser: confirmedLiked,
-                likeCount: Math.max(
-                  0,
-                  previousLikeCount +
-                    (confirmedLiked === previousLiked ? 0 : confirmedLiked ? 1 : -1),
-                ),
-              }
-            : currentComment,
-        ),
-      );
       await loadComments({ showLoading: false });
     } catch (error) {
       console.error("Failed to toggle comment like:", error);
       setComments((current) =>
         current.map((currentComment) =>
           currentComment.id === comment.id
-            ? {
-                ...currentComment,
-                isLikedByCurrentUser: previousLiked,
-                likeCount: previousLikeCount,
-              }
+            ? { ...currentComment, isLikedByCurrentUser: previousLiked, likeCount: previousLikeCount }
             : currentComment,
         ),
       );
@@ -262,33 +248,57 @@ export function CommentThread({ itemId }: CommentThreadProps) {
         ) : (
           <div className="comment-list">
             {comments.map((comment) => (
-              <article className="comment-card" key={comment.id}>
+              <article
+                className="comment-card"
+                key={comment.id}
+                onMouseLeave={() => setOpenMenuId(null)}
+                onBlur={(event) => {
+                  if (!event.currentTarget.contains(event.relatedTarget)) setOpenMenuId(null);
+                }}
+              >
                 <div className="comment-meta">
                   <b>{comment.authorName}</b>
-                  <time dateTime={comment.createdAt}>{formatCommentDate(comment.createdAt)}</time>
+                  <div className="comment-meta-actions">
+                    <time dateTime={comment.createdAt}>{formatCommentDate(comment.createdAt)}</time>
+                    {comment.canDelete && (
+                      <div className="comment-menu">
+                        <button
+                          type="button"
+                          className="comment-menu-trigger"
+                          onClick={() => setOpenMenuId((current) => current === comment.id ? null : comment.id)}
+                          aria-label="コメントの操作を開く"
+                          aria-expanded={openMenuId === comment.id}
+                        >
+                          …
+                        </button>
+                        {openMenuId === comment.id && (
+                          <div className="comment-menu-popup">
+                            <button
+                              type="button"
+                              className="comment-delete"
+                              onClick={() => void handleDelete(comment)}
+                              disabled={busyCommentId === comment.id}
+                            >
+                              削除
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <p className="comment-content">{renderCommentContent(comment.content)}</p>
-                <div className="comment-actions">
-                  <button
-                    type="button"
-                    className={comment.isLikedByCurrentUser ? "comment-like liked" : "comment-like"}
-                    onClick={() => void handleLike(comment)}
-                    disabled={busyCommentId === comment.id}
-                    aria-pressed={comment.isLikedByCurrentUser}
-                  >
-                    いいね {comment.likeCount}
-                  </button>
-                  {comment.canDelete && (
-                    <button
-                      type="button"
-                      className="comment-delete"
-                      onClick={() => void handleDelete(comment)}
-                      disabled={busyCommentId === comment.id}
-                    >
-                      削除
-                    </button>
-                  )}
-                </div>
+                <button
+                  type="button"
+                  className={comment.isLikedByCurrentUser ? "comment-like liked" : "comment-like"}
+                  onClick={() => void handleLike(comment)}
+                  disabled={busyCommentId === comment.id}
+                  aria-pressed={comment.isLikedByCurrentUser}
+                  aria-label={`このコメントにいいね ${comment.likeCount}件`}
+                >
+                  <CommentHeartIcon />
+                  <span>{comment.likeCount}</span>
+                </button>
               </article>
             ))}
           </div>
