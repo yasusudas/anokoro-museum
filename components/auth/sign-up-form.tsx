@@ -18,6 +18,7 @@ export function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<SignUpErrors>({});
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -59,6 +60,7 @@ export function SignUpForm() {
     }
 
     setErrors({});
+    setInfoMessage(null);
 
     startTransition(async () => {
       const result = await signUpAction(formData);
@@ -74,6 +76,13 @@ export function SignUpForm() {
         return;
       }
 
+      if (result.data?.needsEmailConfirmation) {
+        setInfoMessage(
+          "確認メールを送信しました。メール内のリンクをクリックして本登録を完了してください。"
+        );
+        return;
+      }
+
       router.push("/");
       router.refresh();
     });
@@ -81,6 +90,12 @@ export function SignUpForm() {
 
   return (
     <form className="auth-form" onSubmit={handleSubmit} noValidate>
+      {infoMessage && (
+        <div className="auth-hint" role="status" style={{ padding: "0.75rem", borderRadius: "0.375rem", background: "rgba(100, 200, 100, 0.1)", border: "1px solid rgba(100, 200, 100, 0.3)", marginBottom: "1rem" }}>
+          <p style={{ margin: 0, fontSize: "0.875rem", color: "inherit" }}>{infoMessage}</p>
+        </div>
+      )}
+
       {errors.general && (
         <p className="auth-error" role="alert">
           {errors.general}
@@ -197,7 +212,7 @@ export function SignUpForm() {
       </div>
 
       <button className="auth-submit" type="submit" disabled={isPending}>
-        {isPending ? "アカウントを作成中..." : "アカウントを制作"}
+        {isPending ? "アカウントを作成中..." : "アカウントを作成"}
       </button>
     </form>
   );

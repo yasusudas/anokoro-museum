@@ -16,6 +16,10 @@ export type ActionResult<T = void> =
   | { ok: true; data: T }
   | { ok: false; error: ActionError };
 
+export type SignUpResult = {
+  needsEmailConfirmation: boolean;
+};
+
 export type AuthUser = {
   id: string;
   email: string;

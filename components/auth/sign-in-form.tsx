@@ -123,11 +123,6 @@ export function SignInForm() {
         )}
       </div>
 
-      <label className="auth-check">
-        <input type="checkbox" name="remember" disabled={isPending} />
-        <span>次回から自動でログインする</span>
-      </label>
-
       <button className="auth-submit" type="submit" disabled={isPending}>
         {isPending ? "ログイン中..." : "ログイン"}
       </button>

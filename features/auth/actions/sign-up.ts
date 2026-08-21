@@ -2,9 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import type { ActionResult } from "../types";
+import type { ActionResult, SignUpResult } from "../types";
 
-export async function signUpAction(formData: FormData): Promise<ActionResult> {
+export async function signUpAction(formData: FormData): Promise<ActionResult<SignUpResult>> {
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
@@ -49,7 +49,7 @@ export async function signUpAction(formData: FormData): Promise<ActionResult> {
 
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -105,12 +105,18 @@ export async function signUpAction(formData: FormData): Promise<ActionResult> {
       ok: false,
       error: {
         code: "INTERNAL_ERROR",
-        message: error.message || "登録に失敗しました。時間をおいて再度お試しください",
+        message: "登録に失敗しました。時間をおいて再度お試しください",
       },
     };
   }
 
   revalidatePath("/", "layout");
 
-  return { ok: true, data: undefined };
+  return {
+    ok: true,
+    data: {
+      needsEmailConfirmation: !data?.session,
+    },
+  };
 }
+
