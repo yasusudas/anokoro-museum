@@ -251,54 +251,55 @@ export function CommentThread({ itemId }: CommentThreadProps) {
   return (
     <section className="comment-thread" aria-labelledby="comment-thread-title">
       <div className="comment-thread-heading">
-        <span id="comment-thread-title">みんなの思い出</span>
-        <small>{comments.length}件</small>
+        <h3 id="comment-thread-title">{comments.length}件のコメント</h3>
       </div>
 
-      {isLoading ? (
-        <p className="comment-status">コメントを読み込んでいます…</p>
-      ) : comments.length === 0 ? (
-        <p className="comment-status">まだコメントはありません。最初の思い出を書いてみませんか？</p>
-      ) : (
-        <div className="comment-list">
-          {comments.map((comment) => (
-            <article className="comment-card" key={comment.id}>
-              <div className="comment-meta">
-                <b>{comment.authorName}</b>
-                <time dateTime={comment.createdAt}>{formatCommentDate(comment.createdAt)}</time>
-              </div>
-              <p className="comment-content">{renderCommentContent(comment.content)}</p>
-              <div className="comment-actions">
-                <button
-                  type="button"
-                  className={comment.isLikedByCurrentUser ? "comment-like liked" : "comment-like"}
-                  onClick={() => void handleLike(comment)}
-                  disabled={busyCommentId === comment.id}
-                  aria-pressed={comment.isLikedByCurrentUser}
-                >
-                  いいね {comment.likeCount}
-                </button>
-                {comment.canDelete && (
+      <div className="comment-feed">
+        {isLoading ? (
+          <p className="comment-status">コメントを読み込んでいます…</p>
+        ) : comments.length === 0 ? (
+          <p className="comment-status">まだコメントはありません。最初の思い出を書いてみませんか？</p>
+        ) : (
+          <div className="comment-list">
+            {comments.map((comment) => (
+              <article className="comment-card" key={comment.id}>
+                <div className="comment-meta">
+                  <b>{comment.authorName}</b>
+                  <time dateTime={comment.createdAt}>{formatCommentDate(comment.createdAt)}</time>
+                </div>
+                <p className="comment-content">{renderCommentContent(comment.content)}</p>
+                <div className="comment-actions">
                   <button
                     type="button"
-                    className="comment-delete"
-                    onClick={() => void handleDelete(comment)}
+                    className={comment.isLikedByCurrentUser ? "comment-like liked" : "comment-like"}
+                    onClick={() => void handleLike(comment)}
                     disabled={busyCommentId === comment.id}
+                    aria-pressed={comment.isLikedByCurrentUser}
                   >
-                    削除
+                    いいね {comment.likeCount}
                   </button>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
+                  {comment.canDelete && (
+                    <button
+                      type="button"
+                      className="comment-delete"
+                      onClick={() => void handleDelete(comment)}
+                      disabled={busyCommentId === comment.id}
+                    >
+                      削除
+                    </button>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
 
       {isViewerLoading ? (
         <p className="comment-status">投稿状態を確認しています…</p>
       ) : viewerId ? (
         <form className="comment-form" onSubmit={handleSubmit}>
-          <label htmlFor={`comment-content-${itemId}`}>思い出を残す</label>
+          <label htmlFor={`comment-content-${itemId}`}>コメントを書く</label>
           <textarea
             id={`comment-content-${itemId}`}
             name="content"
