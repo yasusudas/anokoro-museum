@@ -19,7 +19,7 @@ erDiagram
 ## 共通ルール
 
 - table / column / constraint: `snake_case`
-- 展示品を表すtableは `items` に固定する。設計書・UI・URLの内部識別子もすべて `item` 系で統一する
+- 展示品を表すDB tableは `items` に固定する。アプリケーション層・UI・URLの用語は `exhibit` 系で統一し、DB列名の `item_id` とは区別する
 - 主キー: UUIDの `id`（`gen_random_uuid()`。拡張機能が不要なため `uuid_generate_v4()` は使わない）
 - 時刻: `timestamptz`。更新される可能性のあるtableだけ `updated_at` を持つ
 - ユーザー参照: `auth.users(id)` を起点としたUUID外部キー
@@ -170,5 +170,5 @@ MVPでは有効化しない。PRDのMVP対象外にリアルタイム機能が�
 | コメントの論理削除・運営による非表示 | 不適切な投稿へ運営が対処する手段がない |
 | 画像の出典情報 | 出典URLやライセンス情報の管理は行わず、`image_rights_confirmed` による投稿者の自己申告だけを必須にする |
 | 生まれ年のDB保存 | F-01は端末内の一時保存に留まり、再ログインでは復元されない |
-| 展示のslug | URLは `/items/{uuid}` になる。後からslugを導入すると既存URLが変わる |
+| 展示のslug | URLは `/exhibits/{uuid}` になる。後からslugを導入すると既存URLが変わる |
 | コメントの論理削除 | 物理削除のため、後から論理削除へ移行してもデータを復元できない |
