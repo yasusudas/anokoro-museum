@@ -18,15 +18,14 @@ Codex / Claude などのAIコーディングエージェントは、このリポ
 | 内容 | パス |
 | --- | --- |
 | 開発ルール全体（Git / コミット / PR / 禁止事項） | `docs/DEVELOPMENT_RULES.md` |
-| コーディング規約（命名・TS・React・CSS・import） | `docs/conventions.md` |
+| コーディング規約（命名・TS・React・CSS・import） | `docs/CONVENTIONS.md` |
 | プロダクト要件（何を・誰のために・なぜ） | `docs/PRD.md` |
-| 機能要件（F-01〜F-09・受け入れ条件） | `docs/FEATURE_REQUIREMENTS.md` |
+| 機能要件（F-01〜F-07・受け入れ条件） | `docs/FEATURE_REQUIREMENTS.md` |
 | 技術方針（スタック・アーキテクチャ・非機能） | `docs/TRD.md` |
 | コード配置と依存方向 | `docs/ARCHITECTURE_GUIDE.md` |
 | API 境界（Server Actions / Route Handlers / Supabase） | `docs/API_DESIGN.md` |
 | DB 設計と RLS | `docs/DATABASE_DESIGN.md` |
 | DB マイグレーション手順 | `docs/MIGRATIONS.md` |
-| 参考資料と採用・不採用の記録 | `docs/REFERENCE_NOTES.md` |
 
 ## よく使うコマンド
 

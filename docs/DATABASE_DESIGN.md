@@ -1,6 +1,6 @@
 # データベース設計
 
-Supabase PostgreSQLの設計意図を管理する。サークル内ハッカソン用プロダクトのため開発スピードを最優先とし、テーブル結合を最小限に抑えたフラットでシンプルな構成を採用する。運営ロール・展示審査・モデレーションは意図的に持たない（[スコープ外の記録](#スコープ外の記録)）。
+Supabase PostgreSQLの設計意図を管理する。サークル内ハッカソン用プロダクトのため開発スピードを最優先とし、テーブル結合を最小限に抑えたフラットでシンプルな構成を採用する。
 
 ## ER図
 
@@ -24,7 +24,7 @@ erDiagram
 - 時刻: `timestamptz`。更新される可能性のあるtableだけ `updated_at` を持つ
 - ユーザー参照: `auth.users(id)` を起点としたUUID外部キー
 - **RLSはtable作成と同じmigrationで有効化する。** 無効のままPreview / Productionへ出さない
-- 生まれ年（F-01）はDBで管理しない。クライアント側の一時保存のみとする
+- 生まれ年はDBで管理しない。クライアント側の一時保存のみとする
 
 ## テーブル一覧
 
@@ -59,7 +59,7 @@ erDiagram
 | `category` | varchar | NOT NULL。CHECK制約で `おかし` / `ゲーム` / `たべもの` / `ほん` / `できごと` / `ガジェット` / `インターネット` に限定 |
 | `theme` | varchar | 表示テーマ識別子（`gummy`, `watch` など。未設定時はコードでフォールバック） |
 | `image_url` | text | 写真のURL（外部URLまたはSupabase Storageキー） |
-| `image_rights_confirmed` | boolean | 投稿者の権利確認 |
+| `image_rights_confirmed` | boolean | 現行スキーマとの互換用。利用者へ確認操作は求めない |
 | `year` | int | 展示品の年代（西暦4桁、例: `2004`） |
 | `created_at`, `updated_at` | timestamptz | NOT NULL DEFAULT `now()` |
 
@@ -136,7 +136,7 @@ RLS有効下ではクライアントから `users` をINSERTできない。`auth
 ## インデックス
 
 - `comments(item_id, created_at DESC)` — 展示詳細のコメント取得
-- `items(category)` / `items(year)` — F-02の絞り込み
+- `items(category)` / `items(year)` — F-01の絞り込み
 - `comment_likes` は `UNIQUE(comment_id, user_id)` が `comment_id` 先頭の複合indexになるため追加不要
 - `shinmiri_reactions` は `UNIQUE(item_id, user_id)` が `item_id` 先頭の複合indexになるため追加不要
 
@@ -160,10 +160,8 @@ MVPでは有効化しない。PRDのMVP対象外にリアルタイム機能が�
 
 | 省略したもの | 影響 |
 | --- | --- |
-| 運営 / モデレーターのロール | 権限判定が「本人かどうか」だけになる |
-| 展示の公開状態（`status`）と審査フロー | 投稿は即時公開される |
 | コメントの論理削除・運営による非表示 | 不適切な投稿へ運営が対処する手段がない |
-| 画像の出典情報 | 出典URLやライセンス情報の管理は行わず、`image_rights_confirmed` による投稿者の自己申告だけを必須にする |
-| 生まれ年のDB保存 | F-01は端末内の一時保存に留まり、再ログインでは復元されない |
+| 画像の出典情報 | 出典URLやライセンス情報の管理、利用者への確認操作は行わない |
+| 生まれ年のDB保存 | 端末内の一時保存に留まり、再ログインでは復元されない |
 | 展示のslug | URLは `/exhibits/{uuid}` になる。後からslugを導入すると既存URLが変わる |
 | コメントの論理削除 | 物理削除のため、後から論理削除へ移行してもデータを復元できない |
