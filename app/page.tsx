@@ -2,14 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 
-type Item = { id: string; number: string; title: string; subtitle: string; category: string; year: string; memory: string; shinmiriCount: number; theme: string };
+type Item = { id: string; number: string; title: string; subtitle: string; category: string; year: string; description: string; shinmiriCount: number; theme: string };
 
 const items: Item[] = [
-  { id: "himo-q", number: "01", title: "ひもQ", subtitle: "なが〜いグミ、覚えてる？", category: "おかし", year: "2004–2008", memory: "遠足の日、ちぎれないように端から大事に食べた、あの長いグミ。友だちと長さを比べるのも定番でした。", shinmiriCount: 248, theme: "gummy" },
-  { id: "yokai", number: "02", title: "妖怪ウォッチ", subtitle: "ともだち、召喚！", category: "ゲーム", year: "2004–2008", memory: "放課後になると、みんなで妖怪メダルを見せ合った。あの召喚ソングは今でも口ずさめるかも。", shinmiriCount: 196, theme: "watch" },
-  { id: "tapioca", number: "03", title: "タピオカ", subtitle: "平成最後の放課後ドリンク", category: "たべもの", year: "2002–2007", memory: "長い列に並んで、黒糖ミルクを片手に写真を撮った放課後。太いストローも含めて思い出。", shinmiriCount: 174, theme: "tapioca" },
-  { id: "zoro", number: "04", title: "かいけつゾロリ", subtitle: "図書室の人気者", category: "ほん", year: "2000–2009", memory: "休み時間の図書室。貸出中なら次の巻を探して、最後のなぞなぞまでしっかり読んだ。", shinmiriCount: 139, theme: "book" },
-  { id: "soran", number: "05", title: "ソーラン節", subtitle: "どっこいしょ、どっこいしょ！", category: "できごと", year: "1998–2009", memory: "運動会前、筋肉痛になるまで低い姿勢を練習した。クラス全員の掛け声が揃った瞬間は忘れられない。", shinmiriCount: 121, theme: "soran" },
+  { id: "himo-q", number: "01", title: "ひもQ", subtitle: "なが〜いグミ、覚えてる？", category: "おかし", year: "2004–2008", description: "遠足の日、ちぎれないように端から大事に食べた、あの長いグミ。友だちと長さを比べるのも定番でした。", shinmiriCount: 248, theme: "gummy" },
+  { id: "yokai", number: "02", title: "妖怪ウォッチ", subtitle: "ともだち、召喚！", category: "ゲーム", year: "2004–2008", description: "放課後になると、みんなで妖怪メダルを見せ合った。あの召喚ソングは今でも口ずさめるかも。", shinmiriCount: 196, theme: "watch" },
+  { id: "tapioca", number: "03", title: "タピオカ", subtitle: "平成最後の放課後ドリンク", category: "たべもの", year: "2002–2007", description: "長い列に並んで、黒糖ミルクを片手に写真を撮った放課後。太いストローも含めて思い出。", shinmiriCount: 174, theme: "tapioca" },
+  { id: "zoro", number: "04", title: "かいけつゾロリ", subtitle: "図書室の人気者", category: "ほん", year: "2000–2009", description: "休み時間の図書室。貸出中なら次の巻を探して、最後のなぞなぞまでしっかり読んだ。", shinmiriCount: 139, theme: "book" },
+  { id: "soran", number: "05", title: "ソーラン節", subtitle: "どっこいしょ、どっこいしょ！", category: "できごと", year: "1998–2009", description: "運動会前、筋肉痛になるまで低い姿勢を練習した。クラス全員の掛け声が揃った瞬間は忘れられない。", shinmiriCount: 121, theme: "soran" },
 ];
 
 const categories = ["すべて", "おかし", "ゲーム", "たべもの", "ほん", "できごと"];
@@ -79,7 +79,7 @@ export default function Home() {
         <div className="floor"><span className="floor-line" /></div><div className="scroll-hint"><span>SCROLL TO EXPLORE</span><i><b /></i></div>
       </div>
 
-      {selected && <div className="modal-backdrop" onMouseDown={() => setSelected(null)}><section className="detail-modal" role="dialog" aria-modal="true" aria-label={`${selected.title}の展示詳細`} onMouseDown={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setSelected(null)} aria-label="閉じる">×</button><div className="modal-art"><div className="frame modal-frame"><span className="frame-inner"><ItemArt theme={selected.theme} /></span></div></div><div className="modal-content"><p className="eyebrow">EXHIBIT {selected.number} · {selected.category}</p><h2>{selected.title}</h2><p className="modal-subtitle">{selected.subtitle}</p><p className="modal-memory">{selected.memory}</p><div className="memory-tag">主に <b>{selected.year}年生まれ</b> の記憶</div><button className={shinmiriItems.includes(selected.id) ? "modal-like liked" : "modal-like"} onClick={() => toggleShinmiri(selected.id)}><NostalgiaIcon />しんみりした <b>{selected.shinmiriCount + (shinmiriItems.includes(selected.id) ? 1 : 0)}</b></button><div className="thread-preview"><span>みんなの思い出</span><p>「これ、学校帰りによく友達と話してたなあ…」</p><button>思い出を読む →</button></div></div></section></div>}
+      {selected && <div className="modal-backdrop" onMouseDown={() => setSelected(null)}><section className="detail-modal" role="dialog" aria-modal="true" aria-label={`${selected.title}の展示詳細`} onMouseDown={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setSelected(null)} aria-label="閉じる">×</button><div className="modal-art"><div className="frame modal-frame"><span className="frame-inner"><ItemArt theme={selected.theme} /></span></div></div><div className="modal-content"><p className="eyebrow">EXHIBIT {selected.number} · {selected.category}</p><h2>{selected.title}</h2><p className="modal-subtitle">{selected.subtitle}</p><p className="modal-memory">{selected.description}</p><div className="memory-tag">主に <b>{selected.year}年生まれ</b> の記憶</div><button className={shinmiriItems.includes(selected.id) ? "modal-like liked" : "modal-like"} onClick={() => toggleShinmiri(selected.id)}><NostalgiaIcon />しんみりした <b>{selected.shinmiriCount + (shinmiriItems.includes(selected.id) ? 1 : 0)}</b></button><div className="thread-preview"><span>みんなの思い出</span><p>「これ、学校帰りによく友達と話してたなあ…」</p><button>思い出を読む →</button></div></div></section></div>}
       {showGuide && <div className="guide-toast"><span>← →</span><div><b>横に歩いて、記憶をめぐる</b><small>マウスホイールや矢印キーで移動できます</small></div><button onClick={() => setShowGuide(false)} aria-label="案内を閉じる">×</button></div>}
     </main>
   );

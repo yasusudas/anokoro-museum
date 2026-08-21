@@ -20,17 +20,16 @@
 | --- | --- | --- | --- |
 | 公開展示一覧取得 | Server query | 不要 | F-02 |
 | 展示詳細取得 | Server query | 不要 | F-03 |
-| 生まれ年保存 | Server Action | 必要 | F-01 |
 | しんみり切替 | Server Action / RPC | 必要 | F-05 |
 | コメント投稿・削除 | Server Action | 必要 | F-06 |
+| コメントいいね切替 | Server Action | 必要 | F-06 |
 | 展示候補投稿 | Server Action | 必要 | F-07 |
 | 画像アップロード確定 | Server Action | 必要 | F-07 |
-| 審査状態変更 | Server Action | 運営 | F-08 |
 
 ## 3. 共通入力・出力
 
 - IDはUUID文字列として検証する
-- 本文はtrim後に長さを検証する
+- 本文は前後だけtrimして長さを検証し、本文中の改行は保持する
 - Server Actionは例外文字列をそのまま返さず、識別可能なcodeを返す
 
 ```ts
@@ -39,7 +38,7 @@ type ActionResult<T> =
   | {
       ok: false;
       error: {
-        code: "UNAUTHENTICATED" | "FORBIDDEN" | "VALIDATION_ERROR" | "CONFLICT" | "INTERNAL_ERROR";
+        code: "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "VALIDATION_ERROR" | "CONFLICT" | "INTERNAL_ERROR";
         message: string;
         fieldErrors?: Record<string, string[]>;
       };
@@ -50,16 +49,18 @@ type ActionResult<T> =
 
 ## 4. 認証・認可
 
-- 公開済み展示・コメントは匿名で読み取れる
-- 投稿、しんみり、コメントは `auth.uid()` と所有者をRLSで照合する
-- 審査操作はDBに保存した運営権限をサーバーとRLSの両方で検査する
+- 展示・コメントは匿名で読み取れる
+- 投稿、しんみり、コメント、コメントいいねは `auth.uid()` と所有者をRLSで照合する
 - service roleは管理用サーバー処理に限定し、通常ユーザー処理でRLSを迂回しない
+- 運営ロールを持たないため、認可判定は所有者かどうかだけで完結する
+- 生まれ年はDBで管理しないため、対応するServer Actionを持たない
 
 ## 5. キャッシュと再検証
 
 - 一覧更新: 展示一覧tagまたは該当pathを再検証
 - 展示更新: 一覧と `/items/{id}` を再検証
 - コメント更新: 該当展示のコメント境界だけを更新
+- コメントいいね: 楽観的UI後、サーバーの確定値へ収束させる
 - しんみり件数: 楽観的UI後、サーバーの確定値へ収束させる
 
 具体APIは導入済みNext.jsのローカルドキュメントを確認して選択する。

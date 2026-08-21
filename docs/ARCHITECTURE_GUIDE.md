@@ -13,15 +13,18 @@ app/
     items/[itemId]/page.tsx
   login/page.tsx
   items/new/page.tsx
-  admin/items/page.tsx
 components/
   museum/                 # 回廊・額縁・展示UI
   forms/                  # 投稿・コメントフォーム
   ui/                     # 汎用的な小さい部品
 features/
   items/
-    domain/               # Item、年代判定、状態遷移
-    application/          # 投稿、審査などのuse case
+    domain/               # Item、年代判定、入力検証
+    application/          # 投稿、削除などのuse case
+    infrastructure/       # Supabase query / mapper
+  comments/
+    domain/               # Comment、本文・URLの入力検証
+    application/          # 投稿、削除、いいね切替
     infrastructure/       # Supabase query / mapper
   memories/
   auth/
@@ -66,9 +69,13 @@ docs/
 
 UI → Server Action → applicationの `toggle-shinmiri` → repository。重複防止の最終保証はDBの一意制約に置く。UIは楽観的更新できるが失敗時に戻す。
 
+### コメント
+
+詳細ページはServer Componentでコメントといいね件数をまとめて読み、入力・削除・いいね切替だけをClient ComponentからServer Actionへ渡す。本文の整形はdomainで行い、UIではReactの標準エスケープを維持してURLだけをリンク要素へ分割する。
+
 ### 展示投稿
 
-フォーム入力をServer Actionで検証し、画像保存とDB保存をapplicationで調整する。片方だけ成功した場合に孤立ファイルを残さない処理を設計する。公開状態は必ず `pending` から開始する。
+フォーム入力をServer Actionで検証し、画像保存とDB保存をapplicationで調整する。片方だけ成功した場合に孤立ファイルを残さない処理を設計する。審査を持たないため、保存した時点で公開される。
 
 ## 段階的導入
 

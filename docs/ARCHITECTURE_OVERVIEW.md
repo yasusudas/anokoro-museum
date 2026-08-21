@@ -4,7 +4,7 @@
 
 ```mermaid
 flowchart TB
-  User["来場者 / 投稿者 / 運営"]
+  User["来場者 / 投稿者"]
   Browser["PC Browser"]
   subgraph Vercel["Vercel"]
     Next["Next.js App Router"]
@@ -80,17 +80,15 @@ sequenceDiagram
   end
 ```
 
-### 展示候補を投稿・審査する
+### 展示候補を投稿する
+
+審査を持たないため、公開状態の遷移はない。投稿は保存と同時に公開され、以降は投稿者だけが更新・削除できる。
 
 ```mermaid
 stateDiagram-v2
-  [*] --> draft
-  draft --> pending: 投稿
-  pending --> published: 運営が承認
-  pending --> changes_requested: 差し戻し
-  changes_requested --> pending: 修正して再投稿
-  pending --> rejected: 却下
-  published --> archived: 非公開化
+  [*] --> published: 投稿者がフォーム送信
+  published --> published: 投稿者が編集
+  published --> [*]: 投稿者が削除
 ```
 
 ## デプロイ単位
