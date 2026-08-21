@@ -147,7 +147,7 @@ export type Database = {
           birth_year_start?: number | null
           category?: string
           created_at?: string
-          description: string
+          description?: string
           id?: string
           image_alt?: string | null
           image_path?: string | null
