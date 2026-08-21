@@ -118,13 +118,6 @@ export function MuseumExperience() {
       </header>
 
       <section className="controls" aria-label="展示の絞り込み">
-        <div className="era-select">
-          <small>あなたの生まれ年</small>
-          <button>
-            2006年 <span>⌄</span>
-          </button>
-        </div>
-
         <div className="category-tabs">
           {categories.map((category) => (
             <button
@@ -150,36 +143,13 @@ export function MuseumExperience() {
       </section>
 
       <div className="corridor-wrap">
-        <div className="ceiling-light light-one" />
-        <div className="ceiling-light light-two" />
-        <div className="ceiling-light light-three" />
         <button className="scroll-arrow left" onClick={() => move(-1)} aria-label="前の展示へ">
           <ArrowIcon direction="left" />
         </button>
         <div className="corridor" ref={corridorRef}>
-          <section className="intro-panel">
-            <p className="eyebrow">WELCOME TO YOUR MEMORIES</p>
-            <h1>
-              あのころ、<br />
-              <em>なにしてた？</em>
-            </h1>
-            <p className="intro-copy">
-              忘れていた景色も、音も、匂いも。<br />
-              ここには、あなたの「あのころ」が並んでいます。
-            </p>
-            <button className="start-button" onClick={() => move(1)}>
-              展示をめぐる <ArrowIcon />
-            </button>
-            <div className="wall-caption">
-              <span>常設展</span>
-              <b>2000 — 2020</b>
-              <small>平成から令和へ</small>
-            </div>
-          </section>
           <section className="gallery" aria-live="polite">
             {visible.map((exhibit) => (
               <article className="exhibit" key={exhibit.id}>
-                <div className="spotlight" />
                 <button className="frame" onClick={() => setSelected(exhibit)} aria-label={`${exhibit.title}の詳細を見る`}>
                   <span className="frame-inner">
                     <ExhibitArt theme={exhibit.theme} />
