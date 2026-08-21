@@ -12,3 +12,28 @@ export type ExhibitItem = {
   userName?: string;
   createdAt: string;
 };
+
+export type ActionResult<T = void> =
+  | { ok: true; data: T }
+  | {
+      ok: false;
+      error: {
+        code: "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "VALIDATION_ERROR" | "CONFLICT" | "INTERNAL_ERROR";
+        message: string;
+        fieldErrors?: Record<string, string[]>;
+      };
+    };
+
+export type CreateExhibitInput = {
+  title: string;
+  description: string;
+  category: string;
+  year: number;
+  imageUrl?: string | null;
+};
+
+export type CreateExhibitData = {
+  id: string;
+  title: string;
+  imageUrl: string | null;
+};

@@ -54,12 +54,12 @@ erDiagram
 | --- | --- | --- |
 | `id` | uuid | PK、DEFAULT `gen_random_uuid()` |
 | `user_id` | uuid | FK `users.id` (ON DELETE CASCADE)、NULL可 |
-| `title` | varchar | NOT NULL。Unicode空白を除くtrim後が1文字以上 |
-| `description` | text | NOT NULL。Unicode空白を除くtrim後が1文字以上 |
+| `title` | varchar | NOT NULL。Unicode空白を除くtrim後1〜100文字 |
+| `description` | text | NOT NULL。Unicode空白を除くtrim後1〜500文字 |
 | `category` | varchar | NOT NULL。CHECK制約で `おかし` / `ゲーム` / `たべもの` / `ほん` / `できごと` / `ガジェット` / `インターネット` に限定 |
 | `theme` | varchar | 表示テーマ識別子（`gummy`, `watch` など。未設定時はコードでフォールバック） |
 | `image_url` | text | Supabase Storage内の画像オブジェクトパス。投稿時は必須 |
-| `year` | int | 展示品の年代（西暦4桁、例: `2004`） |
+| `year` | int | 展示品の年代（西暦4桁、1900年〜現在年、例: `2004`） |
 | `created_at`, `updated_at` | timestamptz | NOT NULL DEFAULT `now()` |
 
 制約・運用:
