@@ -1,5 +1,5 @@
 -- ==========================================
--- items テーブルのスキーマ更新（image_url, year 列の追加・整合）
+-- items テーブルのスキーマ更新（image_url, year 列の追加・整合、制約の緩和・更新）
 -- ==========================================
 
 DO $$
@@ -18,6 +18,14 @@ BEGIN
     WHERE table_schema = 'public' AND table_name = 'items' AND column_name = 'year'
   ) THEN
     ALTER TABLE public.items ADD COLUMN year INT;
+  END IF;
+
+  -- image_rights_confirmed 列が存在しない場合は追加
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'items' AND column_name = 'image_rights_confirmed'
+  ) THEN
+    ALTER TABLE public.items ADD COLUMN image_rights_confirmed BOOLEAN DEFAULT TRUE;
   END IF;
 
   -- theme 列を NULL 可に変更（コード側でのフォールバック判定に対応）
@@ -59,4 +67,12 @@ BEGIN
   ) THEN
     ALTER TABLE public.items ALTER COLUMN birth_year_end DROP NOT NULL;
   END IF;
+
+  -- 既存の category check 制約を削除して新しいカテゴリ（ガジェット、インターネット等）を含む制約に更新
+  ALTER TABLE public.items DROP CONSTRAINT IF EXISTS items_category_check;
+  ALTER TABLE public.items ADD CONSTRAINT items_category_check
+    CHECK (category IN ('おかし', 'ゲーム', 'たべもの', 'ほん', 'できごと', 'ガジェット', 'インターネット'));
+
+  -- legacy な null 年をバックフィル
+  UPDATE public.items SET year = 2000 WHERE year IS NULL;
 END $$;

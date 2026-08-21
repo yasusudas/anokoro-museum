@@ -27,6 +27,7 @@ const exhibits = [
     category: "おかし",
     year: 2004,
     image_url: "https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=600&auto=format&fit=crop&q=80",
+    image_rights_confirmed: true,
     created_at: "2026-08-01T00:00:00+09:00",
   },
   {
@@ -36,7 +37,8 @@ const exhibits = [
     description: "放課後になると、みんなで妖怪メダルを見せ合った。あの召喚ソングは今でも口ずさめるかも。",
     category: "ゲーム",
     year: 2013,
-    image_url: "https://images.unsplash.com/photo-1612287233207-63a2c5a0e5b7?w=600&auto=format&fit=crop&q=80",
+    image_url: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop&q=80",
+    image_rights_confirmed: true,
     created_at: "2026-08-01T01:00:00+09:00",
   },
   {
@@ -46,7 +48,8 @@ const exhibits = [
     description: "長い列に並んで、黒糖ミルクを片手に写真を撮った放課後。太いストローも含めて思い出。",
     category: "たべもの",
     year: 2018,
-    image_url: "https://images.unsplash.com/photo-1558857563-b37fe8240409?w=600&auto=format&fit=crop&q=80",
+    image_url: "https://images.unsplash.com/photo-1541658016709-82535e94bc69?w=600&auto=format&fit=crop&q=80",
+    image_rights_confirmed: true,
     created_at: "2026-08-01T02:00:00+09:00",
   },
   {
@@ -57,6 +60,7 @@ const exhibits = [
     category: "ほん",
     year: 2000,
     image_url: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=600&auto=format&fit=crop&q=80",
+    image_rights_confirmed: true,
     created_at: "2026-08-01T03:00:00+09:00",
   },
   {
@@ -67,6 +71,7 @@ const exhibits = [
     category: "できごと",
     year: 2005,
     image_url: "https://images.unsplash.com/photo-1533105079780-92b9be482077?w=600&auto=format&fit=crop&q=80",
+    image_rights_confirmed: true,
     created_at: "2026-08-01T04:00:00+09:00",
   },
   {
@@ -77,6 +82,7 @@ const exhibits = [
     category: "ゲーム",
     year: 2005,
     image_url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop&q=80",
+    image_rights_confirmed: true,
     created_at: "2026-08-21T07:07:46.552256+00:00",
   },
   {
@@ -87,6 +93,7 @@ const exhibits = [
     category: "ガジェット",
     year: 2006,
     image_url: "https://images.unsplash.com/photo-1592840496694-26d035b52b48?w=600&auto=format&fit=crop&q=80",
+    image_rights_confirmed: true,
     created_at: "2026-08-21T07:07:46.552256+00:00",
   },
   {
@@ -97,6 +104,7 @@ const exhibits = [
     category: "ガジェット",
     year: 2007,
     image_url: "https://images.unsplash.com/photo-1520923642038-b4259acecbd7?w=600&auto=format&fit=crop&q=80",
+    image_rights_confirmed: true,
     created_at: "2026-08-21T07:07:46.552256+00:00",
   },
   {
@@ -107,12 +115,13 @@ const exhibits = [
     category: "インターネット",
     year: 2008,
     image_url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80",
+    image_rights_confirmed: true,
     created_at: "2026-08-21T07:07:46.552256+00:00",
   },
 ];
 
 async function run() {
-  console.log("Seeding exhibits with image URLs to Supabase DB...");
+  console.log("Seeding exhibits with image URLs and rights confirmed to Supabase DB...");
   for (const exhibit of exhibits) {
     const { error } = await supabase
       .from("items")
@@ -127,7 +136,7 @@ async function run() {
 
   const { data: allItems } = await supabase
     .from("items")
-    .select("id, title, category, year, image_url")
+    .select("id, title, category, year, image_url, image_rights_confirmed")
     .order("created_at", { ascending: true });
 
   console.log(`\n🎉 Total items in DB: ${allItems?.length}`);

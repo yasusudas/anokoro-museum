@@ -281,7 +281,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                   <div>
                     <h2>{item.title}</h2>
                     <p>{item.subtitle}</p>
-                    <small>{item.year} 年の記憶</small>
+                    <small>{item.year ? `${item.year} 年の記憶` : "あのころの記憶"}</small>
                   </div>
                   <button
                     className={shinmiriItems.includes(item.id) ? "nostalgia liked" : "nostalgia"}
@@ -359,7 +359,15 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
               <p className="modal-subtitle">{selected.subtitle}</p>
               <p className="modal-memory">{selected.description}</p>
               <div className="memory-tag">
-                主に <b>{selected.year}年</b> の記憶
+                {selected.year ? (
+                  <>
+                    主に <b>{selected.year}年</b> の記憶
+                  </>
+                ) : (
+                  <>
+                    <b>あのころ</b> の記憶
+                  </>
+                )}
               </div>
               <button
                 className={shinmiriItems.includes(selected.id) ? "modal-like liked" : "modal-like"}

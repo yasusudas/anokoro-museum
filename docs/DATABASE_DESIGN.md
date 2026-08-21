@@ -56,7 +56,7 @@ erDiagram
 | `user_id` | uuid | FK `users.id` (ON DELETE CASCADE)、NULL可 |
 | `title` | varchar | NOT NULL。Unicode空白を除くtrim後が1文字以上 |
 | `description` | text | NOT NULL。Unicode空白を除くtrim後が1文字以上 |
-| `category` | varchar | NOT NULL。CHECK制約で `おかし` / `ゲーム` / `たべもの` / `ほん` / `できごと` に限定 |
+| `category` | varchar | NOT NULL。CHECK制約で `おかし` / `ゲーム` / `たべもの` / `ほん` / `できごと` / `ガジェット` / `インターネット` に限定 |
 | `theme` | varchar | 表示テーマ識別子（`gummy`, `watch` など。未設定時はコードでフォールバック） |
 | `image_url` | text | 写真のURL（外部URLまたはSupabase Storageキー） |
 | `image_rights_confirmed` | boolean | 投稿者の権利確認 |
@@ -136,7 +136,7 @@ RLS有効下ではクライアントから `users` をINSERTできない。`auth
 ## インデックス
 
 - `comments(item_id, created_at DESC)` — 展示詳細のコメント取得
-- `items(category)` / `items(birth_year_start, birth_year_end)` — F-02の絞り込み
+- `items(category)` / `items(year)` — F-02の絞り込み
 - `comment_likes` は `UNIQUE(comment_id, user_id)` が `comment_id` 先頭の複合indexになるため追加不要
 - `shinmiri_reactions` は `UNIQUE(item_id, user_id)` が `item_id` 先頭の複合indexになるため追加不要
 

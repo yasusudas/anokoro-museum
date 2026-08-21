@@ -69,7 +69,7 @@ export async function getExhibits(): Promise<ExhibitItem[]> {
     const user = Array.isArray(item.users) ? item.users[0] : item.users;
     const userName = user?.user_name ?? undefined;
 
-    const displayYear = item.year ? `${item.year}年` : "あのころ";
+    const yearStr = item.year ? String(item.year) : "";
     const subtitle = item.year ? `${item.year}年の思い出` : "あのころの思い出";
 
     return {
@@ -78,7 +78,7 @@ export async function getExhibits(): Promise<ExhibitItem[]> {
       title: item.title,
       subtitle,
       category: item.category,
-      year: displayYear,
+      year: yearStr,
       description: item.description,
       imageUrl: item.image_url,
       theme,
