@@ -350,6 +350,15 @@ button:focus-visible {
   background: #f3ead8;
   border: 1px solid #6f4a19;
   box-shadow: inset 0 0 0 1px #d8c6a7, inset 0 0 10px rgba(74, 49, 24, .28);
+  overflow: hidden;
+}
+
+.frame-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 2px;
 }
 
 .exhibit-label {
