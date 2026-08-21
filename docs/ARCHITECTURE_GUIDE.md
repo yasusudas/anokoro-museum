@@ -8,15 +8,14 @@
 
 ```text
 app/
-  (museum)/
-    page.tsx
-    exhibits/[exhibitId]/page.tsx
-  login/page.tsx
-  exhibits/new/page.tsx
-  admin/exhibits/page.tsx
+  page.tsx
+  (auth)/
+    layout.tsx
+    sign-in/page.tsx
+    sign-up/page.tsx
 components/
   museum/                 # 回廊・額縁・展示UI
-  forms/                  # 投稿・コメントフォーム
+  auth/                   # ログイン・登録まわりのカードやフォーム
   ui/                     # 汎用的な小さい部品
 features/
   exhibits/
@@ -60,7 +59,11 @@ docs/
 
 ### 公開展示一覧
 
-`app/(museum)/page.tsx` がsearch paramsを解釈し、`features/exhibits/infrastructure/find-published-exhibits.ts` を呼ぶ。年代との関連度計算が複雑になったら `domain` へ移す。横移動だけを `components/museum/exhibit-corridor.tsx` に分離する。
+`app/page.tsx` は薄く保ち、表示の中心は `components/museum/museum-experience.tsx` に置く。年代との関連度計算が複雑になったら `domain` へ移す。横移動だけを `components/museum/exhibit-corridor.tsx` に分離する。
+
+### 認証導線
+
+`app/(auth)/sign-in/page.tsx` と `app/(auth)/sign-up/page.tsx` は route group 配下に置き、共通の見た目は `components/auth/auth-card.tsx` に寄せる。入力フォームは `components/auth/*-form.tsx` に分け、ページ側はルーティングと composition だけにする。
 
 ### しんみり
 
@@ -68,7 +71,7 @@ UI → Server Action → applicationの `toggle-nostalgia` → repository。重�
 
 ### 展示投稿
 
-フォーム入力をServer Actionで検証し、画像保存とDB保存をapplicationで調整する。片方だけ成功した場合に孤立ファイルを残さない処理を設計する。公開状態は必ず `pending` から開始する。
+投稿画面をページとして切るなら `app/(museum)/exhibits/new/page.tsx` に置き、ページ側はルートと composition のみを担当する。モーダルで出すなら再利用UIは `components/forms/` か `components/museum/` に置き、必要なら `app/(museum)` 側から呼び出す。フォーム入力は Server Action で検証し、画像保存と DB 保存は application で調整する。片方だけ成功した場合に孤立ファイルを残さない処理を設計する。公開状態は必ず `pending` から開始する。
 
 ## 段階的導入
 
