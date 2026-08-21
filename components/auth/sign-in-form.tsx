@@ -10,6 +10,20 @@ type SignInErrors = {
   general?: string;
 };
 
+function getSafeNextPath() {
+  const next = new URLSearchParams(window.location.search).get("next");
+  if (!next) return "/";
+
+  try {
+    const nextUrl = new URL(next, window.location.origin);
+    if (nextUrl.origin !== window.location.origin) return "/";
+
+    return `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
+  } catch {
+    return "/";
+  }
+}
+
 export function SignInForm() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -55,7 +69,7 @@ export function SignInForm() {
         return;
       }
 
-      router.push("/");
+      router.push(getSafeNextPath());
       router.refresh();
     });
   }

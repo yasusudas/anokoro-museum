@@ -33,6 +33,7 @@ Codex / Claude などのAIコーディングエージェントは、このリポ
 ```bash
 npm run dev
 npm run lint
+npm run test
 npm run build
 ```
 
@@ -52,7 +53,7 @@ npm run build
 - 秘密値・service role keyをブラウザへ渡さない。`NEXT_PUBLIC_*` は全利用者から見える前提で扱う。
 - 環境変数を追加・変更した場合は `.env.example` も更新する。
 - 成果物に不要なコメントアウトや説明用コメントを残さない。
-- コミット前に `npm run lint` と `npm run build` を通す（pre-commitフックが同じ内容を実行する）。
+- コミット前に `npm run lint`、`npm run test`、`npm run build` を通す（pre-commitフックが同じ内容を実行する）。
 
 <!-- BEGIN:nextjs-agent-rules -->
 

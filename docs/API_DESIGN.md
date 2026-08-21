@@ -14,6 +14,8 @@
 
 「APIを作るため」だけにRoute Handlerを増やさず、Server ActionやRLS付きPostgRESTで足りるか先に検討する。
 
+現在の展示詳細はClient Componentのモーダルで構成されているため、コメント読み取りは暫定的にServer Action `getCommentsAction`を介する。展示詳細をServer ComponentのURLへ分離した段階で、コメント読み取りをServer Component queryへ寄せる。
+
 ## 2. 操作一覧
 
 | 操作 | 実装候補 | 認証 | 関連機能 |
@@ -62,7 +64,7 @@ type ActionResult<T> =
 - 一覧更新: 展示一覧tagまたは該当pathを再検証
 - 展示更新: 一覧と `/exhibits/{id}` を再検証
 - コメント更新: 該当展示のコメント境界だけを更新
-- コメントいいね: 楽観的UI後、サーバーの確定値へ収束させる
+- コメントいいね: 楽観的UI後、サーバーの確定値へ収束させる。同時付与で一意制約に当たった場合は付与済みとして成功扱いする
 - しんみり件数: 楽観的UI後、サーバーの確定値へ収束させる
 
 具体APIは導入済みNext.jsのローカルドキュメントを確認して選択する。
