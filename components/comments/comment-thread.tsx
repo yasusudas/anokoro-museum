@@ -19,6 +19,7 @@ type CommentThreadProps = {
 };
 
 const URL_PATTERN = /(https?:\/\/[^\s<]+)/g;
+const COMMENT_REQUEST_ERROR = "通信に失敗しました。もう一度お試しください";
 
 function renderCommentContent(content: string) {
   return content.split(URL_PATTERN).map((part, index) => {
@@ -56,20 +57,31 @@ export function CommentThread({ itemId }: CommentThreadProps) {
     [itemId, viewerId],
   );
 
-  const loadComments = useCallback(async () => {
-    setIsLoading(true);
+  const loadComments = useCallback(async ({ showLoading = true }: { showLoading?: boolean } = {}) => {
+    if (showLoading) {
+      setIsLoading(true);
+    }
     setErrorMessage("");
 
-    const result = await getCommentsAction(itemId);
+    try {
+      const result = await getCommentsAction(itemId);
 
-    if (!result.ok) {
-      setErrorMessage(result.error.message);
-      setComments([]);
-    } else {
+      if (!result.ok) {
+        setErrorMessage(result.error.message);
+        return false;
+      }
+
       setComments(result.data);
+      return true;
+    } catch (error) {
+      console.error("Failed to load comments:", error);
+      setErrorMessage("コメントを読み込めませんでした。もう一度お試しください");
+      return false;
+    } finally {
+      if (showLoading) {
+        setIsLoading(false);
+      }
     }
-
-    setIsLoading(false);
   }, [itemId]);
 
   useEffect(() => {
@@ -139,18 +151,23 @@ export function CommentThread({ itemId }: CommentThreadProps) {
     setIsSubmitting(true);
     setErrorMessage("");
 
-    const formData = new FormData(event.currentTarget);
-    const result = await createCommentAction(formData);
+    try {
+      const formData = new FormData(event.currentTarget);
+      const result = await createCommentAction(formData);
 
-    if (!result.ok) {
-      setErrorMessage(result.error.message);
+      if (!result.ok) {
+        setErrorMessage(result.error.message);
+        return;
+      }
+
+      handleContentChange("");
+      await loadComments({ showLoading: false });
+    } catch (error) {
+      console.error("Failed to create comment:", error);
+      setErrorMessage(COMMENT_REQUEST_ERROR);
+    } finally {
       setIsSubmitting(false);
-      return;
     }
-
-    handleContentChange("");
-    await loadComments();
-    setIsSubmitting(false);
   }
 
   async function handleDelete(comment: CommentView) {
@@ -159,34 +176,99 @@ export function CommentThread({ itemId }: CommentThreadProps) {
     setBusyCommentId(comment.id);
     setErrorMessage("");
 
-    const formData = new FormData();
-    formData.set("commentId", comment.id);
-    const result = await deleteCommentAction(formData);
+    try {
+      const formData = new FormData();
+      formData.set("commentId", comment.id);
+      const result = await deleteCommentAction(formData);
 
-    if (!result.ok) {
-      setErrorMessage(result.error.message);
-    } else {
-      await loadComments();
+      if (!result.ok) {
+        setErrorMessage(result.error.message);
+      } else {
+        await loadComments({ showLoading: false });
+      }
+    } catch (error) {
+      console.error("Failed to delete comment:", error);
+      setErrorMessage(COMMENT_REQUEST_ERROR);
+    } finally {
+      setBusyCommentId(null);
     }
-
-    setBusyCommentId(null);
   }
 
   async function handleLike(comment: CommentView) {
     setBusyCommentId(comment.id);
     setErrorMessage("");
 
-    const formData = new FormData();
-    formData.set("commentId", comment.id);
-    const result = await toggleCommentLikeAction(formData);
+    const previousLiked = comment.isLikedByCurrentUser;
+    const previousLikeCount = comment.likeCount;
+    const optimisticLiked = !previousLiked;
 
-    if (!result.ok) {
-      setErrorMessage(result.error.message);
-    } else {
-      await loadComments();
+    setComments((current) =>
+      current.map((currentComment) =>
+        currentComment.id === comment.id
+          ? {
+              ...currentComment,
+              isLikedByCurrentUser: optimisticLiked,
+              likeCount: Math.max(0, previousLikeCount + (optimisticLiked ? 1 : -1)),
+            }
+          : currentComment,
+      ),
+    );
+
+    try {
+      const formData = new FormData();
+      formData.set("commentId", comment.id);
+      const result = await toggleCommentLikeAction(formData);
+
+      if (!result.ok) {
+        setComments((current) =>
+          current.map((currentComment) =>
+            currentComment.id === comment.id
+              ? {
+                  ...currentComment,
+                  isLikedByCurrentUser: previousLiked,
+                  likeCount: previousLikeCount,
+                }
+              : currentComment,
+          ),
+        );
+        setErrorMessage(result.error.message);
+        return;
+      }
+
+      const confirmedLiked = result.data.liked;
+      setComments((current) =>
+        current.map((currentComment) =>
+          currentComment.id === comment.id
+            ? {
+                ...currentComment,
+                isLikedByCurrentUser: confirmedLiked,
+                likeCount: Math.max(
+                  0,
+                  previousLikeCount +
+                    (confirmedLiked === previousLiked ? 0 : confirmedLiked ? 1 : -1),
+                ),
+              }
+            : currentComment,
+        ),
+      );
+      await loadComments({ showLoading: false });
+    } catch (error) {
+      console.error("Failed to toggle comment like:", error);
+      setComments((current) =>
+        current.map((currentComment) =>
+          currentComment.id === comment.id
+            ? {
+                ...currentComment,
+                isLikedByCurrentUser: previousLiked,
+                likeCount: previousLikeCount,
+              }
+            : currentComment,
+        ),
+      );
+      setErrorMessage(COMMENT_REQUEST_ERROR);
+    } finally {
+      setBusyCommentId(null);
     }
-
-    setBusyCommentId(null);
   }
 
   return (
@@ -215,6 +297,7 @@ export function CommentThread({ itemId }: CommentThreadProps) {
                   className={comment.isLikedByCurrentUser ? "comment-like liked" : "comment-like"}
                   onClick={() => void handleLike(comment)}
                   disabled={busyCommentId === comment.id}
+                  aria-pressed={comment.isLikedByCurrentUser}
                 >
                   いいね {comment.likeCount}
                 </button>
@@ -258,7 +341,7 @@ export function CommentThread({ itemId }: CommentThreadProps) {
         </form>
       ) : (
         <p className="comment-login-prompt">
-          コメントするには <Link href={`/sign-in?next=${encodeURIComponent(`/exhibits/${itemId}`)}`}>ログイン</Link> してください。
+          コメントするには <Link href={`/sign-in?next=${encodeURIComponent(`/?exhibit=${itemId}`)}`}>ログイン</Link> してください。
         </p>
       )}
 

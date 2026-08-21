@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { CommentThread } from "@/components/comments/comment-thread";
 import type { ExhibitItem } from "@/features/exhibits/types";
 import type { AuthUser } from "@/features/auth/types";
@@ -91,8 +92,12 @@ function ExhibitArt({ theme, title }: { theme: string; title: string }) {
 
 export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperienceProps) {
   const corridorRef = useRef<HTMLDivElement>(null);
+  const searchParams = useSearchParams();
+  const requestedExhibitId = searchParams.get("exhibit");
   const [activeCategory, setActiveCategory] = useState("すべて");
-  const [selected, setSelected] = useState<ExhibitItem | null>(null);
+  const [selected, setSelected] = useState<ExhibitItem | null>(() =>
+    initialExhibits.find((item) => item.id === requestedExhibitId) ?? null,
+  );
   const [shinmiriItems, setShinmiriItems] = useState<string[]>([]);
   const [showGuide, setShowGuide] = useState(true);
   const [isPending, startTransition] = useTransition();
