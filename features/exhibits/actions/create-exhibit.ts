@@ -58,8 +58,8 @@ export async function createExhibitAction(
 
   if (!description) {
     fieldErrors.description = ["思い出の本文を入力してください。"];
-  } else if (description.length > 1000) {
-    fieldErrors.description = ["思い出の本文は1000文字以内で入力してください。"];
+  } else if (description.length > 500) {
+    fieldErrors.description = ["思い出の本文は500文字以内で入力してください。"];
   }
 
   if (!category) {
