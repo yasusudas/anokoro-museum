@@ -20,14 +20,14 @@
 
 | 操作 | 実装候補 | 認証 | 関連機能 |
 | --- | --- | --- | --- |
-| 公開展示一覧取得 | Server query | 不要 | F-02 |
-| 展示詳細取得 | Server query | 不要 | F-03 |
-| しんみり切替 | Server Action / RPC | 必要 | F-05 |
-| コメント投稿・削除 | Server Action | 必要 | F-06 |
-| コメントいいね切替 | Server Action | 必要 | F-06 |
-| コメントいいね件数取得 | Supabase RPC `get_comment_like_counts` | 不要 | F-06 |
-| 展示候補投稿 | Server Action | 必要 | F-07 |
-| 画像アップロード確定 | Server Action | 必要 | F-07 |
+| 公開展示一覧取得 | Server query | 不要 | F-01 |
+| 展示詳細取得 | Server query | 不要 | F-02 |
+| しんみり切替 | Server Action / RPC | 必要 | F-04 |
+| コメント投稿・削除 | Server Action | 必要 | F-05 |
+| コメントいいね切替 | Server Action | 必要 | F-05 |
+| コメントいいね件数取得 | Supabase RPC `get_comment_like_counts` | 不要 | F-05 |
+| 展示候補投稿 | Server Action | 必要 | F-06 |
+| 画像アップロード確定 | Server Action | 必要 | F-06 |
 
 ## 3. 共通入力・出力
 
@@ -71,4 +71,4 @@ type ActionResult<T> =
 
 ## 6. 将来のRoute Handler
 
-画像モデレーションWebhookなど外部から呼ばれる処理を追加するときは、メソッド、path、認証、冪等性、request/response例、timeout、retry方針をこの文書へ追記する。
+外部サービスのWebhookなど外部から呼ばれる処理を追加するときは、メソッド、path、認証、冪等性、request/response例、timeout、retry方針をこの文書へ追記する。

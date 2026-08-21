@@ -82,12 +82,11 @@ sequenceDiagram
 
 ### 展示候補を投稿する
 
-審査を持たないため、公開状態の遷移はない。投稿は保存と同時に公開され、以降は投稿者だけが更新・削除できる。
+投稿は保存と同時に公開され、以降は投稿者だけが削除できる。
 
 ```mermaid
 stateDiagram-v2
   [*] --> published: 投稿者がフォーム送信
-  published --> published: 投稿者が編集
   published --> [*]: 投稿者が削除
 ```
 
