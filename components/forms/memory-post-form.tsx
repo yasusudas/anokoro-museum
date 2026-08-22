@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Trash2 } from "lucide-react";
+import { checkExhibitTitleAction } from "@/features/exhibits/actions/check-title-availability";
 import { createExhibitAction } from "@/features/exhibits/actions/create-exhibit";
 import { EXHIBIT_CATEGORIES } from "@/features/exhibits/categories";
 
@@ -18,12 +19,56 @@ export function MemoryPostForm() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const titleCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
+      if (titleCheckTimerRef.current) clearTimeout(titleCheckTimerRef.current);
     };
   }, [previewUrl]);
+
+  const performDuplicateCheck = useCallback(async (title: string) => {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+
+    try {
+      const { isDuplicate } = await checkExhibitTitleAction(trimmed);
+      if (isDuplicate) {
+        setFieldErrors((currentErrors) => ({
+          ...currentErrors,
+          title: "その展示品は寄贈されています",
+        }));
+      }
+    } catch {
+      // ネットワーク等のエラー時は送信時の検証に任せる
+    }
+  }, []);
+
+  function handleTitleInput(event: React.ChangeEvent<HTMLInputElement>) {
+    const val = event.currentTarget.value;
+    clearFieldError("title");
+
+    if (titleCheckTimerRef.current) {
+      clearTimeout(titleCheckTimerRef.current);
+    }
+
+    if (val.trim()) {
+      titleCheckTimerRef.current = setTimeout(() => {
+        performDuplicateCheck(val);
+      }, 350);
+    }
+  }
+
+  function handleTitleBlur(event: React.FocusEvent<HTMLInputElement>) {
+    const val = event.currentTarget.value;
+    if (titleCheckTimerRef.current) {
+      clearTimeout(titleCheckTimerRef.current);
+    }
+    if (val.trim()) {
+      performDuplicateCheck(val);
+    }
+  }
 
   function selectImage(file: File | undefined) {
     if (!file || !file.type.startsWith("image/")) return;
@@ -122,7 +167,8 @@ export function MemoryPostForm() {
           aria-invalid={Boolean(fieldErrors.title)}
           aria-describedby={fieldErrors.title ? "memory-title-error" : undefined}
           placeholder="（例）妖怪ウォッチ"
-          onInput={() => clearFieldError("title")}
+          onChange={handleTitleInput}
+          onBlur={handleTitleBlur}
         />
         {fieldErrors.title && (
           <p id="memory-title-error" className="post-field-error" role="alert">
