@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
+import type { ExhibitCategory } from "../features/exhibits/categories";
 
 const envContent = fs.readFileSync(".env.local", "utf-8");
 for (const line of envContent.split("\n")) {
@@ -17,12 +18,20 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const mockExhibits = [
+const mockExhibits: Array<{
+  id: string;
+  title: string;
+  description: string;
+  category: ExhibitCategory;
+  year: number;
+  imageFileName: string;
+  created_at: string;
+}> = [
   {
     id: "abccab1c-030a-46ca-a77e-403558a7b4e3",
     title: "ひもQ",
     description: "遠足の日、ちぎれないように端から大事に食べた、あの長いグミ。友だちと長さを比べるのも定番でした。",
-    category: "おかし",
+    category: "食べ物",
     year: 2004,
     imageFileName: "himo-q.jpg",
     created_at: "2026-08-01T00:00:00+09:00",
@@ -40,7 +49,7 @@ const mockExhibits = [
     id: "01b2a5ce-d7f5-48a5-83be-c02acbe44673",
     title: "タピオカ",
     description: "長い列に並んで、黒糖ミルクを片手に写真を撮った放課後。太いストローも含めて思い出。",
-    category: "たべもの",
+    category: "食べ物",
     year: 2018,
     imageFileName: "tapioka.jpg",
     created_at: "2026-08-01T02:00:00+09:00",
@@ -49,7 +58,7 @@ const mockExhibits = [
     id: "f5336f5e-34f3-4dad-b26a-516a70e92e1f",
     title: "かいけつゾロリ",
     description: "休み時間の図書室。貸出中なら次の巻を探して、最後のなぞなぞまでしっかり読んだ。",
-    category: "ほん",
+    category: "本",
     year: 2000,
     imageFileName: "zorori.jpg",
     created_at: "2026-08-01T03:00:00+09:00",
@@ -58,7 +67,7 @@ const mockExhibits = [
     id: "5fbf3448-5776-4765-8676-8a7a7ca7531f",
     title: "ソーラン節",
     description: "運動会前、筋肉痛になるまで低い姿勢を練習した。クラス全員の掛け声が揃った瞬間は忘れられない。",
-    category: "できごと",
+    category: "音楽",
     year: 2005,
     imageFileName: "soran-bushi.png",
     created_at: "2026-08-01T04:00:00+09:00",
@@ -85,7 +94,7 @@ const mockExhibits = [
     id: "3bf75231-81b2-4701-a1f5-2a28ec4918b5",
     title: "ガラケー",
     description: "メアド交換は赤外線通信！携帯をピタッとくっつけて受信して、キラキラのデコメで返信するのが定番でした。",
-    category: "ガジェット",
+    category: "その他",
     year: 2007,
     imageFileName: "garakei.jpg",
     created_at: "2026-08-21T07:07:46.552256+00:00",

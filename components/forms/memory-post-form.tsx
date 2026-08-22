@@ -4,16 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Trash2 } from "lucide-react";
 import { createExhibitAction } from "@/features/exhibits/actions/create-exhibit";
-
-const categories = [
-  "おかし",
-  "ゲーム",
-  "たべもの",
-  "ほん",
-  "できごと",
-  "ガジェット",
-  "インターネット",
-];
+import { EXHIBIT_CATEGORIES } from "@/features/exhibits/categories";
 
 type FieldName = "title" | "category" | "year" | "description" | "image";
 type FieldErrors = Partial<Record<FieldName, string>>;
@@ -157,7 +148,7 @@ export function MemoryPostForm() {
               <option value="" disabled>
                 選択してください
               </option>
-              {categories.map((category) => (
+              {EXHIBIT_CATEGORIES.map((category) => (
                 <option key={category} value={category}>
                   {category}
                 </option>

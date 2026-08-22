@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CommentThread } from "@/components/comments/comment-thread";
+import { EXHIBIT_CATEGORIES } from "@/features/exhibits/categories";
 import type { ExhibitItem } from "@/features/exhibits/types";
 import type { AuthUser } from "@/features/auth/types";
 import { signOutAction } from "@/features/auth/actions/sign-out";
@@ -125,21 +126,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
 
   const exhibits = initialExhibits;
 
-  const categories = useMemo(() => {
-    const defaultCategories = [
-      "すべて",
-      "おかし",
-      "ゲーム",
-      "たべもの",
-      "ほん",
-      "できごと",
-      "ガジェット",
-      "インターネット",
-    ];
-    const itemCategories = exhibits.map((e) => e.category).filter(Boolean);
-    const set = new Set([...defaultCategories, ...itemCategories]);
-    return Array.from(set);
-  }, [exhibits]);
+  const categories = ["すべて", ...EXHIBIT_CATEGORIES] as const;
 
   const visible =
     activeCategory === "すべて"

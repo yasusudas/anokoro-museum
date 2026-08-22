@@ -1,9 +1,11 @@
+import type { ExhibitCategory } from "./categories";
+
 export type ExhibitItem = {
   id: string;
   number: string;
   title: string;
   subtitle?: string;
-  category: string;
+  category: ExhibitCategory;
   year: string;
   description: string;
   imageUrl?: string | null;
@@ -28,7 +30,7 @@ export type ActionResult<T = void> =
 export type CreateExhibitInput = {
   title: string;
   description: string;
-  category: string;
+  category: ExhibitCategory;
   year: number;
   imageUrl?: string | null;
 };
