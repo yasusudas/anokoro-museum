@@ -26,7 +26,7 @@ export function MemoryPostForm() {
   const [generalError, setGeneralError] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const titleCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const latestCheckIdRef = useRef(0);
+  const titleCheckVersionRef = useRef(0);
 
   const isFormComplete =
     title.trim().length > 0 &&
@@ -44,18 +44,18 @@ export function MemoryPostForm() {
     };
   }, [previewUrl]);
 
-  const performDuplicateCheck = useCallback(async (checkTitle: string) => {
+  const performDuplicateCheck = useCallback(async (checkTitle: string, version: number) => {
     const trimmed = checkTitle.trim();
     if (!trimmed) {
-      setIsTitleDuplicate(false);
+      if (version === titleCheckVersionRef.current) {
+        setIsTitleDuplicate(false);
+      }
       return;
     }
 
-    const checkId = ++latestCheckIdRef.current;
-
     try {
       const { isDuplicate } = await checkExhibitTitleAction(trimmed);
-      if (latestCheckIdRef.current !== checkId) return;
+      if (version !== titleCheckVersionRef.current) return;
 
       setIsTitleDuplicate(isDuplicate);
       if (isDuplicate) {
@@ -65,12 +65,13 @@ export function MemoryPostForm() {
         }));
       }
     } catch {
-      if (latestCheckIdRef.current !== checkId) return;
+      if (version !== titleCheckVersionRef.current) return;
     }
   }, []);
 
   function handleTitleInput(event: React.ChangeEvent<HTMLInputElement>) {
     const val = event.currentTarget.value;
+    const version = ++titleCheckVersionRef.current;
     setTitle(val);
     setIsTitleDuplicate(false);
     clearFieldError("title");
@@ -81,18 +82,19 @@ export function MemoryPostForm() {
 
     if (val.trim()) {
       titleCheckTimerRef.current = setTimeout(() => {
-        performDuplicateCheck(val);
+        performDuplicateCheck(val, version);
       }, 350);
     }
   }
 
   function handleTitleBlur(event: React.FocusEvent<HTMLInputElement>) {
     const val = event.currentTarget.value;
+    const version = ++titleCheckVersionRef.current;
     if (titleCheckTimerRef.current) {
       clearTimeout(titleCheckTimerRef.current);
     }
     if (val.trim()) {
-      performDuplicateCheck(val);
+      performDuplicateCheck(val, version);
     }
   }
 
