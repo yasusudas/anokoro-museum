@@ -38,7 +38,9 @@ export async function createExhibitAction(
   }
 
   const title = String(formData.get("title") ?? "").trim();
-  const description = String(formData.get("description") ?? formData.get("body") ?? "").trim();
+  const description = String(
+    formData.get("description") ?? formData.get("body") ?? formData.get("subtitle") ?? ""
+  ).trim();
   const category = String(formData.get("category") ?? "").trim();
   const rawYear = String(formData.get("year") ?? "").trim();
   const imageFile = formData.get("image");

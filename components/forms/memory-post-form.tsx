@@ -1,17 +1,31 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronDown, Trash2 } from "lucide-react";
+import { createExhibitAction } from "@/features/exhibits/actions/create-exhibit";
 
-const categories = ["おかし", "ゲーム", "たべもの", "ほん", "できごと"];
-type FieldName = "title" | "category" | "year" | "subtitle" | "image";
+const categories = [
+  "おかし",
+  "ゲーム",
+  "たべもの",
+  "ほん",
+  "できごと",
+  "ガジェット",
+  "インターネット",
+];
+
+type FieldName = "title" | "category" | "year" | "description" | "image";
 type FieldErrors = Partial<Record<FieldName, string>>;
 
 export function MemoryPostForm() {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [selectedFileName, setSelectedFileName] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [generalError, setGeneralError] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -24,6 +38,7 @@ export function MemoryPostForm() {
     if (!file || !file.type.startsWith("image/")) return;
 
     clearFieldError("image");
+    setGeneralError(null);
     setSelectedFileName(file.name);
     setPreviewUrl((currentUrl) => {
       if (currentUrl) URL.revokeObjectURL(currentUrl);
@@ -39,14 +54,17 @@ export function MemoryPostForm() {
       delete nextErrors[fieldName];
       return nextErrors;
     });
+    setGeneralError(null);
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setGeneralError(null);
 
-    const formData = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const formData = new FormData(formElement);
     const nextErrors: FieldErrors = {};
-    const textFields: Exclude<FieldName, "image">[] = ["title", "category", "year", "subtitle"];
+    const textFields: Exclude<FieldName, "image">[] = ["title", "category", "year", "description"];
 
     textFields.forEach((fieldName) => {
       if (!String(formData.get(fieldName) ?? "").trim()) nextErrors[fieldName] = "未入力です。";
@@ -56,11 +74,41 @@ export function MemoryPostForm() {
     if (year && !/^[0-9]{4}$/.test(year)) nextErrors.year = "4桁の数字で入力してください。";
     if (!selectedFileName) nextErrors.image = "未入力です。";
 
-    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await createExhibitAction(formData);
+
+      if (!result.ok) {
+        if (result.error.fieldErrors) {
+          const serverFieldErrors: FieldErrors = {};
+          for (const [key, messages] of Object.entries(result.error.fieldErrors)) {
+            if (key in nextErrors || key === "description" || key === "title" || key === "category" || key === "year" || key === "image") {
+              serverFieldErrors[key as FieldName] = messages[0];
+            }
+          }
+          setFieldErrors(serverFieldErrors);
+        }
+        setGeneralError(result.error.message || "展示の投稿に失敗しました。");
+        return;
+      }
+
+      router.push("/");
+      router.refresh();
+    });
   }
 
   return (
     <form className="post-form" noValidate onSubmit={handleSubmit}>
+      {generalError && (
+        <div className="post-field-error-banner" role="alert" style={{ color: "#ef4444", marginBottom: "1rem", fontSize: "0.875rem" }}>
+          {generalError}
+        </div>
+      )}
+
       <div className="post-field post-field-wide">
         <label htmlFor="memory-title">展示タイトル</label>
         <input
@@ -68,6 +116,7 @@ export function MemoryPostForm() {
           name="title"
           type="text"
           required
+          disabled={isPending}
           aria-invalid={Boolean(fieldErrors.title)}
           aria-describedby={fieldErrors.title ? "memory-title-error" : undefined}
           placeholder="（例）妖怪ウォッチ"
@@ -89,6 +138,7 @@ export function MemoryPostForm() {
               name="category"
               defaultValue=""
               required
+              disabled={isPending}
               aria-invalid={Boolean(fieldErrors.category)}
               aria-describedby={fieldErrors.category ? "memory-category-error" : undefined}
               onChange={() => clearFieldError("category")}
@@ -122,6 +172,7 @@ export function MemoryPostForm() {
             minLength={4}
             maxLength={4}
             required
+            disabled={isPending}
             aria-invalid={Boolean(fieldErrors.year)}
             aria-describedby={fieldErrors.year ? "memory-year-error" : undefined}
             placeholder="（例）2007"
@@ -139,20 +190,21 @@ export function MemoryPostForm() {
       </div>
 
       <div className="post-field post-field-wide">
-        <label htmlFor="memory-subtitle">説明</label>
+        <label htmlFor="memory-description">説明</label>
         <textarea
-          id="memory-subtitle"
-          name="subtitle"
+          id="memory-description"
+          name="description"
           rows={3}
           required
-          aria-invalid={Boolean(fieldErrors.subtitle)}
-          aria-describedby={fieldErrors.subtitle ? "memory-subtitle-error" : undefined}
+          disabled={isPending}
+          aria-invalid={Boolean(fieldErrors.description)}
+          aria-describedby={fieldErrors.description ? "memory-description-error" : undefined}
           placeholder="その展示についての説明を書いてください。"
-          onInput={() => clearFieldError("subtitle")}
+          onInput={() => clearFieldError("description")}
         />
-        {fieldErrors.subtitle && (
-          <p id="memory-subtitle-error" className="post-field-error" role="alert">
-            {fieldErrors.subtitle}
+        {fieldErrors.description && (
+          <p id="memory-description-error" className="post-field-error" role="alert">
+            {fieldErrors.description}
           </p>
         )}
       </div>
@@ -166,15 +218,16 @@ export function MemoryPostForm() {
             onDragOver={(event) => {
               event.preventDefault();
               event.stopPropagation();
-              setIsDragging(true);
+              if (!isPending) setIsDragging(true);
             }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={(event) => {
               event.preventDefault();
               event.stopPropagation();
               setIsDragging(false);
-              const file = event.dataTransfer.files[0];
+              if (isPending) return;
 
+              const file = event.dataTransfer.files[0];
               if (file) {
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(file);
@@ -197,8 +250,9 @@ export function MemoryPostForm() {
               id="memory-image"
               name="image"
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               required
+              disabled={isPending}
               aria-invalid={Boolean(fieldErrors.image)}
               aria-describedby={fieldErrors.image ? "memory-image-error" : undefined}
               ref={imageInputRef}
@@ -209,6 +263,7 @@ export function MemoryPostForm() {
             <button
               className="post-image-remove"
               type="button"
+              disabled={isPending}
               aria-label="画像を削除"
               title="画像を削除"
               onClick={() => {
@@ -229,8 +284,8 @@ export function MemoryPostForm() {
       </div>
 
       <div className="post-actions">
-        <button className="post-primary" type="submit">
-          展示する
+        <button className="post-primary" type="submit" disabled={isPending}>
+          {isPending ? "展示中..." : "展示する"}
         </button>
       </div>
     </form>
