@@ -79,7 +79,6 @@ export function MemoryPostForm() {
             const serverFieldErrors: FieldErrors = {};
             for (const [key, messages] of Object.entries(result.error.fieldErrors)) {
               if (
-                key in nextErrors ||
                 key === "description" ||
                 key === "title" ||
                 key === "category" ||
@@ -90,8 +89,9 @@ export function MemoryPostForm() {
               }
             }
             setFieldErrors(serverFieldErrors);
+          } else {
+            setGeneralError(result.error.message || "展示の投稿に失敗しました。");
           }
-          setGeneralError(result.error.message || "展示の投稿に失敗しました。");
           return;
         }
 
