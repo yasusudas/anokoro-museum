@@ -1,12 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition, type RefObject } from "react";
-import { ExternalLink } from "lucide-react";
+import { ChevronDown, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CommentThread } from "@/components/comments/comment-thread";
 import { SiteHeader } from "@/components/layout/site-header";
 import { EXHIBIT_CATEGORIES } from "@/features/exhibits/categories";
+import {
+  type FloorId,
+  MUSEUM_FLOORS,
+  filterExhibitsByFloor,
+  getFloorDefinition,
+} from "@/features/exhibits/floors";
 import type { ExhibitItem } from "@/features/exhibits/types";
 import type { AuthUser } from "@/features/auth/types";
 import { toggleShinmiriAction } from "@/features/exhibits/actions/toggle-shinmiri";
@@ -241,6 +247,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
   const router = useRouter();
   const corridorRef = useRef<HTMLDivElement>(null);
   const modalCloseRef = useRef<HTMLButtonElement>(null);
+  const floorMenuRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
   const requestedExhibitId = searchParams.get("exhibit");
   const requestedExhibit = requestedExhibitId
@@ -248,6 +255,8 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
     : null;
   const isRequestedExhibitMissing = Boolean(requestedExhibitId) && !requestedExhibit;
   const [activeCategory, setActiveCategory] = useState("すべて");
+  const [activeFloorId, setActiveFloorId] = useState<FloorId>("2F");
+  const [isFloorMenuOpen, setIsFloorMenuOpen] = useState(false);
   const [selected, setSelected] = useState<ExhibitItem | null>(() => requestedExhibit);
   const [shinmiriItems, setShinmiriItems] = useState<string[]>(() =>
     initialExhibits.filter((item) => item.isShinmiri).map((item) => item.id)
@@ -268,10 +277,18 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
 
   const categories = ["すべて", ...EXHIBIT_CATEGORIES] as const;
 
+  const activeFloor = getFloorDefinition(activeFloorId);
+
+  const floorFilteredExhibits = filterExhibitsByFloor(
+    exhibits,
+    activeFloorId,
+    shinmiriItems
+  );
+
   const visible =
     activeCategory === "すべて"
-      ? exhibits
-      : exhibits.filter((item) => item.category === activeCategory);
+      ? floorFilteredExhibits
+      : floorFilteredExhibits.filter((item) => item.category === activeCategory);
 
   const move = useCallback((direction: number) => {
     corridorRef.current?.scrollBy({
@@ -339,6 +356,25 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
     if (selected) modalCloseRef.current?.focus();
   }, [selected]);
 
+  useEffect(() => {
+    if (!isFloorMenuOpen) return;
+
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!floorMenuRef.current?.contains(event.target as Node)) {
+        setIsFloorMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsFloorMenuOpen(false);
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isFloorMenuOpen]);
   const pendingShinmiriIdsRef = useRef<Set<string>>(new Set());
 
   const toggleShinmiri = (id: string) => {
@@ -431,12 +467,57 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
           ))}
         </div>
 
-        <div className="floor-label">
-          <span>2F</span>
-          <div>
-            <small>平成・令和</small>
-            <b>あのころ回廊</b>
-          </div>
+        <div className="floor-selector-container" ref={floorMenuRef}>
+          <button
+            type="button"
+            className={`floor-selector-button ${isFloorMenuOpen ? "active" : ""}`}
+            onClick={() => setIsFloorMenuOpen((prev) => !prev)}
+            aria-expanded={isFloorMenuOpen}
+            aria-haspopup="menu"
+            aria-label={`フロア移動: 現在 ${activeFloor.label} ${activeFloor.name}`}
+          >
+            <span className="floor-badge">{activeFloor.label}</span>
+            <div className="floor-info">
+              <small>{activeFloor.era}</small>
+              <b>{activeFloor.name}</b>
+            </div>
+            <ChevronDown size={14} className={`floor-chevron ${isFloorMenuOpen ? "open" : ""}`} aria-hidden="true" />
+          </button>
+
+          {isFloorMenuOpen && (
+            <div className="floor-dropdown-menu" aria-label="フロア一覧">
+              <div className="floor-dropdown-header">
+                <span>フロア移動</span>
+                <small>階を選択</small>
+              </div>
+              <ul className="floor-dropdown-list">
+                {MUSEUM_FLOORS.map((floor) => {
+                  const isSelected = floor.id === activeFloorId;
+                  return (
+                    <li key={floor.id}>
+                      <button
+                        type="button"
+                        className={`floor-item-button ${isSelected ? "selected" : ""}`}
+                        aria-current={isSelected ? "true" : undefined}
+                        onClick={() => {
+                          setActiveFloorId(floor.id);
+                          setIsFloorMenuOpen(false);
+                          corridorRef.current?.scrollTo({ left: 0 });
+                        }}
+                      >
+                        <span className="floor-item-badge">{floor.label}</span>
+                        <div className="floor-item-info">
+                          <span className="floor-item-era">{floor.era}</span>
+                          <span className="floor-item-name">{floor.name}</span>
+                        </div>
+                        {isSelected && <span className="floor-item-check" aria-hidden="true">✓</span>}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
         </div>
       </section>
 
@@ -448,7 +529,38 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
         )}
         <div className="corridor" ref={corridorRef}>
           <section className="gallery" aria-live="polite">
-            {visible.map((item) => (
+            {visible.length === 0 ? (
+              <div className="gallery-empty-state">
+                {activeFloorId === "B1F" && floorFilteredExhibits.length === 0 ? (
+                  currentUser ? (
+                    <div className="gallery-empty-content">
+                      <p className="gallery-empty-title">まだ「しんみり」した展示がありません</p>
+                      <p className="gallery-empty-desc">
+                        各展示の詳細画面で「しんみり」ボタンを押すと、この企画展にあなただけのコレクションが並びます。
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="gallery-empty-content">
+                      <p className="gallery-empty-title">ログインして自分だけの企画展をつくろう</p>
+                      <p className="gallery-empty-desc">
+                        ログインすると、「しんみり」した思い出の品だけを集めた特別な展示室をお楽しみいただけます。
+                      </p>
+                      <Link href="/sign-in" className="gallery-empty-action">
+                        ログインする
+                      </Link>
+                    </div>
+                  )
+                ) : (
+                  <div className="gallery-empty-content">
+                    <p className="gallery-empty-title">該当する展示品がありません</p>
+                    <p className="gallery-empty-desc">
+                      他の年代のフロアやカテゴリを選択してみてください。
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              visible.map((item) => (
               <article className="exhibit" key={item.id}>
                 <button className="frame" onClick={() => handleOpenExhibit(item)} aria-label={`${item.title}の詳細を見る`}>
                   <span className="frame-inner">
@@ -486,7 +598,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                   </button>
                 </div>
               </article>
-            ))}
+            )))}
           </section>
         </div>
         {canScroll && scrollProgress < 99.5 && (
