@@ -498,7 +498,8 @@ button:focus-visible {
   margin: 0;
   font-size: 18px;
   line-height: 1.2;
-  min-height: 2.4em;
+  height: 43.2px;
+  min-height: 43.2px;
   display: -webkit-box;
   overflow: hidden;
   text-overflow: ellipsis;
