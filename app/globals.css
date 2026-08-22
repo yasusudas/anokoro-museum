@@ -274,6 +274,7 @@ button:focus-visible {
 }
 
 .floor-selector-container {
+  grid-column: 2;
   justify-self: end;
   position: relative;
 }
