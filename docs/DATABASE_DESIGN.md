@@ -111,13 +111,15 @@ erDiagram
 | table | SELECT | INSERT | UPDATE | DELETE |
 | --- | --- | --- | --- | --- |
 | `users` | 全員 | トリガー経由のみ | 本人 | 不可（`auth.users` 削除にCASCADE） |
-| `items` | 全員 | ログイン済み・本人名義 | 不可（編集なし） | 不可（取り下げは運営がサーバー側権限で対応） |
+| `items` | 全員 | ログイン済み・本人名義 | 不可（編集なし） | 不可（投稿者による取り下げなし。`auth.users` 削除時の CASCADE による連鎖削除は例外として残す。運営による取り下げはサーバー側権限） |
 | `comments` | 全員 | ログイン済み・本人名義 | 不可（編集なし） | 本人 |
 | `comment_likes` | 本人の行のみ | ログイン済み・本人名義 | 不可 | 本人 |
 | `shinmiri_reactions` | 全員 | ログイン済み・本人名義 | 不可 | 本人 |
 
 - INSERTは `WITH CHECK (auth.uid() = user_id)` で本人名義を強制する
 - DELETEは `USING (auth.uid() = user_id)` で所有者を照合する。ただし `items` は公開後の取り下げを認めないため、policyもtable権限も与えない
+- `items` の UPDATE は table権限に加え、列単位権限も与えない。残存しうる列単位 UPDATE 権限は `20260822190000_revoke_item_column_update_privileges.sql` で存在する列だけを動的に revoke する
+- `items.user_id` は `users.id` へ `ON DELETE CASCADE` するため、アカウント削除（`auth.users` → `users`）に伴う展示の連鎖削除は、上記 DELETE 禁止の例外として意図的に残す
 - `users` の所有者列は `id`、それ以外の所有者付きtableは `user_id` を使う
 - `comment_likes` の匿名件数は生テーブルを公開せず、集計RPC `get_comment_like_counts` から取得する
 - 公開状態（status）を持たないため、SELECTに条件分岐は不要
