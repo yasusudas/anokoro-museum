@@ -29,7 +29,7 @@
 
 - 公開展示一覧・詳細: Server Componentで取得し、検索条件はURLのsearch paramsを正とする
 - 横スクロール、モーダル、楽観的な「しんみり」表示: Client Component
-- 認証セッション: Supabase AuthのcookieベースSSR構成
+- 認証セッション: Supabase AuthのcookieベースSSR構成。Google OAuthはPKCEで開始し、`GET /auth/callback` がサーバー側でcodeをセッションへ交換する
 - フォーム: Server Actionを基本とし、入力をサーバー側でも検証する
 - DB更新後: 必要なpath/tagだけを再検証する
 
@@ -78,7 +78,7 @@ PR前の最低条件は `lint` と `build`。テスト導入後はCIとローカ
 
 ## 6. 未解決事項
 
-- Google OAuthの本番同意画面・ドメイン認証の運用確認
+- Google OAuthのRedirect URL登録（Supabase DashboardのURL Configurationへ本番・Previewドメインを追加する運用）と、本番同意画面の審査要否の確認
 - アナリティクス製品とCookie同意の要否
 - Preview / Productionへのmigration適用担当と自動化方式
 
