@@ -100,11 +100,11 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
           {mode === "browse" && (
             isAuthenticated ? (
               <Link className="nav-cta" href="/exhibits/new">
-                思い出を展示する <span>＋</span>
+                思い出を展示 <span>＋</span>
               </Link>
             ) : (
               <button className="nav-cta" type="button" onClick={() => setIsAuthGateOpen(true)}>
-                思い出を展示する <span>＋</span>
+                思い出を展示 <span>＋</span>
               </button>
             )
           )}

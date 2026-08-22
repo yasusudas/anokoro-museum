@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Trash2 } from "lucide-react";
+import { checkExhibitTitleAction } from "@/features/exhibits/actions/check-title-availability";
 import { createExhibitAction } from "@/features/exhibits/actions/create-exhibit";
+import { MAX_EXHIBIT_TITLE_LENGTH } from "@/features/exhibits/constants";
 import { EXHIBIT_CATEGORIES } from "@/features/exhibits/categories";
 
 type FieldName = "title" | "category" | "year" | "description" | "image";
@@ -12,18 +14,89 @@ type FieldErrors = Partial<Record<FieldName, string>>;
 export function MemoryPostForm() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("");
+  const [year, setYear] = useState("");
+  const [description, setDescription] = useState("");
   const [selectedFileName, setSelectedFileName] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [isTitleDuplicate, setIsTitleDuplicate] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const titleCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const titleCheckVersionRef = useRef(0);
+
+  const isFormComplete =
+    title.trim().length > 0 &&
+    category.trim().length > 0 &&
+    /^[0-9]{4}$/.test(year.trim()) &&
+    description.trim().length > 0 &&
+    Boolean(selectedFileName);
+
+  const isSubmitDisabled = isPending || isTitleDuplicate || !isFormComplete;
 
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
+      if (titleCheckTimerRef.current) clearTimeout(titleCheckTimerRef.current);
     };
   }, [previewUrl]);
+
+  const performDuplicateCheck = useCallback(async (checkTitle: string, version: number) => {
+    const trimmed = checkTitle.trim();
+    if (!trimmed) {
+      if (version === titleCheckVersionRef.current) {
+        setIsTitleDuplicate(false);
+      }
+      return;
+    }
+
+    try {
+      const { isDuplicate } = await checkExhibitTitleAction(trimmed);
+      if (version !== titleCheckVersionRef.current) return;
+
+      setIsTitleDuplicate(isDuplicate);
+      if (isDuplicate) {
+        setFieldErrors((currentErrors) => ({
+          ...currentErrors,
+          title: "その展示品は寄贈されています",
+        }));
+      }
+    } catch {
+      if (version !== titleCheckVersionRef.current) return;
+    }
+  }, []);
+
+  function handleTitleInput(event: React.ChangeEvent<HTMLInputElement>) {
+    const val = event.currentTarget.value;
+    const version = ++titleCheckVersionRef.current;
+    setTitle(val);
+    setIsTitleDuplicate(false);
+    clearFieldError("title");
+
+    if (titleCheckTimerRef.current) {
+      clearTimeout(titleCheckTimerRef.current);
+    }
+
+    if (val.trim()) {
+      titleCheckTimerRef.current = setTimeout(() => {
+        performDuplicateCheck(val, version);
+      }, 350);
+    }
+  }
+
+  function handleTitleBlur(event: React.FocusEvent<HTMLInputElement>) {
+    const val = event.currentTarget.value;
+    const version = ++titleCheckVersionRef.current;
+    if (titleCheckTimerRef.current) {
+      clearTimeout(titleCheckTimerRef.current);
+    }
+    if (val.trim()) {
+      performDuplicateCheck(val, version);
+    }
+  }
 
   function selectImage(file: File | undefined) {
     if (!file || !file.type.startsWith("image/")) return;
@@ -52,6 +125,14 @@ export function MemoryPostForm() {
     event.preventDefault();
     setGeneralError(null);
 
+    if (isTitleDuplicate) {
+      setFieldErrors((currentErrors) => ({
+        ...currentErrors,
+        title: "その展示品は寄贈されています",
+      }));
+      return;
+    }
+
     const formElement = event.currentTarget;
     const formData = new FormData(formElement);
     const nextErrors: FieldErrors = {};
@@ -79,7 +160,6 @@ export function MemoryPostForm() {
             const serverFieldErrors: FieldErrors = {};
             for (const [key, messages] of Object.entries(result.error.fieldErrors)) {
               if (
-                key in nextErrors ||
                 key === "description" ||
                 key === "title" ||
                 key === "category" ||
@@ -90,8 +170,9 @@ export function MemoryPostForm() {
               }
             }
             setFieldErrors(serverFieldErrors);
+          } else {
+            setGeneralError(result.error.message || "展示の投稿に失敗しました。");
           }
-          setGeneralError(result.error.message || "展示の投稿に失敗しました。");
           return;
         }
 
@@ -117,12 +198,15 @@ export function MemoryPostForm() {
           id="memory-title"
           name="title"
           type="text"
+          value={title}
+          maxLength={MAX_EXHIBIT_TITLE_LENGTH}
           required
           disabled={isPending}
           aria-invalid={Boolean(fieldErrors.title)}
           aria-describedby={fieldErrors.title ? "memory-title-error" : undefined}
           placeholder="（例）妖怪ウォッチ"
-          onInput={() => clearFieldError("title")}
+          onChange={handleTitleInput}
+          onBlur={handleTitleBlur}
         />
         {fieldErrors.title && (
           <p id="memory-title-error" className="post-field-error" role="alert">
@@ -138,19 +222,22 @@ export function MemoryPostForm() {
             <select
               id="memory-category"
               name="category"
-              defaultValue=""
+              value={category}
               required
               disabled={isPending}
               aria-invalid={Boolean(fieldErrors.category)}
               aria-describedby={fieldErrors.category ? "memory-category-error" : undefined}
-              onChange={() => clearFieldError("category")}
+              onChange={(event) => {
+                setCategory(event.target.value);
+                clearFieldError("category");
+              }}
             >
               <option value="" disabled>
                 選択してください
               </option>
-              {EXHIBIT_CATEGORIES.map((category) => (
-                <option key={category} value={category}>
-                  {category}
+              {EXHIBIT_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
                 </option>
               ))}
             </select>
@@ -169,6 +256,7 @@ export function MemoryPostForm() {
             id="memory-year"
             name="year"
             type="text"
+            value={year}
             inputMode="numeric"
             pattern="[0-9]{4}"
             minLength={4}
@@ -179,7 +267,8 @@ export function MemoryPostForm() {
             aria-describedby={fieldErrors.year ? "memory-year-error" : undefined}
             placeholder="（例）2007"
             onInput={(event) => {
-              event.currentTarget.value = event.currentTarget.value.replace(/[^0-9]/g, "").slice(0, 4);
+              const cleanVal = event.currentTarget.value.replace(/[^0-9]/g, "").slice(0, 4);
+              setYear(cleanVal);
               clearFieldError("year");
             }}
           />
@@ -196,13 +285,17 @@ export function MemoryPostForm() {
         <textarea
           id="memory-description"
           name="description"
+          value={description}
           rows={3}
           required
           disabled={isPending}
           aria-invalid={Boolean(fieldErrors.description)}
           aria-describedby={fieldErrors.description ? "memory-description-error" : undefined}
           placeholder="その展示についての説明を書いてください。"
-          onInput={() => clearFieldError("description")}
+          onInput={(event) => {
+            setDescription(event.currentTarget.value);
+            clearFieldError("description");
+          }}
         />
         {fieldErrors.description && (
           <p id="memory-description-error" className="post-field-error" role="alert">
@@ -286,7 +379,12 @@ export function MemoryPostForm() {
       </div>
 
       <div className="post-actions">
-        <button className="post-primary" type="submit" disabled={isPending}>
+        <button
+          className="post-primary"
+          type="submit"
+          disabled={isSubmitDisabled}
+          aria-disabled={isSubmitDisabled}
+        >
           {isPending ? "展示中..." : "展示する"}
         </button>
       </div>

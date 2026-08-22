@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { isExhibitCategory } from "../categories";
+import { countExhibitTitleCharacters, MAX_EXHIBIT_TITLE_LENGTH } from "../constants";
 import type { ActionResult, CreateExhibitData } from "../types";
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -43,8 +44,8 @@ export async function createExhibitAction(
 
   if (!title) {
     fieldErrors.title = ["展示タイトルを入力してください。"];
-  } else if (title.length > 100) {
-    fieldErrors.title = ["展示タイトルは100文字以内で入力してください。"];
+  } else if (countExhibitTitleCharacters(title) > MAX_EXHIBIT_TITLE_LENGTH) {
+    fieldErrors.title = [`展示タイトルは${MAX_EXHIBIT_TITLE_LENGTH}文字以内で入力してください。`];
   }
 
   if (!description) {
@@ -84,6 +85,30 @@ export async function createExhibitAction(
         code: "VALIDATION_ERROR",
         message: "入力内容をご確認ください。",
         fieldErrors,
+      },
+    };
+  }
+
+  const { data: existingItem, error: checkError } = await supabase
+    .from("items")
+    .select("id")
+    .eq("title", title)
+    .limit(1)
+    .maybeSingle();
+
+  if (checkError) {
+    console.error("Database duplicate check error:", checkError);
+  }
+
+  if (existingItem) {
+    return {
+      ok: false,
+      error: {
+        code: "CONFLICT",
+        message: "その展示品は寄贈されています",
+        fieldErrors: {
+          title: ["その展示品は寄贈されています"],
+        },
       },
     };
   }
@@ -150,6 +175,19 @@ export async function createExhibitAction(
 
     if (uploadedStoragePath) {
       await supabase.storage.from("exhibits").remove([uploadedStoragePath]).catch(() => {});
+    }
+
+    if (insertError?.code === "23505") {
+      return {
+        ok: false,
+        error: {
+          code: "CONFLICT",
+          message: "その展示品は寄贈されています",
+          fieldErrors: {
+            title: ["その展示品は寄贈されています"],
+          },
+        },
+      };
     }
 
     return {

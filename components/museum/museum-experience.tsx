@@ -1,12 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { ExternalLink } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, useTransition, type RefObject } from "react";
+import { ChevronDown, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CommentThread } from "@/components/comments/comment-thread";
 import { SiteHeader } from "@/components/layout/site-header";
 import { EXHIBIT_CATEGORIES } from "@/features/exhibits/categories";
+import {
+  type FloorId,
+  MUSEUM_FLOORS,
+  filterExhibitsByFloor,
+  getFloorDefinition,
+} from "@/features/exhibits/floors";
 import type { ExhibitItem } from "@/features/exhibits/types";
 import type { AuthUser } from "@/features/auth/types";
 import { toggleShinmiriAction } from "@/features/exhibits/actions/toggle-shinmiri";
@@ -16,6 +22,155 @@ type MuseumExperienceProps = {
   currentUser?: AuthUser | null;
   isPreview?: boolean;
 };
+
+function useAutoFitFontSize<T extends HTMLElement>(
+  ref: RefObject<T | null>,
+  text: string,
+  maxLines: number,
+  baseFontSize: number,
+  minFontSize: number
+) {
+  const [fontSize, setFontSize] = useState(baseFontSize);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+
+    let isMeasuring = false;
+    let isActive = true;
+
+    const measure = () => {
+      if (!isActive || isMeasuring) return;
+      isMeasuring = true;
+
+      const originalStyles = {
+        display: element.style.display,
+        height: element.style.height,
+        maxHeight: element.style.maxHeight,
+        minHeight: element.style.minHeight,
+        overflow: element.style.overflow,
+        textOverflow: element.style.textOverflow,
+        lineClamp: element.style.getPropertyValue("-webkit-line-clamp"),
+        boxOrient: element.style.getPropertyValue("-webkit-box-orient"),
+      };
+
+      element.style.fontSize = `${baseFontSize}px`;
+      element.style.display = "block";
+      element.style.height = "auto";
+      element.style.maxHeight = "none";
+      element.style.minHeight = "0";
+      element.style.overflow = "visible";
+      element.style.textOverflow = "clip";
+      element.style.setProperty("-webkit-line-clamp", "unset");
+      element.style.setProperty("-webkit-box-orient", "initial");
+
+      let nextFontSize = baseFontSize;
+      const fits = () => {
+        if (maxLines === 1) {
+          return element.scrollWidth <= element.clientWidth + 1;
+        }
+
+        const lineHeight = Number.parseFloat(getComputedStyle(element).lineHeight);
+        const lineElements = [...element.children].filter(
+          (child): child is HTMLElement => child instanceof HTMLElement
+        );
+        if (lineElements.length > 0) {
+          return lineElements.every(
+            (lineElement) =>
+              lineElement.scrollWidth <= lineElement.clientWidth + 1 &&
+              lineElement.getBoundingClientRect().height <= lineHeight + 1
+          );
+        }
+
+        return element.scrollHeight <= lineHeight * maxLines + 1;
+      };
+
+      while (nextFontSize > minFontSize && !fits()) {
+        nextFontSize = Math.max(minFontSize, nextFontSize - 0.5);
+        element.style.fontSize = `${nextFontSize}px`;
+      }
+
+      element.style.display = originalStyles.display;
+      element.style.height = originalStyles.height;
+      element.style.maxHeight = originalStyles.maxHeight;
+      element.style.minHeight = originalStyles.minHeight;
+      element.style.overflow = originalStyles.overflow;
+      element.style.textOverflow = originalStyles.textOverflow;
+      element.style.setProperty("-webkit-line-clamp", originalStyles.lineClamp);
+      element.style.setProperty("-webkit-box-orient", originalStyles.boxOrient);
+      element.style.fontSize = `${nextFontSize}px`;
+      setFontSize(nextFontSize);
+      isMeasuring = false;
+    };
+
+    const animationFrame = requestAnimationFrame(measure);
+    const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    resizeObserver?.observe(element);
+    document.fonts?.ready.then(measure);
+
+    return () => {
+      isActive = false;
+      cancelAnimationFrame(animationFrame);
+      resizeObserver?.disconnect();
+    };
+  }, [baseFontSize, maxLines, minFontSize, ref, text]);
+
+  return fontSize;
+}
+
+function splitTitleIntoLines(title: string) {
+  const characters = [...title];
+  if (characters.length <= 20) return [title];
+
+  const midpoint = Math.ceil(characters.length / 2);
+  return [characters.slice(0, midpoint).join(""), characters.slice(midpoint).join("")];
+}
+
+function AutoFitTitle({ title }: { title: string }) {
+  const ref = useRef<HTMLHeadingElement>(null);
+  const titleLines = splitTitleIntoLines(title);
+  const baseFontSize = titleLines.length > 1 ? 14 : 18;
+  const fontSize = useAutoFitFontSize(ref, title, 2, baseFontSize, 10);
+
+  return (
+    <h2 ref={ref} style={{ fontSize, lineHeight: 1.2 }}>
+      {titleLines.map((line, index) => (
+        <span key={`${line}-${index}`} style={{ display: "block" }}>
+          {renderCardTitle(line)}
+        </span>
+      ))}
+    </h2>
+  );
+}
+
+function AutoFitModalTitle({ title }: { title: string }) {
+  const ref = useRef<HTMLHeadingElement>(null);
+  const titleLines = splitTitleIntoLines(title);
+  const fontSize = useAutoFitFontSize(ref, title, 2, 44, 14);
+
+  return (
+    <div className="modal-title-frame">
+      <h2 ref={ref} style={{ fontSize, lineHeight: 1.2 }}>
+        {titleLines.map((line, index) => (
+          <span key={`${line}-${index}`} style={{ display: "block" }}>
+            {line}
+          </span>
+        ))}
+      </h2>
+    </div>
+  );
+}
+
+function AutoFitDonor({ userName }: { userName: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const fontSize = useAutoFitFontSize(ref, userName, 1, 10, 7);
+
+  return (
+    <span ref={ref} className="exhibit-donor" style={{ fontSize }}>
+      {userName}
+    </span>
+  );
+}
 
 function ArrowIcon({ direction = "right" }: { direction?: "left" | "right" }) {
   return (
@@ -30,6 +185,18 @@ function NostalgiaIcon() {
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21.2l7.8-7.7 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z" />
     </svg>
+  );
+}
+
+function renderCardTitle(title: string) {
+  return title.split(/(Q)/g).map((part, index) =>
+    part === "Q" ? (
+      <span className="title-q" key={`${part}-${index}`}>
+        {part}
+      </span>
+    ) : (
+      part
+    ),
   );
 }
 
@@ -97,6 +264,7 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
   const router = useRouter();
   const corridorRef = useRef<HTMLDivElement>(null);
   const modalCloseRef = useRef<HTMLButtonElement>(null);
+  const floorMenuRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
   const requestedExhibitId = searchParams.get("exhibit");
   const requestedExhibit = requestedExhibitId
@@ -104,6 +272,8 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
     : null;
   const isRequestedExhibitMissing = Boolean(requestedExhibitId) && !requestedExhibit;
   const [activeCategory, setActiveCategory] = useState("すべて");
+  const [activeFloorId, setActiveFloorId] = useState<FloorId>(isPreview ? "1F" : "2F");
+  const [isFloorMenuOpen, setIsFloorMenuOpen] = useState(false);
   const [selected, setSelected] = useState<ExhibitItem | null>(() => requestedExhibit);
   const [shinmiriItems, setShinmiriItems] = useState<string[]>(() =>
     initialExhibits.filter((item) => item.isShinmiri).map((item) => item.id)
@@ -124,10 +294,18 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
 
   const categories = ["すべて", ...EXHIBIT_CATEGORIES] as const;
 
+  const activeFloor = getFloorDefinition(activeFloorId);
+
+  const floorFilteredExhibits = filterExhibitsByFloor(
+    exhibits,
+    activeFloorId,
+    shinmiriItems
+  );
+
   const visible =
     activeCategory === "すべて"
-      ? exhibits
-      : exhibits.filter((item) => item.category === activeCategory);
+      ? floorFilteredExhibits
+      : floorFilteredExhibits.filter((item) => item.category === activeCategory);
 
   const move = useCallback((direction: number) => {
     corridorRef.current?.scrollBy({
@@ -195,6 +373,25 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
     if (selected) modalCloseRef.current?.focus();
   }, [selected]);
 
+  useEffect(() => {
+    if (!isFloorMenuOpen) return;
+
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!floorMenuRef.current?.contains(event.target as Node)) {
+        setIsFloorMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsFloorMenuOpen(false);
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isFloorMenuOpen]);
   const pendingShinmiriIdsRef = useRef<Set<string>>(new Set());
 
   const toggleShinmiri = (id: string) => {
@@ -230,7 +427,16 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
           setShinmiriCounts((current) => ({ ...current, [id]: currentCount }));
           return;
         }
-        setShinmiriCounts((current) => ({ ...current, [id]: result.data.shinmiriCount }));
+        setShinmiriItems((current) => {
+          if (result.data.isShinmiri) {
+            return current.includes(id) ? current : [...current, id];
+          }
+          return current.filter((item) => item !== id);
+        });
+        const updatedCount = result.data.shinmiriCount;
+        if (updatedCount !== undefined) {
+          setShinmiriCounts((current) => ({ ...current, [id]: updatedCount }));
+        }
       } catch {
         setShinmiriItems((current) =>
           isCurrentlyLiked ? [...current, id] : current.filter((item) => item !== id)
@@ -288,12 +494,64 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
           ))}
         </div>
 
-        <div className="floor-label">
-          <span>{isPreview ? "1F" : "2F"}</span>
-          <div>
-            <small>{isPreview ? "はじめての方へ" : "みんなの投稿"}</small>
-            <b>{isPreview ? "常設展示室" : "あのころ回廊"}</b>
-          </div>
+        <div className="floor-selector-container" ref={floorMenuRef}>
+          <button
+            type="button"
+            className={`floor-selector-button ${isFloorMenuOpen ? "active" : ""}`}
+            onClick={() => setIsFloorMenuOpen((prev) => !prev)}
+            aria-expanded={isFloorMenuOpen}
+            aria-label={`フロア移動: 現在 ${activeFloor.label} ${activeFloor.name}`}
+          >
+            <span className="floor-badge">{activeFloor.label}</span>
+            <div className="floor-info">
+              <small>{activeFloor.era}</small>
+              <b>{activeFloor.name}</b>
+            </div>
+            <ChevronDown size={14} className={`floor-chevron ${isFloorMenuOpen ? "open" : ""}`} aria-hidden="true" />
+          </button>
+
+          {isFloorMenuOpen && (
+            <div className="floor-dropdown-menu" aria-label="フロア一覧">
+              <div className="floor-dropdown-header">
+                <span>フロア移動</span>
+                <small>階を選択</small>
+              </div>
+              <ul className="floor-dropdown-list">
+                {MUSEUM_FLOORS.map((floor) => {
+                  const isSelected = floor.id === activeFloorId;
+                  return (
+                    <li key={floor.id}>
+                      <button
+                        type="button"
+                        className={`floor-item-button ${isSelected ? "selected" : ""}`}
+                        aria-current={isSelected ? "true" : undefined}
+                        onClick={() => {
+                          if (floor.id === "1F" && !isPreview) {
+                            router.push("/floor/1");
+                            return;
+                          }
+                          if (floor.id !== "1F" && isPreview) {
+                            router.push(currentUser ? "/floor/2" : "/sign-in?next=/floor/2");
+                            return;
+                          }
+                          setActiveFloorId(floor.id);
+                          setIsFloorMenuOpen(false);
+                          corridorRef.current?.scrollTo({ left: 0 });
+                        }}
+                      >
+                        <span className="floor-item-badge">{floor.label}</span>
+                        <div className="floor-item-info">
+                          <span className="floor-item-era">{floor.era}</span>
+                          <span className="floor-item-name">{floor.name}</span>
+                        </div>
+                        {isSelected && <span className="floor-item-check" aria-hidden="true">✓</span>}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
         </div>
       </section>
 
@@ -305,7 +563,38 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
         )}
         <div className="corridor" ref={corridorRef}>
           <section className="gallery" aria-live="polite">
-            {visible.map((item) => (
+            {visible.length === 0 ? (
+              <div className="gallery-empty-state">
+                {activeFloorId === "B1F" && floorFilteredExhibits.length === 0 ? (
+                  currentUser ? (
+                    <div className="gallery-empty-content">
+                      <p className="gallery-empty-title">まだ「しんみり」した展示がありません</p>
+                      <p className="gallery-empty-desc">
+                        各展示の詳細画面で「しんみり」ボタンを押すと、この企画展にあなただけのコレクションが並びます。
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="gallery-empty-content">
+                      <p className="gallery-empty-title">ログインして自分だけの企画展をつくろう</p>
+                      <p className="gallery-empty-desc">
+                        ログインすると、「しんみり」した思い出の品だけを集めた特別な展示室をお楽しみいただけます。
+                      </p>
+                      <Link href="/sign-in" className="gallery-empty-action">
+                        ログインする
+                      </Link>
+                    </div>
+                  )
+                ) : (
+                  <div className="gallery-empty-content">
+                    <p className="gallery-empty-title">該当する展示品がありません</p>
+                    <p className="gallery-empty-desc">
+                      他の年代のフロアやカテゴリを選択してみてください。
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              visible.map((item) => (
               <article className="exhibit" key={item.id}>
                 <button className="frame" onClick={() => handleOpenExhibit(item)} aria-label={`${item.title}の詳細を見る`}>
                   <span className="frame-inner">
@@ -323,24 +612,29 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
                   </span>
                 </button>
                 <div className="exhibit-label">
-                  <span className="item-number">{item.number}</span>
-                  <div>
-                    <h2>{item.title}</h2>
-                    <p>{item.subtitle}</p>
+                  <div className="exhibit-caption">
+                    <AutoFitTitle title={item.title} />
+                    <p>
+                      <span className="exhibit-subtitle-prefix">
+                        {item.subtitle}
+                        {item.userName ? "　寄贈：" : null}
+                      </span>
+                      {item.userName ? <AutoFitDonor userName={item.userName} /> : null}
+                    </p>
                   </div>
                   <button
                     className={`${shinmiriItems.includes(item.id) ? "nostalgia liked" : "nostalgia"}${isPreview ? " is-display-only" : ""}`}
                     onClick={() => toggleShinmiri(item.id)}
                     aria-label="しんみりする"
                     disabled={isPreview}
+                    aria-pressed={shinmiriItems.includes(item.id)}
                   >
                     <NostalgiaIcon />
                     <b>{shinmiriCounts[item.id] ?? item.shinmiriCount}</b>
-                    <small>しんみり</small>
                   </button>
                 </div>
               </article>
-            ))}
+            )))}
           </section>
         </div>
         {canScroll && scrollProgress < 99.5 && (
@@ -397,13 +691,14 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
                   {selected.year ? `${selected.year}年　${selected.category}` : selected.category}
                 </p>
                 <div className="modal-title-row">
-                  <div>
-                    <h2>{selected.title}</h2>
+                  <div className="modal-title">
+                    <AutoFitModalTitle title={selected.title} />
                   </div>
                   <div className="modal-actions">
                     <button
                       className={shinmiriItems.includes(selected.id) ? "modal-like liked" : "modal-like"}
                       onClick={() => toggleShinmiri(selected.id)}
+                      aria-pressed={shinmiriItems.includes(selected.id)}
                     >
                       <NostalgiaIcon />
                       <span>しんみり</span>
@@ -445,15 +740,9 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
       )}
 
       {showGuide && !selected && (
-        <div className="guide-toast">
-          <span>← →</span>
-          <div>
-            <b>横に歩いて、記憶をめぐる</b>
-            <small>マウスホイールや矢印キーで移動できます</small>
-          </div>
-          <button onClick={() => setShowGuide(false)} aria-label="案内を閉じる">
-            ×
-          </button>
+        <div className="guide-toast" aria-label="展示の移動方法">
+          <span aria-hidden="true">← →</span>
+          <small>マウスホイールや矢印キーで移動</small>
         </div>
       )}
 

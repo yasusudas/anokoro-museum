@@ -44,5 +44,5 @@ export type CreateExhibitData = {
 export type ToggleShinmiriData = {
   itemId: string;
   isShinmiri: boolean;
-  shinmiriCount: number;
+  shinmiriCount?: number;
 };
