@@ -1,13 +1,15 @@
 import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 
-const envContent = fs.readFileSync(".env.local", "utf-8");
-for (const line of envContent.split("\n")) {
-  const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
-  if (match) {
-    const key = match[1];
-    const value = match[2] ? match[2].trim().replace(/^['"]|['"]$/g, "") : "";
-    process.env[key] = value;
+if (fs.existsSync(".env.local")) {
+  const envContent = fs.readFileSync(".env.local", "utf-8");
+  for (const line of envContent.split("\n")) {
+    const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+    if (match) {
+      const key = match[1];
+      const value = match[2] ? match[2].trim().replace(/^['"]|['"]$/g, "") : "";
+      process.env[key] = value;
+    }
   }
 }
 
@@ -19,8 +21,8 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 async function testShinmiriFlow() {
   console.log("🧪 Starting Shinmiri Reaction Test...\n");
 
-  const testEmail = "test_runner@anokoro.local";
-  const testPassword = "TestRunnerPassword123!";
+  const testEmail = process.env.TEST_USER_EMAIL || "test_runner@anokoro.local";
+  const testPassword = process.env.TEST_USER_PASSWORD || "TestRunnerPassword123!";
 
   const signInResult = await supabase.auth.signInWithPassword({
     email: testEmail,
@@ -47,7 +49,6 @@ async function testShinmiriFlow() {
 
   console.log(`✅ Authenticated user: ${user.id}`);
 
-  // テスト用展示アイテムを1件取得
   const { data: item, error: itemError } = await supabase
     .from("items")
     .select("id, title")
@@ -63,14 +64,23 @@ async function testShinmiriFlow() {
   console.log(`📌 Target Exhibit: ${item.title} (${item.id})\n`);
 
   try {
-    // 既存のテストユーザーのリアクションがあれば一度削除してクリーンな状態に
     await supabase
       .from("shinmiri_reactions")
       .delete()
       .eq("item_id", item.id)
       .eq("user_id", user.id);
 
-    // 1. しんみりリアクション追加 (INSERT)
+    const { count: baselineCount, error: baselineError } = await supabase
+      .from("shinmiri_reactions")
+      .select("id", { count: "exact", head: true })
+      .eq("item_id", item.id);
+
+    if (baselineError || baselineCount === null) {
+      console.error("❌ Failed to fetch baseline reaction count:", baselineError?.message);
+      process.exitCode = 1;
+      return;
+    }
+
     const { error: insertError } = await supabase
       .from("shinmiri_reactions")
       .insert({
@@ -83,17 +93,21 @@ async function testShinmiriFlow() {
       process.exitCode = 1;
       return;
     }
-    console.log("✅ Step 1: Shinmiri reaction ADDED successfully.");
 
-    // 2. 件数取得の確認
-    const { count: countAfterAdd } = await supabase
+    const { count: countAfterAdd, error: countAddError } = await supabase
       .from("shinmiri_reactions")
       .select("id", { count: "exact", head: true })
       .eq("item_id", item.id);
 
-    console.log(`   Reaction count after add: ${countAfterAdd}`);
+    if (countAddError || countAfterAdd !== baselineCount + 1) {
+      console.error(
+        `❌ Reaction count after add is invalid. Expected: ${baselineCount + 1}, Actual: ${countAfterAdd}`
+      );
+      process.exitCode = 1;
+      return;
+    }
+    console.log(`✅ Shinmiri reaction ADDED successfully (Count: ${countAfterAdd}).`);
 
-    // 3. 重複防止の検証 (同一ユーザーによる重複INSERTがUNIQUE制約で弾かれるか)
     const { error: duplicateError } = await supabase
       .from("shinmiri_reactions")
       .insert({
@@ -102,13 +116,13 @@ async function testShinmiriFlow() {
       });
 
     if (duplicateError) {
-      console.log("✅ Step 2: Duplicate reaction prevented by UNIQUE constraint.");
+      console.log("✅ Duplicate reaction prevented by UNIQUE constraint.");
     } else {
       console.error("❌ Duplicate reaction was NOT prevented!");
       process.exitCode = 1;
+      return;
     }
 
-    // 4. しんみりリアクション解除 (DELETE)
     const { error: deleteError } = await supabase
       .from("shinmiri_reactions")
       .delete()
@@ -120,17 +134,21 @@ async function testShinmiriFlow() {
       process.exitCode = 1;
       return;
     }
-    console.log("✅ Step 3: Shinmiri reaction REMOVED successfully.");
 
-    // 5. 解除後の件数確認
-    const { count: countAfterDelete } = await supabase
+    const { count: countAfterDelete, error: countDeleteError } = await supabase
       .from("shinmiri_reactions")
       .select("id", { count: "exact", head: true })
       .eq("item_id", item.id);
 
-    console.log(`   Reaction count after remove: ${countAfterDelete}`);
+    if (countDeleteError || countAfterDelete !== baselineCount) {
+      console.error(
+        `❌ Reaction count after remove is invalid. Expected: ${baselineCount}, Actual: ${countAfterDelete}`
+      );
+      process.exitCode = 1;
+      return;
+    }
+    console.log(`✅ Shinmiri reaction REMOVED successfully (Count: ${countAfterDelete}).`);
   } finally {
-    // クリーンアップ
     await supabase
       .from("shinmiri_reactions")
       .delete()

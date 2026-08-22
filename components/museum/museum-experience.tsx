@@ -229,11 +229,19 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
     };
   }, [isAccountMenuOpen]);
 
+  const pendingShinmiriIdsRef = useRef<Set<string>>(new Set());
+
   const toggleShinmiri = (id: string) => {
     if (!currentUser) {
       router.push(`/sign-in?next=${encodeURIComponent(selected ? `/?exhibit=${selected.id}` : "/")}`);
       return;
     }
+
+    if (pendingShinmiriIdsRef.current.has(id)) {
+      return;
+    }
+
+    pendingShinmiriIdsRef.current.add(id);
 
     const isCurrentlyLiked = shinmiriItems.includes(id);
     const nextIsLiked = !isCurrentlyLiked;
@@ -261,6 +269,8 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
           isCurrentlyLiked ? [...current, id] : current.filter((item) => item !== id)
         );
         setShinmiriCounts((current) => ({ ...current, [id]: currentCount }));
+      } finally {
+        pendingShinmiriIdsRef.current.delete(id);
       }
     });
   };
