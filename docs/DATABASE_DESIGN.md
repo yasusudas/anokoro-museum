@@ -58,18 +58,18 @@ erDiagram
 | `title` | varchar | NOT NULL。Unicode空白を除くtrim後1〜40文字。`items_title_length_check`でDB側も上限を保証 |
 | `description` | text | NOT NULL。Unicode空白を除くtrim後1〜500文字 |
 | `category` | varchar | NOT NULL。CHECK制約で `食べ物` / `テレビ` / `アニメ` / `ゲーム` / `音楽` / `本` / `出来事` / `その他` に限定。アプリ側の正規定義は `features/exhibits/categories.ts` |
-| `image_url` | text | 表示可能な画像URLまたはpublic配下のパス（投稿時は画像添付必須。既存seed等で未指定時はテーマアートへフォールバック） |
+| `image_url` | text | Supabase Storageの公開画像URL。投稿時は画像添付必須 |
 | `year` | int | 展示品の年代（西暦4桁、1900年〜現在年、例: `2004`） |
 | `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
 
 制約・運用:
 
-- `image_url` は額縁に飾る展示写真を保持する。投稿画像はSupabase StorageのURL、同梱する初期展示画像はpublic配下のパスを使い、未指定の場合はテーマアートを表示する
+- `image_url` は額縁に飾る展示写真を保持する。表示用画像はSupabase Storageで管理し、リポジトリのpublic配下には置かない
+- 過去にpublic配下を参照していた展示は `20260822230000_migrate_local_exhibit_images_to_storage.sql` で既存Storageオブジェクトの公開URLへ移行する
 - `title` の文字数はPostgreSQLの `char_length`（Unicodeコードポイント単位）で検証し、`items_title_length_check`により40文字を超える値をDBでも拒否する
 - `year` は展示アイテムの年代（流行年や発売年など）を表す
-- `user_id` が `NULL` の行は seed で投入した初期展示を表す
-- 初期展示の固定UUIDは `supabase/seed.sql` と各seedスクリプトで共通化し、既存環境との差異はmigrationで参照行ごと移行する
-- 表示テーマは列に持たず、`title` と `category` からアプリ側（`features/exhibits/queries/get-exhibits.ts` の `resolveTheme`）で導出する
+- `user_id` のNULL許容は既存のDB管理展示との互換性のために残す。新規投稿は認証ユーザーのUUIDを必須とする
+- 展示本文と画像の正はSupabase Database / Storageとし、ローカルseedや表示用モックは管理しない
 - 公開後の編集を認めないため `updated_at` は持たない。`theme` / `image_path` / `image_alt` / `image_rights_confirmed` / `birth_year_start` / `birth_year_end` は使わなくなったため `20260822180000_drop_unused_item_columns.sql` で削除した
 
 ### `comments`

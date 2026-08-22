@@ -9,7 +9,6 @@ export type ExhibitItem = {
   year: string;
   description: string;
   imageUrl?: string | null;
-  theme: string;
   shinmiriCount: number;
   isShinmiri?: boolean;
   userName?: string;
