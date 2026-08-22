@@ -8,21 +8,21 @@ export const BGM_TRACKS: BgmTrack[] = [
   },
   {
     id: "bgm-1",
-    name: "BGM 1: ノスタルジア",
-    description: "夕暮れのオルゴール風",
-    src: "/bgm/bgm-1.mp3",
+    name: "年の陽炎",
+    description: "ノスタルジックな調べ",
+    src: "/bgm/年の陽炎.mp3",
   },
   {
     id: "bgm-2",
-    name: "BGM 2: 木漏れ日",
-    description: "穏やかなアコースティック風",
-    src: "/bgm/bgm-2.mp3",
+    name: "Felt and Wood",
+    description: "温かみのあるアコースティック",
+    src: "/bgm/Felt%20and%20Wood.mp3",
   },
   {
     id: "bgm-3",
-    name: "BGM 3: あの日の放課後",
-    description: "レトロなピアノ風",
-    src: "/bgm/bgm-3.mp3",
+    name: "Stone Garden",
+    description: "静けさと和のアンビエント",
+    src: "/bgm/Stone%20Garden.mp3",
   },
 ];
 
