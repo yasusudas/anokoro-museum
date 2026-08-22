@@ -26,7 +26,7 @@ const exhibits = [
     description: "遠足の日、ちぎれないように端から大事に食べた、あの長いグミ。友だちと長さを比べるのも定番でした。",
     category: "おかし",
     year: 2004,
-    image_url: "https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=600&auto=format&fit=crop&q=80",
+    image_url: "/mock-images/himo-q.jpg",
     created_at: "2026-08-01T00:00:00+09:00",
   },
   {
@@ -56,7 +56,7 @@ const exhibits = [
     description: "休み時間の図書室。貸出中なら次の巻を探して、最後のなぞなぞまでしっかり読んだ。",
     category: "ほん",
     year: 2000,
-    image_url: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=600&auto=format&fit=crop&q=80",
+    image_url: "/mock-images/zorori.jpg",
     created_at: "2026-08-01T03:00:00+09:00",
   },
   {

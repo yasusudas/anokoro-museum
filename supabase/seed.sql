@@ -18,7 +18,7 @@ INSERT INTO public.items (
     'ひもQ',
     '遠足の日、ちぎれないように端から大事に食べた、あの長いグミ。友だちと長さを比べるのも定番でした。',
     'おかし',
-    'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=600&auto=format&fit=crop&q=80',
+    '/mock-images/himo-q.jpg',
     2004,
     '2026-08-01 00:00:00+09'
   ),
@@ -48,7 +48,7 @@ INSERT INTO public.items (
     'かいけつゾロリ',
     '休み時間の図書室。貸出中なら次の巻を探して、最後のなぞなぞまでしっかり読んだ。',
     'ほん',
-    'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=600&auto=format&fit=crop&q=80',
+    '/mock-images/zorori.jpg',
     2000,
     '2026-08-01 03:00:00+09'
   ),
