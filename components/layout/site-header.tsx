@@ -84,7 +84,7 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
           </Link>
           {mode === "browse" && (
             <Link className="nav-cta" href="/exhibits/new">
-              思い出を追加する <span>＋</span>
+              思い出を追加 <span>＋</span>
             </Link>
           )}
         </nav>
