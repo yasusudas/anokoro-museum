@@ -44,7 +44,6 @@ export function AuthCard({
 
       <section className="auth-panel" aria-label={title}>
         <div className="auth-card">
-          <span className="auth-badge">{eyebrow}</span>
           <h1>{title}</h1>
           {lead && <p className="auth-lead">{lead}</p>}
           {children}
