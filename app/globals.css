@@ -1615,7 +1615,7 @@ button:focus-visible {
   right: 28px;
   bottom: 26px;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr;
   align-items: center;
   gap: 16px;
   padding: 14px 16px;
@@ -1632,28 +1632,11 @@ button:focus-visible {
   letter-spacing: .2em
 }
 
-.guide-toast b,
 .guide-toast small {
-  display: block
-}
-
-.guide-toast b {
+  color: var(--ink);
   font-size: 11px;
-  letter-spacing: .08em
-}
-
-.guide-toast small {
-  font-size: 8px;
-  color: #776e61;
-  margin-top: 4px
-}
-
-.guide-toast button {
-  border: 0;
-  background: none;
-  color: #756c5f;
-  font: 18px Arial;
-  cursor: pointer
+  letter-spacing: .08em;
+  white-space: nowrap
 }
 
 @keyframes rise {

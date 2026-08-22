@@ -531,15 +531,9 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
       )}
 
       {showGuide && !selected && (
-        <div className="guide-toast">
-          <span>← →</span>
-          <div>
-            <b>横に歩いて、記憶をめぐる</b>
-            <small>マウスホイールや矢印キーで移動できます</small>
-          </div>
-          <button onClick={() => setShowGuide(false)} aria-label="案内を閉じる">
-            ×
-          </button>
+        <div className="guide-toast" aria-label="展示の移動方法">
+          <span aria-hidden="true">← →</span>
+          <small>マウスホイールや矢印キーで移動</small>
         </div>
       )}
     </main>

@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { isExhibitCategory } from "../categories";
-import { MAX_EXHIBIT_TITLE_LENGTH } from "../constants";
+import { countExhibitTitleCharacters, MAX_EXHIBIT_TITLE_LENGTH } from "../constants";
 import type { ActionResult, CreateExhibitData } from "../types";
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -44,7 +44,7 @@ export async function createExhibitAction(
 
   if (!title) {
     fieldErrors.title = ["展示タイトルを入力してください。"];
-  } else if (title.length > MAX_EXHIBIT_TITLE_LENGTH) {
+  } else if (countExhibitTitleCharacters(title) > MAX_EXHIBIT_TITLE_LENGTH) {
     fieldErrors.title = [`展示タイトルは${MAX_EXHIBIT_TITLE_LENGTH}文字以内で入力してください。`];
   }
 
