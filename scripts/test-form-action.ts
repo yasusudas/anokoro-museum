@@ -98,17 +98,37 @@ async function testFormFlow() {
     console.log(`   Title: ${newItem.title}`);
     console.log(`   Image URL: ${newItem.image_url}\n`);
   } finally {
+    let dbCleanupFailed = false;
+
     if (insertedId) {
-      await supabase.from("items").delete().eq("id", insertedId);
-      console.log("🧹 Cleaned up test DB row.");
+      const { error: deleteDbError } = await supabase.from("items").delete().eq("id", insertedId);
+      if (deleteDbError) {
+        console.error("⚠️ Failed to clean up test DB row:", deleteDbError.message);
+        dbCleanupFailed = true;
+        process.exitCode = 1;
+      } else {
+        console.log("🧹 Cleaned up test DB row.");
+      }
     }
-    if (uploadedPath) {
-      await supabase.storage.from("exhibits").remove([uploadedPath]);
-      console.log("🧹 Cleaned up test storage object.");
+
+    if (uploadedPath && !dbCleanupFailed) {
+      const { error: deleteStorageError } = await supabase.storage.from("exhibits").remove([uploadedPath]);
+      if (deleteStorageError) {
+        console.error("⚠️ Failed to clean up test storage object:", deleteStorageError.message);
+        process.exitCode = 1;
+      } else {
+        console.log("🧹 Cleaned up test storage object.");
+      }
+    } else if (uploadedPath && dbCleanupFailed) {
+      console.warn("⚠️ Preserving test storage object due to DB cleanup error. Path:", uploadedPath);
     }
   }
 
-  console.log("\n🎉 Form & Backend Connection Test Passed!");
+  if (process.exitCode === 1) {
+    console.error("\n⚠️ Test finished with errors.");
+  } else {
+    console.log("\n🎉 Form & Backend Connection Test Passed!");
+  }
 }
 
 testFormFlow();

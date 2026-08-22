@@ -80,24 +80,35 @@ export function MemoryPostForm() {
     }
 
     startTransition(async () => {
-      const result = await createExhibitAction(formData);
+      try {
+        const result = await createExhibitAction(formData);
 
-      if (!result.ok) {
-        if (result.error.fieldErrors) {
-          const serverFieldErrors: FieldErrors = {};
-          for (const [key, messages] of Object.entries(result.error.fieldErrors)) {
-            if (key in nextErrors || key === "description" || key === "title" || key === "category" || key === "year" || key === "image") {
-              serverFieldErrors[key as FieldName] = messages[0];
+        if (!result.ok) {
+          if (result.error.fieldErrors) {
+            const serverFieldErrors: FieldErrors = {};
+            for (const [key, messages] of Object.entries(result.error.fieldErrors)) {
+              if (
+                key in nextErrors ||
+                key === "description" ||
+                key === "title" ||
+                key === "category" ||
+                key === "year" ||
+                key === "image"
+              ) {
+                serverFieldErrors[key as FieldName] = messages[0];
+              }
             }
+            setFieldErrors(serverFieldErrors);
           }
-          setFieldErrors(serverFieldErrors);
+          setGeneralError(result.error.message || "展示の投稿に失敗しました。");
+          return;
         }
-        setGeneralError(result.error.message || "展示の投稿に失敗しました。");
-        return;
-      }
 
-      router.push("/");
-      router.refresh();
+        router.push("/");
+        router.refresh();
+      } catch {
+        setGeneralError("展示の投稿処理中にエラーが発生しました。時間をおいて再試行してください。");
+      }
     });
   }
 
