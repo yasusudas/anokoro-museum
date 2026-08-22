@@ -14,7 +14,7 @@ const ALLOWED_CATEGORIES = [
   "インターネット",
 ];
 
-const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export async function createExhibitAction(
