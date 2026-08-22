@@ -11,6 +11,8 @@ export type BgmContextValue = {
   currentTrackId: BgmTrackId;
   isPlaying: boolean;
   volume: number;
+  startMuseumBgm: () => void;
+  stopMuseumBgm: () => void;
   selectTrack: (trackId: BgmTrackId) => void;
   togglePlay: () => void;
   setVolume: (volume: number) => void;

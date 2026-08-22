@@ -12,11 +12,17 @@ import { BGM_TRACKS } from "@/features/bgm/tracks";
 
 type SiteHeaderProps = {
   currentUser?: AuthUser | null;
+  loginReturnPath?: string;
   mode?: "browse" | "create" | "brand-only";
   onBrandClick?: () => void;
 };
 
-export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteHeaderProps) {
+export function SiteHeader({
+  currentUser,
+  loginReturnPath = "/floor/1",
+  mode = "browse",
+  onBrandClick,
+}: SiteHeaderProps) {
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const authGateRef = useRef<HTMLElement>(null);
   const authGateCloseRef = useRef<HTMLButtonElement>(null);
@@ -26,7 +32,15 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const isAuthenticated = Boolean(currentUser?.id);
-  const { currentTrackId, isPlaying, volume, selectTrack, togglePlay, setVolume } = useBgm();
+  const {
+    currentTrackId,
+    isPlaying,
+    volume,
+    stopMuseumBgm,
+    selectTrack,
+    togglePlay,
+    setVolume,
+  } = useBgm();
 
   useEffect(() => {
     if (!isAccountMenuOpen) return;
@@ -100,6 +114,7 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
 
   const handleSignOut = () => {
     setSignOutError(null);
+    stopMuseumBgm();
     startTransition(async () => {
       const result = await signOutAction();
       if (result && !result.ok) {
@@ -232,7 +247,10 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
             </div>
           </div>
         ) : (
-          <Link className="login-button" href="/sign-in">
+          <Link
+            className="login-button"
+            href={`/sign-in?next=${encodeURIComponent(loginReturnPath)}`}
+          >
             ログイン
           </Link>
         ))}
