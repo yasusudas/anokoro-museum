@@ -1,6 +1,6 @@
 import type { ExhibitItem } from "./types";
 
-export type FloorId = "B1F" | "2F" | "3F" | "4F" | "5F" | "6F";
+export type FloorId = "B1F" | "1F" | "2F" | "3F" | "4F" | "5F" | "6F";
 
 export type FloorDefinition = {
   id: FloorId;
@@ -57,6 +57,13 @@ export const MUSEUM_FLOORS: FloorDefinition[] = [
     maxYear: 2009,
   },
   {
+    id: "1F",
+    label: "1F",
+    era: "常設展",
+    name: "はじめての展示室",
+    description: "どなたでも見られる、あのころの入口",
+  },
+  {
     id: "B1F",
     label: "B1F",
     era: "企画展",
@@ -82,11 +89,16 @@ export function filterExhibitsByFloor(
     return exhibits.filter((item) => shinmiriSet.has(item.id));
   }
 
+  if (floorId === "1F") {
+    return exhibits;
+  }
+
   const floor = getFloorDefinition(floorId);
 
   return exhibits.filter((item) => {
+    if (item.year.trim() === "") return false;
     const yearNum = Number(item.year);
-    if (isNaN(yearNum)) return false;
+    if (!Number.isFinite(yearNum)) return false;
 
     if (floor.minYear !== undefined && yearNum < floor.minYear) {
       return false;
