@@ -10,6 +10,7 @@
     "test": "node --experimental-strip-types --test features/auth/domain/next-path.test.mjs features/auth/domain/oauth-callback-error.test.mjs features/comments/domain/comment.test.mjs"
   },
   "dependencies": {
+    "lucide-react": "^1.33.0",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.3",
     "next": "16.3.1",
