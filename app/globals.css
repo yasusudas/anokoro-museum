@@ -1817,7 +1817,7 @@ button:focus-visible {
 }
 
 .auth-field input:focus-visible {
-  outline: 2px solid #b68a42;
+  outline: 2px solid #956f82;
   outline-offset: 2px;
 }
 
@@ -2015,10 +2015,32 @@ button:focus-visible {
 }
 
 .post-shell {
-  min-height: 100dvh;
+  position: relative;
+  height: 100dvh;
   display: grid;
-  grid-template-columns: minmax(320px, .95fr) minmax(360px, 1.05fr);
-  background: linear-gradient(180deg, #1d1814 0%, #0f0c0a 100%);
+  place-items: center;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at center, #d8b98a55 0%, transparent 46%),
+    radial-gradient(ellipse at center, #faf5ec 0%, #f4ecdf 52%, #e7dbc9 100%),
+    #f4ecdf;
+  isolation: isolate;
+}
+
+.post-shell::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: -28%;
+  left: 12%;
+  width: 34%;
+  height: 160%;
+  transform: rotate(18deg);
+  background: linear-gradient(90deg, transparent, #fffdf5aa 48%, transparent);
+  filter: blur(18px);
+  pointer-events: none;
 }
 
 .post-hero {
@@ -2107,35 +2129,82 @@ button:focus-visible {
 }
 
 .post-panel {
-  padding: 32px;
-  background: linear-gradient(180deg, #f5edde 0%, #eadfca 100%);
+  position: relative;
+  z-index: 1;
+  width: min(760px, 100%);
+  padding: 18px 32px 22px;
+  border-radius: 22px;
+  border: 1px solid #b9966844;
+  background: linear-gradient(145deg, #f0dfc5ee 0%, #e2c8a4ee 52%, #d4b487ee 100%);
+  box-shadow: 0 0 72px #c29a6766, 0 18px 70px #8d704b44;
+  backdrop-filter: blur(8px);
+}
+
+.post-heading {
+  max-width: 680px;
+  margin: 0 auto 10px;
+}
+
+.post-heading h1 {
+  margin: 8px 0 0;
+  color: #806b5b;
+  font-size: clamp(26px, 2.8vw, 38px);
+  line-height: 1.15;
+  letter-spacing: .08em;
+  font-weight: 500;
+}
+
+.post-heading .post-back-link {
+  margin-top: 0;
+  margin-bottom: 12px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: #795634;
+}
+
+.post-heading .post-back-link:hover {
+  background: transparent;
+  color: #5d3d25;
 }
 
 .post-form {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 9px 14px;
   max-width: 760px;
   margin: 0 auto;
-  padding: 18px;
-  border: 1px solid #ccb592;
-  background: #fffaf1;
-  box-shadow: 0 20px 60px #0002;
+  padding: 0;
 }
 
 .post-field {
   display: grid;
-  gap: 8px;
+  grid-template-rows: auto auto minmax(19px, auto);
+  gap: 4px;
 }
 
 .post-field-wide {
   grid-column: 1 / -1;
 }
 
+.post-field-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
 .post-field label {
-  color: #8a745c;
+  color: #6e5238;
   font-size: 11px;
   letter-spacing: .16em;
+}
+
+.post-field-error {
+  margin: 2px 0 0;
+  color: #b42318;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .post-field input,
@@ -2144,14 +2213,43 @@ button:focus-visible {
   width: 100%;
   border: 1px solid #cdbca1;
   background: #fffcf6;
-  padding: 13px 14px;
+  padding: 9px 12px;
+  border-radius: 18px 22px 16px 20px;
   color: #2b251f;
   font: inherit;
 }
 
+.post-select-control {
+  position: relative;
+}
+
+.post-select-control select {
+  appearance: none;
+  padding-right: 46px;
+}
+
+.post-select-control svg {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  color: #564a3b;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
 .post-field textarea {
   resize: vertical;
-  min-height: 160px;
+  min-height: 82px;
+  border-radius: 18px 22px 16px 20px;
+  overflow: auto;
+  background-clip: padding-box;
+}
+
+#memory-title,
+#memory-category,
+#memory-year,
+#memory-subtitle {
+  border-radius: 18px;
 }
 
 .post-field input:focus-visible,
@@ -2163,14 +2261,22 @@ button:focus-visible {
 }
 
 .post-dropzone {
-  grid-column: 1 / -1;
   display: grid;
-  gap: 8px;
-  padding: 22px;
+  justify-items: center;
+  gap: 4px;
+  margin-top: 18px;
+  padding: 26px 14px;
+  border-radius: 10px;
   border: 1px dashed #a98a5f;
   background: linear-gradient(135deg, #faf4ea, #f0e4d0);
   color: #564a3b;
+  text-align: center;
   cursor: pointer;
+}
+
+.post-dropzone.is-dragging {
+  border-color: #956f82;
+  background: #ead9df;
 }
 
 .post-dropzone span {
@@ -2180,51 +2286,107 @@ button:focus-visible {
 }
 
 .post-dropzone strong {
-  font-size: 16px;
+  font-size: 14px;
   letter-spacing: .06em;
 }
 
 .post-dropzone small {
   color: #766a59;
-  line-height: 1.8;
+  line-height: 1.4;
+}
+
+.post-image-link {
+  color: #956f82;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.post-image-link:hover {
+  color: #7f5c70;
 }
 
 .post-dropzone input {
+  display: none;
+}
+
+.post-image-field {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-rows: auto auto minmax(19px, auto);
+  gap: 4px;
+}
+
+.post-image-label {
+  color: #6e5238;
+  font-size: 11px;
+  letter-spacing: .16em;
+}
+
+.post-image-field .post-dropzone {
+  margin-top: 0;
+}
+
+.post-image-control {
+  position: relative;
+}
+
+.post-image-remove {
   position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid #cbbca8;
+  border-radius: 6px;
+  background: #fffaf2;
+  color: #956f82;
+  cursor: pointer;
+}
+
+.post-image-remove:hover {
+  color: #7f5c70;
+  background: #f3e7db;
+}
+
+.post-image-remove:focus-visible {
+  outline: 2px solid #b68a42;
+  outline-offset: 2px;
 }
 
 .post-actions {
   grid-column: 1 / -1;
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 9px;
+  margin-top: 18px;
 }
 
 .post-secondary,
 .post-primary {
   border: 1px solid #806745;
-  padding: 13px 18px;
+  padding: 10px 16px;
+  border-radius: 8px;
   letter-spacing: .16em;
   cursor: pointer;
 }
 
 .post-secondary {
   background: transparent;
-  color: #6d5a46;
+  color: #e0c59b;
 }
 
 .post-primary {
-  background: #2c231c;
+  border-color: #5a3b28;
+  background: #3a211d;
   color: #f5e7cb;
 }
 
 .post-primary:hover {
-  background: #b78a47;
-  color: #241c15;
+  background: #5a3426;
+  color: #fff0dc;
 }
 
 .post-secondary:hover {
@@ -2232,11 +2394,6 @@ button:focus-visible {
 }
 
 @media(max-width:1000px) {
-  .post-shell {
-    grid-template-columns: 1fr
-  }
-
-  .post-hero,
   .post-panel {
     padding: 32px 22px
   }
@@ -2249,6 +2406,10 @@ button:focus-visible {
 @media(max-width:700px) {
   .post-form {
     grid-template-columns: 1fr
+  }
+
+  .post-field-row {
+    gap: 10px;
   }
 
   .post-actions {
