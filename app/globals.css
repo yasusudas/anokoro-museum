@@ -91,7 +91,7 @@ button:focus-visible {
 .brand small {
   display: block;
   color: #eadbc9;
-  font: 8px/1.5 Arial, sans-serif;
+  font: 10px/1.5 Arial, sans-serif;
   letter-spacing: .34em;
   margin-top: 3px;
 }

@@ -50,7 +50,7 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
       />
       <span>
         <b>あのころ</b>
-        <small>MUSEUM</small>
+        <small>ミュージアム</small>
       </span>
     </>
   );
