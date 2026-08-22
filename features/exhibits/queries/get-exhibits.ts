@@ -13,14 +13,29 @@ function resolveTheme(title: string, category: string): string {
   return "book";
 }
 
-export async function getExhibits(): Promise<ExhibitItem[]> {
+type GetExhibitsOptions = {
+  isFirstFloor?: boolean;
+};
+
+const FIRST_FLOOR_EXHIBIT_IDS = [
+  "abccab1c-030a-46ca-a77e-403558a7b4e3",
+  "96d0cc6b-ef33-4d69-b5f0-8e5371ab3c29",
+  "01b2a5ce-d7f5-48a5-83be-c02acbe44673",
+  "f5336f5e-34f3-4dad-b26a-516a70e92e1f",
+  "5fbf3448-5776-4765-8676-8a7a7ca7531f",
+  "052dd450-347a-4166-8b4c-da075e9a796d",
+  "5a802a54-d1eb-490d-a167-53714978ffeb",
+  "3bf75231-81b2-4701-a1f5-2a28ec4918b5",
+] as const;
+
+export async function getExhibits(options: GetExhibitsOptions = {}): Promise<ExhibitItem[]> {
   const supabase = await createClient();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: items, error: itemsError } = await supabase
+  let itemsQuery = supabase
     .from("items")
     .select(`
       id,
@@ -33,8 +48,13 @@ export async function getExhibits(): Promise<ExhibitItem[]> {
       users (
         user_name
       )
-    `)
-    .order("created_at", { ascending: true });
+    `);
+
+  if (options.isFirstFloor) {
+    itemsQuery = itemsQuery.in("id", FIRST_FLOOR_EXHIBIT_IDS);
+  }
+
+  const { data: items, error: itemsError } = await itemsQuery.order("created_at", { ascending: true });
 
   if (itemsError) {
     console.error("Error fetching exhibits:", itemsError);
@@ -89,4 +109,8 @@ export async function getExhibits(): Promise<ExhibitItem[]> {
       createdAt: item.created_at,
     };
   });
+}
+
+export function getFirstFloorExhibits(): Promise<ExhibitItem[]> {
+  return getExhibits({ isFirstFloor: true });
 }

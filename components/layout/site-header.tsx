@@ -16,9 +16,12 @@ type SiteHeaderProps = {
 
 export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteHeaderProps) {
   const accountMenuRef = useRef<HTMLDivElement>(null);
+  const authGateCloseRef = useRef<HTMLButtonElement>(null);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const [isAuthGateOpen, setIsAuthGateOpen] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const isAuthenticated = Boolean(currentUser?.id);
 
   useEffect(() => {
     if (!isAccountMenuOpen) return;
@@ -37,6 +40,18 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
       window.removeEventListener("keydown", closeOnEscape);
     };
   }, [isAccountMenuOpen]);
+
+  useEffect(() => {
+    if (!isAuthGateOpen) return;
+
+    authGateCloseRef.current?.focus();
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsAuthGateOpen(false);
+    };
+
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [isAuthGateOpen]);
 
   const brandContent = (
     <>
@@ -79,19 +94,25 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
 
       {mode !== "brand-only" && (
         <nav aria-label="メインナビゲーション">
-          <Link className={mode === "browse" ? "nav-active" : undefined} href="/">
+          <Link className={mode === "browse" ? "nav-active" : undefined} href="/floor/2">
             展示をめぐる
           </Link>
           {mode === "browse" && (
-            <Link className="nav-cta" href="/exhibits/new">
-              思い出を追加する <span>＋</span>
-            </Link>
+            isAuthenticated ? (
+              <Link className="nav-cta" href="/exhibits/new">
+                思い出を展示する <span>＋</span>
+              </Link>
+            ) : (
+              <button className="nav-cta" type="button" onClick={() => setIsAuthGateOpen(true)}>
+                思い出を展示する <span>＋</span>
+              </button>
+            )
           )}
         </nav>
       )}
 
       {mode !== "brand-only" &&
-        (currentUser ? (
+        (isAuthenticated && currentUser ? (
           <div className="account-menu" ref={accountMenuRef}>
             <button
               className="account-menu-trigger"
@@ -122,6 +143,29 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
             ログイン
           </Link>
         ))}
+      {isAuthGateOpen && (
+        <div className="auth-gate-backdrop" onMouseDown={() => setIsAuthGateOpen(false)}>
+          <section
+            className="auth-gate-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="auth-gate-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <button
+              ref={authGateCloseRef}
+              className="auth-gate-close"
+              type="button"
+              aria-label="閉じる"
+              onClick={() => setIsAuthGateOpen(false)}
+            >
+              ×
+            </button>
+            <h2 id="auth-gate-title">ログインが必要です</h2>
+            <Link href="/sign-in?next=/exhibits/new">ログインする <b aria-hidden="true">→</b></Link>
+          </section>
+        </div>
+      )}
     </header>
   );
 }

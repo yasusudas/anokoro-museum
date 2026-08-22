@@ -14,6 +14,7 @@ import { toggleShinmiriAction } from "@/features/exhibits/actions/toggle-shinmir
 type MuseumExperienceProps = {
   initialExhibits: ExhibitItem[];
   currentUser?: AuthUser | null;
+  isPreview?: boolean;
 };
 
 function ArrowIcon({ direction = "right" }: { direction?: "left" | "right" }) {
@@ -92,7 +93,7 @@ function ExhibitArt({ theme, title }: { theme: string; title: string }) {
   );
 }
 
-export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperienceProps) {
+export function MuseumExperience({ initialExhibits, currentUser, isPreview = false }: MuseumExperienceProps) {
   const router = useRouter();
   const corridorRef = useRef<HTMLDivElement>(null);
   const modalCloseRef = useRef<HTMLButtonElement>(null);
@@ -197,8 +198,9 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
   const pendingShinmiriIdsRef = useRef<Set<string>>(new Set());
 
   const toggleShinmiri = (id: string) => {
+    if (isPreview) return;
     if (!currentUser) {
-      router.push(`/sign-in?next=${encodeURIComponent(selected ? `/?exhibit=${selected.id}` : "/")}`);
+      router.push(`/sign-in?next=${encodeURIComponent(selected ? `/floor/2?exhibit=${selected.id}` : "/floor/2")}`);
       return;
     }
 
@@ -287,10 +289,10 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
         </div>
 
         <div className="floor-label">
-          <span>2F</span>
+          <span>{isPreview ? "1F" : "2F"}</span>
           <div>
-            <small>平成・令和</small>
-            <b>あのころ回廊</b>
+            <small>{isPreview ? "はじめての方へ" : "みんなの投稿"}</small>
+            <b>{isPreview ? "常設展示室" : "あのころ回廊"}</b>
           </div>
         </div>
       </section>
@@ -327,9 +329,10 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                     <p>{item.subtitle}</p>
                   </div>
                   <button
-                    className={shinmiriItems.includes(item.id) ? "nostalgia liked" : "nostalgia"}
+                    className={`${shinmiriItems.includes(item.id) ? "nostalgia liked" : "nostalgia"}${isPreview ? " is-display-only" : ""}`}
                     onClick={() => toggleShinmiri(item.id)}
                     aria-label="しんみりする"
+                    disabled={isPreview}
                   >
                     <NostalgiaIcon />
                     <b>{shinmiriCounts[item.id] ?? item.shinmiriCount}</b>
@@ -421,9 +424,22 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                 <p className="modal-memory">{selected.description}</p>
               </div>
             </div>
-            <aside className="modal-comments" aria-label="コメント欄">
-              <CommentThread key={selected.id} itemId={selected.id} />
-            </aside>
+            {isPreview ? (
+              <aside className="preview-invitation" aria-label="上階のご案内">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="5" y="10" width="14" height="10" rx="1" />
+                  <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                </svg>
+                <p>{currentUser ? "ログインするとみんなのコメントが見られます" : "ログインすると2Fの展示を見られます"}</p>
+                <Link href={currentUser ? "/floor/2" : "/sign-in?next=/floor/2"}>
+                  {currentUser ? "ログインする" : "ログイン"} <b aria-hidden="true">→</b>
+                </Link>
+              </aside>
+            ) : (
+              <aside className="modal-comments" aria-label="コメント欄">
+                <CommentThread key={selected.id} itemId={selected.id} />
+              </aside>
+            )}
           </section>
         </div>
       )}
@@ -439,6 +455,13 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
             ×
           </button>
         </div>
+      )}
+
+      {isPreview && !selected && (
+        <Link className="floor-up-cta" href={currentUser ? "/floor/2" : "/sign-in?next=/floor/2"}>
+          <span><small>NEXT FLOOR</small><b>みんなの思い出を見る</b></span>
+          <i>{currentUser ? "2Fへ" : "ログイン"} →</i>
+        </Link>
       )}
     </main>
   );
