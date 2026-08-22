@@ -268,36 +268,230 @@ button:focus-visible {
   border-color: #e1c793;
 }
 
-.floor-label {
+.floor-selector-container {
   justify-self: end;
+  position: relative;
+}
+
+.floor-selector-button {
   display: flex;
-  gap: 12px;
   align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  background: rgba(85, 71, 57, 0.35);
+  border: 1px solid #7c6853;
+  border-radius: 8px;
+  color: #ede2d2;
+  cursor: pointer;
+  transition: all .2s;
 }
 
-.floor-label>span {
-  font: 24px/1 Arial, sans-serif;
-  color: #b48948;
-  border-right: 1px solid #968470;
-  padding-right: 12px;
+.floor-selector-button:hover,
+.floor-selector-button.active {
+  background: rgba(105, 87, 70, 0.6);
+  border-color: #b48948;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
 }
 
-.floor-label small,
-.floor-label b {
+.floor-badge {
+  font: 22px/1 Arial, sans-serif;
+  color: #d5b77d;
+  font-weight: 700;
+  border-right: 1px solid #8e7a65;
+  padding-right: 10px;
+}
+
+.floor-info {
+  text-align: left;
+}
+
+.floor-info small,
+.floor-info b {
   display: block;
 }
 
-.floor-label small {
+.floor-info small {
   color: #c9bdae;
-  font-size: 8px;
-  letter-spacing: .12em;
+  font-size: 9px;
+  letter-spacing: .08em;
 }
 
-.floor-label b {
+.floor-info b {
   font-size: 12px;
-  letter-spacing: .13em;
-  margin-top: 4px;
-  font-weight: 500;
+  letter-spacing: .08em;
+  margin-top: 2px;
+  font-weight: 600;
+  color: #f7eedf;
+}
+
+.floor-chevron {
+  color: #b48948;
+  margin-left: 2px;
+  transition: transform .2s ease;
+}
+
+.floor-chevron.open {
+  transform: rotate(180deg);
+}
+
+.floor-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  width: 270px;
+  background: #231e19;
+  border: 1px solid #7f6a52;
+  border-radius: 10px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.75);
+  padding: 8px 0 6px;
+  animation: fade .15s ease-out;
+}
+
+.floor-dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 8px 16px 10px;
+  border-bottom: 1px solid rgba(127, 106, 82, 0.35);
+  color: #d5b77d;
+  font-size: 11px;
+}
+
+.floor-dropdown-header span {
+  font-weight: 600;
+  letter-spacing: .08em;
+}
+
+.floor-dropdown-header small {
+  color: #9e8e7b;
+  font-size: 9px;
+}
+
+.floor-dropdown-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+}
+
+.floor-item-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 16px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color .15s;
+}
+
+.floor-item-button:hover {
+  background: rgba(213, 183, 125, 0.12);
+}
+
+.floor-item-button.selected {
+  background: rgba(213, 183, 125, 0.22);
+}
+
+.floor-item-badge {
+  font: 18px/1 Arial, sans-serif;
+  color: #d5b77d;
+  font-weight: 700;
+  width: 36px;
+  text-align: center;
+  flex: 0 0 auto;
+}
+
+.floor-item-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.floor-item-era {
+  display: block;
+  font-size: 9px;
+  color: #c9baa7;
+  letter-spacing: .04em;
+}
+
+.floor-item-name {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #f7eedf;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.floor-item-desc {
+  display: block;
+  font-size: 10px;
+  color: #998a77;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.floor-item-check {
+  font-size: 13px;
+  color: #d5b77d;
+  font-weight: bold;
+  flex: 0 0 auto;
+}
+
+.gallery-empty-state {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: min(80vw, 540px);
+  padding: 60px 24px;
+}
+
+.gallery-empty-content {
+  text-align: center;
+  background: rgba(43, 35, 27, 0.55);
+  border: 1px dashed #7f6a52;
+  border-radius: 12px;
+  padding: 32px 28px;
+  max-width: 440px;
+  color: #ede2d2;
+  backdrop-filter: blur(4px);
+}
+
+.gallery-empty-title {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #f7eedf;
+}
+
+.gallery-empty-desc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #baa995;
+}
+
+.gallery-empty-action {
+  display: inline-block;
+  margin-top: 18px;
+  padding: 8px 22px;
+  font-size: 12px;
+  background: #d5b77d;
+  color: #1e1915;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity .2s;
+}
+
+.gallery-empty-action:hover {
+  opacity: 0.9;
 }
 
 .corridor-wrap {
