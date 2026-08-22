@@ -70,7 +70,7 @@ const mockExhibits = [
     description: "運動会前、筋肉痛になるまで低い姿勢を練習した。クラス全員の掛け声が揃った瞬間は忘れられない。",
     category: "できごと",
     year: 2005,
-    imageFileName: "soran-bushi.jpg",
+    imageFileName: "soran-bushi.png",
     created_at: "2026-08-01T04:00:00+09:00",
   },
   {
