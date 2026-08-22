@@ -410,6 +410,7 @@ button:focus-visible {
 .gallery {
   flex: 0 0 auto;
   width: max-content;
+  min-width: 100%;
   height: 76%;
   display: flex;
   background-color: var(--wall);

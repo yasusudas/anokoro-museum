@@ -105,6 +105,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
   const [shinmiriItems, setShinmiriItems] = useState<string[]>([]);
   const [showGuide, setShowGuide] = useState(true);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [canScroll, setCanScroll] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -151,8 +152,9 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
       }
     };
 
-    const handleCorridorScroll = () => {
+    const updateScrollState = () => {
       const maxScrollLeft = corridor.scrollWidth - corridor.clientWidth;
+      setCanScroll(maxScrollLeft > 1);
       setScrollProgress(maxScrollLeft > 0 ? (corridor.scrollLeft / maxScrollLeft) * 100 : 0);
       if (corridor.scrollLeft > 4) setShowGuide(false);
     };
@@ -170,15 +172,21 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
     };
 
     corridor.addEventListener("wheel", horizontalWheel, { passive: false });
-    corridor.addEventListener("scroll", handleCorridorScroll, { passive: true });
+    const resizeObserver = new ResizeObserver(updateScrollState);
+    resizeObserver.observe(corridor);
+    if (corridor.firstElementChild) resizeObserver.observe(corridor.firstElementChild);
+
+    updateScrollState();
+    corridor.addEventListener("scroll", updateScrollState, { passive: true });
     window.addEventListener("keydown", arrows);
 
     return () => {
       corridor.removeEventListener("wheel", horizontalWheel);
-      corridor.removeEventListener("scroll", handleCorridorScroll);
+      corridor.removeEventListener("scroll", updateScrollState);
+      resizeObserver.disconnect();
       window.removeEventListener("keydown", arrows);
     };
-  }, [closeModal, move, selected]);
+  }, [closeModal, move, selected, visible.length]);
 
   useEffect(() => {
     if (selected) modalCloseRef.current?.focus();
@@ -321,7 +329,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
       </section>
 
       <div className="corridor-wrap">
-        {scrollProgress > 0.5 && (
+        {canScroll && scrollProgress > 0.5 && (
           <button className="scroll-arrow left" onClick={() => move(-1)} aria-label="前の展示へ">
             <ArrowIcon direction="left" />
           </button>
@@ -365,7 +373,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
             ))}
           </section>
         </div>
-        {scrollProgress < 99.5 && (
+        {canScroll && scrollProgress < 99.5 && (
           <button className="scroll-arrow right" onClick={() => move(1)} aria-label="次の展示へ">
             <ArrowIcon />
           </button>
@@ -373,16 +381,18 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
         <div className="floor">
           <span className="floor-line" />
         </div>
-        <input
-          className="corridor-scrollbar"
-          type="range"
-          min="0"
-          max="100"
-          step="0.1"
-          value={scrollProgress}
-          aria-label="展示回廊のスクロール位置"
-          onChange={handleScrollbarChange}
-        />
+        {canScroll && (
+          <input
+            className="corridor-scrollbar"
+            type="range"
+            min="0"
+            max="100"
+            step="0.1"
+            value={scrollProgress}
+            aria-label="展示回廊のスクロール位置"
+            onChange={handleScrollbarChange}
+          />
+        )}
       </div>
 
       {selected && (
