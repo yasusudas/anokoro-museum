@@ -30,6 +30,18 @@ function NostalgiaIcon() {
   );
 }
 
+function renderCardTitle(title: string) {
+  return title.split(/(Q)/g).map((part, index) =>
+    part === "Q" ? (
+      <span className="title-q" key={`${part}-${index}`}>
+        {part}
+      </span>
+    ) : (
+      part
+    ),
+  );
+}
+
 function ExhibitArt({ theme, title }: { theme: string; title: string }) {
   if (theme === "gummy") {
     return (
@@ -356,7 +368,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                 <div className="exhibit-label">
                   <span className="item-number">{item.number}</span>
                   <div>
-                    <h2>{item.title}</h2>
+                    <h2>{renderCardTitle(item.title)}</h2>
                     <p>{item.subtitle}</p>
                   </div>
                   <button
