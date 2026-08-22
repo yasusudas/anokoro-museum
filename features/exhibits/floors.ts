@@ -72,8 +72,28 @@ export const MUSEUM_FLOORS: FloorDefinition[] = [
   },
 ];
 
+const floorIdByPathSegment: Readonly<Record<string, FloorId>> = {
+  b1: "B1F",
+  "1": "1F",
+  "2": "2F",
+  "3": "3F",
+  "4": "4F",
+  "5": "5F",
+  "6": "6F",
+};
+
 export function isFloorId(value: string): value is FloorId {
   return MUSEUM_FLOORS.some((floor) => floor.id === value);
+}
+
+export function getFloorPath(floorId: FloorId): string {
+  return floorId === "B1F"
+    ? "/floor/b1"
+    : `/floor/${floorId.replace("F", "")}`;
+}
+
+export function getFloorIdFromPathSegment(value: string): FloorId | null {
+  return floorIdByPathSegment[value] ?? null;
 }
 
 export function getFloorDefinition(floorId: FloorId): FloorDefinition {

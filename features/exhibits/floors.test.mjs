@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
-import { filterExhibitsByFloor, isFloorId } from "./floors.ts";
+import {
+  filterExhibitsByFloor,
+  getFloorIdFromPathSegment,
+  getFloorPath,
+  isFloorId,
+} from "./floors.ts";
 
 const mockExhibits = [
   {
@@ -94,6 +99,15 @@ assert.equal(isFloorId("4F"), true);
 assert.equal(isFloorId("6F"), true);
 assert.equal(isFloorId("7F"), false);
 assert.equal(isFloorId(""), false);
+assert.equal(getFloorPath("1F"), "/floor/1");
+assert.equal(getFloorPath("B1F"), "/floor/b1");
+assert.equal(getFloorPath("2F"), "/floor/2");
+assert.equal(getFloorPath("4F"), "/floor/4");
+assert.equal(getFloorIdFromPathSegment("b1"), "B1F");
+assert.equal(getFloorIdFromPathSegment("1"), "1F");
+assert.equal(getFloorIdFromPathSegment("6"), "6F");
+assert.equal(getFloorIdFromPathSegment("B1"), null);
+assert.equal(getFloorIdFromPathSegment("7"), null);
 
 // 1. B1F（自分だけの企画展: shinmiriItems）
 const b1fItems = filterExhibitsByFloor(mockExhibits, "B1F", ["item-1", "item-3"]);

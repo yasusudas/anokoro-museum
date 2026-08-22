@@ -14,7 +14,7 @@ import {
   MUSEUM_FLOORS,
   filterExhibitsByFloor,
   getFloorDefinition,
-  isFloorId,
+  getFloorPath,
 } from "@/features/exhibits/floors";
 import type { ExhibitItem } from "@/features/exhibits/types";
 import type { AuthUser } from "@/features/auth/types";
@@ -22,6 +22,7 @@ import { toggleShinmiriAction } from "@/features/exhibits/actions/toggle-shinmir
 
 type MuseumExperienceProps = {
   initialExhibits: ExhibitItem[];
+  initialFloorId: FloorId;
   currentUser?: AuthUser | null;
   isPreview?: boolean;
 };
@@ -263,7 +264,12 @@ function ExhibitArt({ theme, title }: { theme: string; title: string }) {
   );
 }
 
-export function MuseumExperience({ initialExhibits, currentUser, isPreview = false }: MuseumExperienceProps) {
+export function MuseumExperience({
+  initialExhibits,
+  initialFloorId,
+  currentUser,
+  isPreview = false,
+}: MuseumExperienceProps) {
   const router = useRouter();
   const { selectTrack } = useBgm();
   const hasStartedBgmRef = useRef(false);
@@ -271,23 +277,13 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
   const modalCloseRef = useRef<HTMLButtonElement>(null);
   const floorMenuRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
-  const requestedFloorValue = searchParams.get("floor");
-  const requestedFloorId = requestedFloorValue && isFloorId(requestedFloorValue)
-    ? requestedFloorValue
-    : null;
   const requestedExhibitId = searchParams.get("exhibit");
   const requestedExhibit = requestedExhibitId
     ? initialExhibits.find((item) => item.id === requestedExhibitId) ?? null
     : null;
   const isRequestedExhibitMissing = Boolean(requestedExhibitId) && !requestedExhibit;
   const [activeCategory, setActiveCategory] = useState("すべて");
-  const [activeFloorId, setActiveFloorId] = useState<FloorId>(
-    isPreview
-      ? "1F"
-      : requestedFloorId && requestedFloorId !== "1F"
-        ? requestedFloorId
-        : "2F"
-  );
+  const activeFloorId = initialFloorId;
   const [isFloorMenuOpen, setIsFloorMenuOpen] = useState(false);
   const [selected, setSelected] = useState<ExhibitItem | null>(() => requestedExhibit);
   const [shinmiriItems, setShinmiriItems] = useState<string[]>(() =>
@@ -551,12 +547,8 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
                         aria-checked={isSelected}
                         onClick={() => {
                           setIsFloorMenuOpen(false);
-                          if (floor.id === "1F" && !isPreview) {
-                            router.push("/floor/1");
-                            return;
-                          }
-                          if (floor.id !== "1F" && isPreview) {
-                            const destination = `/floor/2?floor=${encodeURIComponent(floor.id)}`;
+                          const destination = getFloorPath(floor.id);
+                          if (isPreview && floor.id !== "1F") {
                             router.push(
                               currentUser
                                 ? destination
@@ -564,8 +556,7 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
                             );
                             return;
                           }
-                          setActiveFloorId(floor.id);
-                          corridorRef.current?.scrollTo({ left: 0 });
+                          router.push(destination);
                         }}
                       >
                         <span className="floor-item-badge">{floor.label}</span>
