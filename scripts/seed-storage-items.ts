@@ -136,10 +136,8 @@ async function seedStorageItems() {
       if (fs.existsSync(localFilePath)) {
         const fileBuffer = fs.readFileSync(localFilePath);
         const ext = item.imageFileName.split(".").pop() || "jpg";
-        const storagePath = `${userId}/mock_${item.id}.${ext}`;
+        const storagePath = `${userId}/mock_${item.id}_${Date.now()}.${ext}`;
         const contentType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
-
-        await supabase.storage.from("exhibits").remove([storagePath]);
 
         const { error: uploadError } = await supabase.storage
           .from("exhibits")

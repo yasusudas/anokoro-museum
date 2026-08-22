@@ -42,6 +42,7 @@ async function testExhibitRegistration() {
 
   if (!user || !session) {
     console.error("❌ Authentication failed: Session not created");
+    console.error("\n⚠️ Test finished with errors.");
     process.exitCode = 1;
     return;
   }
@@ -62,6 +63,7 @@ async function testExhibitRegistration() {
 
   if (!fs.existsSync(imagePath)) {
     console.error("❌ Image file not found:", imagePath);
+    console.error("\n⚠️ Test finished with errors.");
     process.exitCode = 1;
     return;
   }
@@ -73,6 +75,7 @@ async function testExhibitRegistration() {
 
   let uploadedStoragePath: string | null = null;
   let insertedItemId: string | null = null;
+  let hasError = false;
 
   try {
     const { data: uploadData, error: uploadError } = await supabase.storage
@@ -84,48 +87,49 @@ async function testExhibitRegistration() {
 
     if (uploadError || !uploadData) {
       console.error("❌ Storage upload failed:", uploadError?.message);
+      hasError = true;
       process.exitCode = 1;
-      return;
+    } else {
+      uploadedStoragePath = uploadData.path;
+
+      const { data: publicData } = supabase.storage.from("exhibits").getPublicUrl(uploadedStoragePath);
+      const imageUrl = publicData.publicUrl;
+      console.log(`✅ Storage upload succeeded! Public URL: ${imageUrl}\n`);
+
+      const { data: newItem, error: insertError } = await supabase
+        .from("items")
+        .insert({
+          user_id: userId,
+          title: mockItem.title,
+          description: mockItem.description,
+          category: mockItem.category,
+          year: mockItem.year,
+          image_url: imageUrl,
+        })
+        .select("id, title, category, year, image_url, created_at")
+        .single();
+
+      if (insertError || !newItem) {
+        console.error("❌ DB insert failed:", insertError?.message);
+        hasError = true;
+        process.exitCode = 1;
+      } else {
+        insertedItemId = newItem.id;
+
+        console.log(`✅ DB insert succeeded!`);
+        console.log(`   ID: ${newItem.id}`);
+        console.log(`   Title: ${newItem.title}`);
+        console.log(`   Category: ${newItem.category} / Year: ${newItem.year}`);
+        console.log(`   Image URL: ${newItem.image_url}`);
+        console.log(`   Created At: ${newItem.created_at}\n`);
+      }
     }
-
-    uploadedStoragePath = uploadData.path;
-
-    const { data: publicData } = supabase.storage.from("exhibits").getPublicUrl(uploadedStoragePath);
-    const imageUrl = publicData.publicUrl;
-    console.log(`✅ Storage upload succeeded! Public URL: ${imageUrl}\n`);
-
-    const { data: newItem, error: insertError } = await supabase
-      .from("items")
-      .insert({
-        user_id: userId,
-        title: mockItem.title,
-        description: mockItem.description,
-        category: mockItem.category,
-        year: mockItem.year,
-        image_url: imageUrl,
-      })
-      .select("id, title, category, year, image_url, created_at")
-      .single();
-
-    if (insertError || !newItem) {
-      console.error("❌ DB insert failed:", insertError?.message);
-      process.exitCode = 1;
-      return;
-    }
-
-    insertedItemId = newItem.id;
-
-    console.log(`✅ DB insert succeeded!`);
-    console.log(`   ID: ${newItem.id}`);
-    console.log(`   Title: ${newItem.title}`);
-    console.log(`   Category: ${newItem.category} / Year: ${newItem.year}`);
-    console.log(`   Image URL: ${newItem.image_url}`);
-    console.log(`   Created At: ${newItem.created_at}\n`);
   } finally {
     if (insertedItemId) {
       const { error: deleteDbError } = await supabase.from("items").delete().eq("id", insertedItemId);
       if (deleteDbError) {
         console.error("⚠️ Failed to clean up test DB item:", deleteDbError.message);
+        hasError = true;
         process.exitCode = 1;
       } else {
         console.log("🧹 Test DB item cleaned up.");
@@ -138,6 +142,7 @@ async function testExhibitRegistration() {
         .remove([uploadedStoragePath]);
       if (deleteStorageError) {
         console.error("⚠️ Failed to clean up test storage object:", deleteStorageError.message);
+        hasError = true;
         process.exitCode = 1;
       } else {
         console.log("🧹 Test storage image cleaned up.");
@@ -145,10 +150,10 @@ async function testExhibitRegistration() {
     }
   }
 
-  if (process.exitCode === 1) {
-    console.error("⚠️ Test finished with errors.");
+  if (hasError || process.exitCode === 1) {
+    console.error("\n⚠️ Test finished with errors.");
   } else {
-    console.log("🎉 Exhibit Registration Test Complete!");
+    console.log("\n🎉 Exhibit Registration Test Complete!");
   }
 }
 
