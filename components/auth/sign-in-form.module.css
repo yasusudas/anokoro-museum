@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #c9a779;
+  color: #746b5e;
   font-size: 11px;
   letter-spacing: .12em;
 }
@@ -12,7 +12,7 @@
   content: "";
   flex: 1;
   height: 1px;
-  background: #8f6b3e;
+  background: #b9ab98;
 }
 
 .googleButton {
