@@ -95,8 +95,8 @@ const mockExhibits = [
 async function seedStorageItems() {
   console.log("🚀 Starting Supabase Storage Upload & DB Seeding...\n");
 
-  const seedEmail = "seed_uploader@anokoro.local";
-  const seedPassword = "SeedPassword123!";
+  const seedEmail = process.env.SEED_USER_EMAIL || "seed_uploader@anokoro.local";
+  const seedPassword = process.env.SEED_USER_PASSWORD || "SeedPassword123!";
 
   const signInResult = await supabase.auth.signInWithPassword({
     email: seedEmail,
@@ -117,6 +117,7 @@ async function seedStorageItems() {
 
   if (!user || !session) {
     console.error("❌ Authentication error: Session not created");
+    process.exitCode = 1;
     return;
   }
 
@@ -124,6 +125,7 @@ async function seedStorageItems() {
   console.log(`✅ Authenticated as seed uploader (UID: ${userId})\n`);
 
   const imagesDir = path.join(process.cwd(), "public/mock-images");
+  let hasFailure = false;
 
   for (const item of mockExhibits) {
     let imageUrl: string | null = null;
@@ -137,15 +139,18 @@ async function seedStorageItems() {
         const storagePath = `${userId}/mock_${item.id}.${ext}`;
         const contentType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
 
+        await supabase.storage.from("exhibits").remove([storagePath]);
+
         const { error: uploadError } = await supabase.storage
           .from("exhibits")
           .upload(storagePath, fileBuffer, {
             contentType,
-            upsert: true,
+            upsert: false,
           });
 
         if (uploadError) {
           console.error(`⚠️ Failed to upload image for ${item.title}:`, uploadError.message);
+          hasFailure = true;
         } else {
           const { data: publicData } = supabase.storage
             .from("exhibits")
@@ -156,11 +161,13 @@ async function seedStorageItems() {
         }
       } else {
         console.warn(`⚠️ Local file not found: ${localFilePath}`);
+        hasFailure = true;
       }
     }
 
     if (!imageUrl) {
       console.warn(`⏭️ Skipped DB upsert for ${item.title} due to missing image.`);
+      hasFailure = true;
       continue;
     }
 
@@ -180,15 +187,27 @@ async function seedStorageItems() {
 
     if (dbError) {
       console.error(`❌ DB Upsert Error for ${item.title}:`, dbError.message);
+      hasFailure = true;
     } else {
       console.log(`✅ DB Saved: ${item.title}`);
     }
   }
 
-  const { data: allItems } = await supabase
+  const { data: allItems, error: selectError } = await supabase
     .from("items")
     .select("id, title, category, year, image_url")
     .order("created_at", { ascending: true });
+
+  if (selectError) {
+    console.error("❌ Failed to verify seeded items from DB:", selectError.message);
+    hasFailure = true;
+  }
+
+  if (hasFailure) {
+    console.error("\n⚠️ Seeding finished with errors.");
+    process.exitCode = 1;
+    return;
+  }
 
   console.log(`\n🎉 Seeding Complete! Total items in DB: ${allItems?.length}\n`);
   console.table(allItems);

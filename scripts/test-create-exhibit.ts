@@ -20,8 +20,8 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 async function testExhibitRegistration() {
   console.log("🧪 Starting Exhibit Registration Test...\n");
 
-  const testEmail = "test_runner@anokoro.local";
-  const testPassword = "TestRunnerPassword123!";
+  const testEmail = process.env.TEST_USER_EMAIL || "test_runner@anokoro.local";
+  const testPassword = process.env.TEST_USER_PASSWORD || "TestRunnerPassword123!";
 
   const signInResult = await supabase.auth.signInWithPassword({
     email: testEmail,
@@ -42,6 +42,7 @@ async function testExhibitRegistration() {
 
   if (!user || !session) {
     console.error("❌ Authentication failed: Session not created");
+    process.exitCode = 1;
     return;
   }
   console.log(`✅ Authenticated! User ID: ${user.id}\n`);
@@ -61,6 +62,7 @@ async function testExhibitRegistration() {
 
   if (!fs.existsSync(imagePath)) {
     console.error("❌ Image file not found:", imagePath);
+    process.exitCode = 1;
     return;
   }
 
@@ -82,6 +84,7 @@ async function testExhibitRegistration() {
 
     if (uploadError || !uploadData) {
       console.error("❌ Storage upload failed:", uploadError?.message);
+      process.exitCode = 1;
       return;
     }
 
@@ -106,6 +109,7 @@ async function testExhibitRegistration() {
 
     if (insertError || !newItem) {
       console.error("❌ DB insert failed:", insertError?.message);
+      process.exitCode = 1;
       return;
     }
 
@@ -122,6 +126,7 @@ async function testExhibitRegistration() {
       const { error: deleteDbError } = await supabase.from("items").delete().eq("id", insertedItemId);
       if (deleteDbError) {
         console.error("⚠️ Failed to clean up test DB item:", deleteDbError.message);
+        process.exitCode = 1;
       } else {
         console.log("🧹 Test DB item cleaned up.");
       }
@@ -133,13 +138,18 @@ async function testExhibitRegistration() {
         .remove([uploadedStoragePath]);
       if (deleteStorageError) {
         console.error("⚠️ Failed to clean up test storage object:", deleteStorageError.message);
+        process.exitCode = 1;
       } else {
         console.log("🧹 Test storage image cleaned up.");
       }
     }
   }
 
-  console.log("🎉 Exhibit Registration Test Complete!");
+  if (process.exitCode === 1) {
+    console.error("⚠️ Test finished with errors.");
+  } else {
+    console.log("🎉 Exhibit Registration Test Complete!");
+  }
 }
 
 testExhibitRegistration();
