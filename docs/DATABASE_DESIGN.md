@@ -55,7 +55,7 @@ erDiagram
 | --- | --- | --- |
 | `id` | uuid | PK、DEFAULT `gen_random_uuid()` |
 | `user_id` | uuid | FK `users.id` (ON DELETE CASCADE)、NULL可 |
-| `title` | varchar | NOT NULL。Unicode空白を除くtrim後1〜40文字。`items_title_length_check`でDB側も上限を保証 |
+| `title` | varchar | NOT NULL、UNIQUE。Unicode空白を除くtrim後1〜40文字。`items_title_length_check`でDB側も上限を保証 |
 | `description` | text | NOT NULL。Unicode空白を除くtrim後1〜500文字 |
 | `category` | varchar | NOT NULL。CHECK制約で `食べ物` / `テレビ` / `アニメ` / `ゲーム` / `音楽` / `本` / `出来事` / `その他` に限定。アプリ側の正規定義は `features/exhibits/categories.ts` |
 | `image_url` | text | 表示可能な画像URLまたはpublic配下のパス（投稿時は画像添付必須。既存seed等で未指定時はテーマアートへフォールバック） |
@@ -66,6 +66,7 @@ erDiagram
 
 - `image_url` は額縁に飾る展示写真を保持する。投稿画像はSupabase StorageのURL、同梱する初期展示画像はpublic配下のパスを使い、未指定の場合はテーマアートを表示する
 - `title` の文字数はPostgreSQLの `char_length`（Unicodeコードポイント単位）で検証し、`items_title_length_check`により40文字を超える値をDBでも拒否する
+- `items_title_key` により同じタイトルの同時投稿もDBで拒否し、展示名の一意性を保証する
 - `year` は展示アイテムの年代（流行年や発売年など）を表す
 - `user_id` が `NULL` の行は seed で投入した初期展示を表す
 - 初期展示の固定UUIDは `supabase/seed.sql` と各seedスクリプトで共通化し、既存環境との差異はmigrationで参照行ごと移行する

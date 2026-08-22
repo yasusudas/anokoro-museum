@@ -53,7 +53,7 @@ type ActionResult<T> =
 
 ## 4. 認証・認可
 
-- 展示（DBテーブルは `items`）・コメントは匿名で読み取れる
+- 匿名ユーザーは1F固定展示のみ読み取れる。投稿展示とコメントは認証済みユーザーだけが読み取れる
 - 投稿、しんみり、コメント、コメントいいねは `auth.uid()` と所有者をRLSで照合する
 - コメントいいね件数は生テーブルを直接読ませず、`comment_id` と件数だけを返すRPCで取得する
 - service roleは管理用サーバー処理に限定し、通常ユーザー処理でRLSを迂回しない
@@ -93,29 +93,29 @@ GoogleからSupabase経由で返される認可コードをセッションへ交
 ### Request / response例
 
 ```text
-GET /auth/callback?code=<authorization-code>&next=/?exhibit=<exhibit-id>
+GET /auth/callback?code=<authorization-code>&next=/floor/2?exhibit=<exhibit-id>
 
 HTTP/1.1 307 Temporary Redirect
-Location: /?exhibit=<exhibit-id>
+Location: /floor/2?exhibit=<exhibit-id>
 Set-Cookie: <Supabase session cookies>
 ```
 
 利用者がGoogleの同意画面で中断した場合は、エラーを表示せずサインイン画面へ戻す。
 
 ```text
-GET /auth/callback?error=access_denied&error_description=<provider-message>&next=/?exhibit=<exhibit-id>
+GET /auth/callback?error=access_denied&error_description=<provider-message>&next=/floor/2?exhibit=<exhibit-id>
 
 HTTP/1.1 307 Temporary Redirect
-Location: /sign-in?next=%2F%3Fexhibit%3D%3Cexhibit-id%3E
+Location: /sign-in?next=%2Ffloor%2F2%3Fexhibit%3D%3Cexhibit-id%3E
 ```
 
 それ以外のプロバイダ側エラー、認可コードがない場合、セッション交換に失敗した場合は、次のエラー導線へリダイレクトする。
 
 ```text
-GET /auth/callback?error=server_error&error_description=<provider-message>&next=/?exhibit=<exhibit-id>
+GET /auth/callback?error=server_error&error_description=<provider-message>&next=/floor/2?exhibit=<exhibit-id>
 
 HTTP/1.1 307 Temporary Redirect
-Location: /sign-in?error=oauth_callback&next=%2F%3Fexhibit%3D%3Cexhibit-id%3E
+Location: /sign-in?error=oauth_callback&next=%2Ffloor%2F2%3Fexhibit%3D%3Cexhibit-id%3E
 ```
 
 `next`は相対URLとして解釈した結果のoriginがリクエストのoriginと一致する場合だけ採用し、外部サイトへのオープンリダイレクトを許可しない。判定は`features/auth/domain/next-path.ts`の`getSafeNextPath(value, origin)`に集約し、Route Handlerとサインイン画面の両方から同じ実装を使う。

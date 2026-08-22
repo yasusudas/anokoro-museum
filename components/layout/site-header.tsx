@@ -16,7 +16,9 @@ type SiteHeaderProps = {
 
 export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteHeaderProps) {
   const accountMenuRef = useRef<HTMLDivElement>(null);
+  const authGateRef = useRef<HTMLElement>(null);
   const authGateCloseRef = useRef<HTMLButtonElement>(null);
+  const authGateTriggerRef = useRef<HTMLButtonElement>(null);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isAuthGateOpen, setIsAuthGateOpen] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
@@ -44,13 +46,36 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
   useEffect(() => {
     if (!isAuthGateOpen) return;
 
+    const triggerElement = authGateTriggerRef.current;
     authGateCloseRef.current?.focus();
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setIsAuthGateOpen(false);
+    const handleDialogKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsAuthGateOpen(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      const focusableElements = authGateRef.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusableElements?.length) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
     };
 
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
+    window.addEventListener("keydown", handleDialogKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleDialogKeyDown);
+      triggerElement?.focus();
+    };
   }, [isAuthGateOpen]);
 
   const brandContent = (
@@ -87,7 +112,7 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
           {brandContent}
         </button>
       ) : (
-        <Link className="brand" href="/" aria-label="展示一覧へ戻る">
+        <Link className="brand" href="/" aria-label="博物館の入口へ戻る">
           {brandContent}
         </Link>
       )}
@@ -103,7 +128,12 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
                 思い出を展示 <span>＋</span>
               </Link>
             ) : (
-              <button className="nav-cta" type="button" onClick={() => setIsAuthGateOpen(true)}>
+              <button
+                ref={authGateTriggerRef}
+                className="nav-cta"
+                type="button"
+                onClick={() => setIsAuthGateOpen(true)}
+              >
                 思い出を展示 <span>＋</span>
               </button>
             )
@@ -146,6 +176,7 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
       {isAuthGateOpen && (
         <div className="auth-gate-backdrop" onMouseDown={() => setIsAuthGateOpen(false)}>
           <section
+            ref={authGateRef}
             className="auth-gate-modal"
             role="dialog"
             aria-modal="true"

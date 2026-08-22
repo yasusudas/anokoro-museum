@@ -96,8 +96,9 @@ export function filterExhibitsByFloor(
   const floor = getFloorDefinition(floorId);
 
   return exhibits.filter((item) => {
+    if (item.year.trim() === "") return false;
     const yearNum = Number(item.year);
-    if (isNaN(yearNum)) return false;
+    if (!Number.isFinite(yearNum)) return false;
 
     if (floor.minYear !== undefined && yearNum < floor.minYear) {
       return false;

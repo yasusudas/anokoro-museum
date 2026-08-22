@@ -74,6 +74,18 @@ const mockExhibits = [
     isShinmiri: false,
     createdAt: "2026-08-22T00:00:00Z",
   },
+  {
+    id: "item-without-year",
+    number: "No.07",
+    title: "年代未設定の展示",
+    category: "その他",
+    year: "",
+    description: "年代がない展示",
+    theme: "amber",
+    shinmiriCount: 0,
+    isShinmiri: false,
+    createdAt: "2026-08-22T00:00:00Z",
+  },
 ];
 
 console.log("🧪 Testing Museum Floor Filtering Logic...\n");

@@ -500,6 +500,8 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
             className={`floor-selector-button ${isFloorMenuOpen ? "active" : ""}`}
             onClick={() => setIsFloorMenuOpen((prev) => !prev)}
             aria-expanded={isFloorMenuOpen}
+            aria-haspopup="menu"
+            aria-controls="floor-dropdown-menu"
             aria-label={`フロア移動: 現在 ${activeFloor.label} ${activeFloor.name}`}
           >
             <span className="floor-badge">{activeFloor.label}</span>
@@ -511,21 +513,23 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
           </button>
 
           {isFloorMenuOpen && (
-            <div className="floor-dropdown-menu" aria-label="フロア一覧">
+            <div id="floor-dropdown-menu" className="floor-dropdown-menu" role="menu" aria-label="フロア一覧">
               <div className="floor-dropdown-header">
                 <span>フロア移動</span>
                 <small>階を選択</small>
               </div>
-              <ul className="floor-dropdown-list">
+              <ul className="floor-dropdown-list" role="none">
                 {MUSEUM_FLOORS.map((floor) => {
                   const isSelected = floor.id === activeFloorId;
                   return (
-                    <li key={floor.id}>
+                    <li key={floor.id} role="none">
                       <button
                         type="button"
                         className={`floor-item-button ${isSelected ? "selected" : ""}`}
-                        aria-current={isSelected ? "true" : undefined}
+                        role="menuitemradio"
+                        aria-checked={isSelected}
                         onClick={() => {
+                          setIsFloorMenuOpen(false);
                           if (floor.id === "1F" && !isPreview) {
                             router.push("/floor/1");
                             return;
@@ -535,7 +539,6 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
                             return;
                           }
                           setActiveFloorId(floor.id);
-                          setIsFloorMenuOpen(false);
                           corridorRef.current?.scrollTo({ left: 0 });
                         }}
                       >
@@ -579,7 +582,7 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
                       <p className="gallery-empty-desc">
                         ログインすると、「しんみり」した思い出の品だけを集めた特別な展示室をお楽しみいただけます。
                       </p>
-                      <Link href="/sign-in" className="gallery-empty-action">
+                      <Link href="/sign-in?next=/floor/2" className="gallery-empty-action">
                         ログインする
                       </Link>
                     </div>
@@ -696,8 +699,9 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
                   </div>
                   <div className="modal-actions">
                     <button
-                      className={shinmiriItems.includes(selected.id) ? "modal-like liked" : "modal-like"}
+                      className={`${shinmiriItems.includes(selected.id) ? "modal-like liked" : "modal-like"}${isPreview ? " is-display-only" : ""}`}
                       onClick={() => toggleShinmiri(selected.id)}
+                      disabled={isPreview}
                       aria-pressed={shinmiriItems.includes(selected.id)}
                     >
                       <NostalgiaIcon />
@@ -725,9 +729,9 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
                   <rect x="5" y="10" width="14" height="10" rx="1" />
                   <path d="M8 10V7a4 4 0 0 1 8 0v3" />
                 </svg>
-                <p>{currentUser ? "ログインするとみんなのコメントが見られます" : "ログインすると2Fの展示を見られます"}</p>
+                <p>{currentUser ? "2Fで、みんなの展示を見られます" : "ログインすると2Fの展示を見られます"}</p>
                 <Link href={currentUser ? "/floor/2" : "/sign-in?next=/floor/2"}>
-                  {currentUser ? "ログインする" : "ログイン"} <b aria-hidden="true">→</b>
+                  {currentUser ? "2Fを見る" : "ログイン"} <b aria-hidden="true">→</b>
                 </Link>
               </aside>
             ) : (
