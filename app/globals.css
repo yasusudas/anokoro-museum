@@ -112,7 +112,7 @@ button:focus-visible {
   border: 0;
   background: none;
   color: #eadbc9;
-  font-size: 12px;
+  font-size: 16px;
   letter-spacing: .12em;
   cursor: pointer;
   position: relative;
@@ -2078,7 +2078,7 @@ button:focus-visible {
   border: 0;
   background: none;
   color: #eadbc9;
-  font-size: 12px;
+  font-size: 16px;
   letter-spacing: .12em;
   cursor: pointer;
   position: relative;
@@ -2094,9 +2094,13 @@ button:focus-visible {
 }
 
 .museum-header nav .nav-cta span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: #d2ad6e;
   padding-left: 5px;
   font-size: 17px;
+  line-height: 1;
 }
 
 .login-button {
