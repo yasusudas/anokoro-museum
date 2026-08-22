@@ -4,16 +4,8 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Trash2 } from "lucide-react";
 import { createExhibitAction } from "@/features/exhibits/actions/create-exhibit";
-
-const categories = [
-  "おかし",
-  "ゲーム",
-  "たべもの",
-  "ほん",
-  "できごと",
-  "ガジェット",
-  "インターネット",
-];
+import { MAX_EXHIBIT_TITLE_LENGTH } from "@/features/exhibits/constants";
+import { EXHIBIT_CATEGORIES } from "@/features/exhibits/categories";
 
 type FieldName = "title" | "category" | "year" | "description" | "image";
 type FieldErrors = Partial<Record<FieldName, string>>;
@@ -126,6 +118,7 @@ export function MemoryPostForm() {
           id="memory-title"
           name="title"
           type="text"
+          maxLength={MAX_EXHIBIT_TITLE_LENGTH}
           required
           disabled={isPending}
           aria-invalid={Boolean(fieldErrors.title)}
@@ -157,7 +150,7 @@ export function MemoryPostForm() {
               <option value="" disabled>
                 選択してください
               </option>
-              {categories.map((category) => (
+              {EXHIBIT_CATEGORIES.map((category) => (
                 <option key={category} value={category}>
                   {category}
                 </option>

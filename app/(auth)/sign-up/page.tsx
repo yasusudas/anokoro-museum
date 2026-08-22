@@ -5,7 +5,7 @@ export default function SignUpPage() {
   return (
     <AuthCard
       eyebrow="アカウントを制作"
-      title="あのころミュージアム"
+      title="アカウントを作成"
       lead=""
       asideTitle="記憶の持ち主になる"
       asideCopy="公開前の下書き、あとで見返したい展示、しんみりの反応をまとめて扱えるようにします。"

@@ -2,17 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { isExhibitCategory } from "../categories";
+import { countExhibitTitleCharacters, MAX_EXHIBIT_TITLE_LENGTH } from "../constants";
 import type { ActionResult, CreateExhibitData } from "../types";
-
-const ALLOWED_CATEGORIES = [
-  "おかし",
-  "ゲーム",
-  "たべもの",
-  "ほん",
-  "できごと",
-  "ガジェット",
-  "インターネット",
-];
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -52,8 +44,8 @@ export async function createExhibitAction(
 
   if (!title) {
     fieldErrors.title = ["展示タイトルを入力してください。"];
-  } else if (title.length > 100) {
-    fieldErrors.title = ["展示タイトルは100文字以内で入力してください。"];
+  } else if (countExhibitTitleCharacters(title) > MAX_EXHIBIT_TITLE_LENGTH) {
+    fieldErrors.title = [`展示タイトルは${MAX_EXHIBIT_TITLE_LENGTH}文字以内で入力してください。`];
   }
 
   if (!description) {
@@ -64,7 +56,7 @@ export async function createExhibitAction(
 
   if (!category) {
     fieldErrors.category = ["カテゴリを選択してください。"];
-  } else if (!ALLOWED_CATEGORIES.includes(category)) {
+  } else if (!isExhibitCategory(category)) {
     fieldErrors.category = ["有効なカテゴリを選択してください。"];
   }
 

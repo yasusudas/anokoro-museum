@@ -71,17 +71,15 @@ button:focus-visible {
   background: none;
   cursor: pointer;
   text-align: left;
+  color: inherit;
+  text-decoration: none;
 }
 
 .brand-mark {
-  display: grid;
-  place-items: center;
+  display: block;
   width: 39px;
   height: 39px;
-  border: 1px solid #e7c987;
-  border-radius: 50%;
-  color: #ffe3a3;
-  font-size: 20px;
+  object-fit: contain;
 }
 
 .brand b {
@@ -95,7 +93,7 @@ button:focus-visible {
 .brand small {
   display: block;
   color: #eadbc9;
-  font: 8px/1.5 Arial, sans-serif;
+  font: 10px/1.5 Arial, sans-serif;
   letter-spacing: .34em;
   margin-top: 3px;
 }
@@ -116,7 +114,7 @@ button:focus-visible {
   border: 0;
   background: none;
   color: #eadbc9;
-  font-size: 12px;
+  font-size: 16px;
   letter-spacing: .12em;
   cursor: pointer;
   position: relative;
@@ -135,8 +133,8 @@ button:focus-visible {
   position: absolute;
   bottom: 0;
   height: 2px;
-  left: 10%;
-  right: 10%;
+  left: 0;
+  right: 0;
   background: #f1c565;
 }
 
@@ -248,9 +246,12 @@ button:focus-visible {
 }
 
 .category-tabs {
+  position: absolute;
+  left: 50%;
   display: flex;
   justify-content: center;
   gap: 7px;
+  transform: translateX(-50%);
 }
 
 .category-tabs button {
@@ -274,36 +275,231 @@ button:focus-visible {
   border-color: #e1c793;
 }
 
-.floor-label {
+.floor-selector-container {
+  grid-column: 2;
   justify-self: end;
+  position: relative;
+}
+
+.floor-selector-button {
   display: flex;
-  gap: 12px;
   align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  background: rgba(85, 71, 57, 0.35);
+  border: 1px solid #7c6853;
+  border-radius: 8px;
+  color: #ede2d2;
+  cursor: pointer;
+  transition: all .2s;
 }
 
-.floor-label>span {
-  font: 24px/1 Arial, sans-serif;
-  color: #b48948;
-  border-right: 1px solid #968470;
-  padding-right: 12px;
+.floor-selector-button:hover,
+.floor-selector-button.active {
+  background: rgba(105, 87, 70, 0.6);
+  border-color: #b48948;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
 }
 
-.floor-label small,
-.floor-label b {
+.floor-badge {
+  font: 22px/1 Arial, sans-serif;
+  color: #d5b77d;
+  font-weight: 700;
+  border-right: 1px solid #8e7a65;
+  padding-right: 10px;
+}
+
+.floor-info {
+  text-align: left;
+}
+
+.floor-info small,
+.floor-info b {
   display: block;
 }
 
-.floor-label small {
+.floor-info small {
   color: #c9bdae;
-  font-size: 8px;
-  letter-spacing: .12em;
+  font-size: 9px;
+  letter-spacing: .08em;
 }
 
-.floor-label b {
+.floor-info b {
   font-size: 12px;
-  letter-spacing: .13em;
-  margin-top: 4px;
-  font-weight: 500;
+  letter-spacing: .08em;
+  margin-top: 2px;
+  font-weight: 600;
+  color: #f7eedf;
+}
+
+.floor-chevron {
+  color: #b48948;
+  margin-left: 2px;
+  transition: transform .2s ease;
+}
+
+.floor-chevron.open {
+  transform: rotate(180deg);
+}
+
+.floor-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  width: 270px;
+  background: #231e19;
+  border: 1px solid #7f6a52;
+  border-radius: 10px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.75);
+  padding: 8px 0 6px;
+  animation: fade .15s ease-out;
+}
+
+.floor-dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 8px 16px 10px;
+  border-bottom: 1px solid rgba(127, 106, 82, 0.35);
+  color: #d5b77d;
+  font-size: 11px;
+}
+
+.floor-dropdown-header span {
+  font-weight: 600;
+  letter-spacing: .08em;
+}
+
+.floor-dropdown-header small {
+  color: #9e8e7b;
+  font-size: 9px;
+}
+
+.floor-dropdown-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+}
+
+.floor-item-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 16px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color .15s;
+}
+
+.floor-item-button:hover {
+  background: rgba(213, 183, 125, 0.12);
+}
+
+.floor-item-button.selected {
+  background: rgba(213, 183, 125, 0.22);
+}
+
+.floor-item-badge {
+  font: 18px/1 Arial, sans-serif;
+  color: #d5b77d;
+  font-weight: 700;
+  width: 36px;
+  text-align: center;
+  flex: 0 0 auto;
+}
+
+.floor-item-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.floor-item-era {
+  display: block;
+  font-size: 9px;
+  color: #c9baa7;
+  letter-spacing: .04em;
+}
+
+.floor-item-name {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #f7eedf;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.floor-item-desc {
+  display: block;
+  font-size: 10px;
+  color: #998a77;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.floor-item-check {
+  font-size: 13px;
+  color: #d5b77d;
+  font-weight: bold;
+  flex: 0 0 auto;
+}
+
+.gallery-empty-state {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: min(80vw, 540px);
+  padding: 60px 24px;
+}
+
+.gallery-empty-content {
+  text-align: center;
+  background: rgba(43, 35, 27, 0.55);
+  border: 1px dashed #7f6a52;
+  border-radius: 12px;
+  padding: 32px 28px;
+  max-width: 440px;
+  color: #ede2d2;
+  backdrop-filter: blur(4px);
+}
+
+.gallery-empty-title {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #f7eedf;
+}
+
+.gallery-empty-desc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #baa995;
+}
+
+.gallery-empty-action {
+  display: inline-block;
+  margin-top: 18px;
+  padding: 8px 22px;
+  font-size: 12px;
+  background: #d5b77d;
+  color: #1e1915;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity .2s;
+}
+
+.gallery-empty-action:hover {
+  opacity: 0.9;
 }
 
 .corridor-wrap {
@@ -318,7 +514,12 @@ button:focus-visible {
   content: "";
   position: absolute;
   inset: 0 0 24%;
-  background: linear-gradient(180deg, #beb3a6 0%, #b5aa9d 62%, #aca093 100%);
+  background-color: var(--wall);
+  background-image:
+    repeating-linear-gradient(112deg, var(--wall-line) 0, var(--wall-line) 1px, transparent 1px, transparent 19px),
+    repeating-linear-gradient(4deg, rgba(255, 248, 234, .018) 0, rgba(255, 248, 234, .018) 1px, transparent 1px, transparent 13px),
+    linear-gradient(180deg, #beb3a6 0%, #b5aa9d 62%, #aca093 100%);
+  background-size: 88px 88px, 72px 72px, auto;
 }
 
 .corridor-wrap::after {
@@ -396,9 +597,10 @@ button:focus-visible {
 
 .eyebrow {
   margin: 0 0 22px;
-  color: #967044;
-  font: 9px/1.2 Arial, sans-serif;
+  color: var(--ink);
+  font: 16px/1.2 Arial, sans-serif;
   letter-spacing: .36em;
+  text-align: left;
 }
 
 .scroll-arrow svg {
@@ -415,12 +617,6 @@ button:focus-visible {
   min-width: 100%;
   height: 76%;
   display: flex;
-  background-color: var(--wall);
-  background-image:
-    repeating-linear-gradient(112deg, var(--wall-line) 0, var(--wall-line) 1px, transparent 1px, transparent 19px),
-    repeating-linear-gradient(4deg, rgba(255, 248, 234, .018) 0, rgba(255, 248, 234, .018) 1px, transparent 1px, transparent 13px),
-    linear-gradient(180deg, #beb3a6 0%, #b5aa9d 62%, #aca093 100%);
-  background-size: 88px 88px, 72px 72px, auto;
 }
 
 .exhibit {
@@ -486,11 +682,11 @@ button:focus-visible {
 .exhibit-label {
   position: absolute;
   z-index: 3;
-  bottom: 18px;
+  bottom: 55px;
   width: 330px;
   min-height: 90px;
   display: grid;
-  grid-template-columns: 34px 1fr 62px;
+  grid-template-columns: 1fr 62px;
   gap: 13px;
   align-items: center;
   padding: 12px 14px;
@@ -499,20 +695,20 @@ button:focus-visible {
   box-shadow: 0 6px 13px #4a403269;
 }
 
-.item-number {
-  align-self: start;
-  font: 10px Arial, sans-serif;
-  color: #9a7544;
-  border-right: 1px solid #c5baa5;
-  height: 100%;
-  padding-top: 4px;
-}
-
 .exhibit-label h2 {
   margin: 0;
   color: #211914;
-  font-size: 20px;
-  letter-spacing: .16em;
+  font-size: 18px;
+  line-height: 1.2;
+  height: 43.2px;
+  min-height: 43.2px;
+  display: -webkit-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  letter-spacing: .12em;
   font-weight: 600;
   font-family: "ＭＳ 明朝", "Yu Mincho", "Hiragino Mincho ProN", "Noto Serif JP", serif;
   text-shadow: 0 0 3px #f0dfc544, 0 0 7px #d2ad6e44;
@@ -525,10 +721,37 @@ button:focus-visible {
   margin-inline: .08em;
 }
 
+.exhibit-label h2 > span,
+.modal-title-frame h2 > span {
+  display: block;
+  white-space: nowrap;
+}
+
 .exhibit-label p {
   margin: 4px 0;
-  color: #746b5e;
+  color: var(--ink);
   font-size: 10px;
+  display: flex;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transform: translateY(7px);
+}
+
+.exhibit-caption {
+  min-width: 0;
+}
+
+.exhibit-subtitle-prefix {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.exhibit-donor {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .exhibit-label div small {
@@ -541,9 +764,11 @@ button:focus-visible {
   border: 0;
   border-left: 1px solid #c5baa5;
   background: none;
-  display: grid;
-  grid-template-columns: 22px 1fr;
+  align-self: stretch;
+  display: flex;
   align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding-left: 11px;
   cursor: pointer;
 }
@@ -560,13 +785,6 @@ button:focus-visible {
 
 .nostalgia b {
   font: 14px Arial, sans-serif;
-}
-
-.nostalgia small {
-  grid-column: 1/3;
-  color: #857b6c;
-  font-size: 8px;
-  margin-top: 4px;
 }
 
 .nostalgia.liked svg,
@@ -634,7 +852,7 @@ button:focus-visible {
 .scroll-arrow {
   position: absolute;
   z-index: 20;
-  top: 42%;
+  top: 30%;
   width: 44px;
   height: 44px;
   display: grid;
@@ -1068,14 +1286,34 @@ button:focus-visible {
   letter-spacing: .24em;
 }
 
-.modal-content h2 {
+.modal-title {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.modal-title-frame {
+  display: flex;
+  align-items: center;
+  height: 68.6px;
+  min-width: 0;
+}
+
+.modal-title-frame h2 {
+  width: 100%;
   margin: 0;
   color: #4a3024;
-  font-size: clamp(30px, 3.2vw, 44px);
-  letter-spacing: .16em;
+  line-height: 1.2;
+  letter-spacing: .12em;
   font-family: "ＭＳ 明朝", "Yu Mincho", "Hiragino Mincho ProN", "Noto Serif JP", serif;
   font-weight: 800;
   text-shadow: 0 0 3px #f0dfc544, 0 0 7px #d2ad6e44;
+  transform: translateY(-10px);
+  display: -webkit-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .modal-title-row {
@@ -1083,6 +1321,31 @@ button:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
+}
+
+.modal-actions {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  margin-top: -6px;
+}
+
+.modal-search-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #83674b;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: color .2s;
+}
+
+.modal-search-link:hover {
+  color: #4f3b28;
 }
 
 .modal-subtitle {
@@ -1613,7 +1876,7 @@ button:focus-visible {
   right: 28px;
   bottom: 26px;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr;
   align-items: center;
   gap: 16px;
   padding: 14px 16px;
@@ -1630,28 +1893,11 @@ button:focus-visible {
   letter-spacing: .2em
 }
 
-.guide-toast b,
 .guide-toast small {
-  display: block
-}
-
-.guide-toast b {
+  color: var(--ink);
   font-size: 11px;
-  letter-spacing: .08em
-}
-
-.guide-toast small {
-  font-size: 8px;
-  color: #776e61;
-  margin-top: 4px
-}
-
-.guide-toast button {
-  border: 0;
-  background: none;
-  color: #756c5f;
-  font: 18px Arial;
-  cursor: pointer
+  letter-spacing: .08em;
+  white-space: nowrap
 }
 
 @keyframes rise {
@@ -1683,11 +1929,6 @@ button:focus-visible {
 
   .floor-label {
     display: none
-  }
-
-  .category-tabs {
-    justify-content: flex-start;
-    overflow: auto
   }
 
   .category-tabs button {
@@ -1764,9 +2005,25 @@ button:focus-visible {
   }
 }
 
+@media(max-width:700px) {
+  .category-tabs {
+    right: 20px;
+    left: 20px;
+    justify-content: flex-start;
+    overflow-x: auto;
+    transform: none;
+  }
+}
+
 @media(max-height:700px) {
   .museum-header {
     height: 64px
+  }
+
+  .auth-viewport,
+  .post-shell {
+    height: calc(100dvh - 64px);
+    min-height: calc(100dvh - 64px)
   }
 
   .controls {
@@ -1784,7 +2041,7 @@ button:focus-visible {
   }
 
   .exhibit-label {
-    bottom: 9px
+    bottom: 17px
   }
 
   .modal-art {
@@ -1795,13 +2052,16 @@ button:focus-visible {
 }
 
 .auth-viewport {
-  min-height: 100dvh;
+  position: relative;
+  height: calc(100dvh - 76px);
+  min-height: calc(100dvh - 76px);
   display: grid;
   place-items: center;
   padding: 20px;
+  overflow-y: auto;
   background:
-    radial-gradient(ellipse at center, #30251d 0%, #100e0c 48%, #050505 100%),
-    #050505;
+    repeating-linear-gradient(112deg, transparent 0 68px, var(--wall-line) 69px 70px),
+    linear-gradient(180deg, #beb3a6 0%, #b5aa9d 64%, #aca093 100%);
 }
 
 .auth-shell {
@@ -1809,9 +2069,11 @@ button:focus-visible {
   display: grid;
   grid-template-columns: 1fr;
   overflow: hidden;
-  border: 1px solid #8f6b3e;
-  background: #2b2119;
-  box-shadow: 0 0 0 8px #0005, 0 24px 80px #000;
+  border: 1px solid #9d8e79;
+  border-top: 5px solid #a9803b;
+  border-radius: 4px;
+  background: var(--paper);
+  box-shadow: 0 18px 42px rgba(58, 43, 31, .28);
 }
 
 .auth-intro {
@@ -1869,7 +2131,7 @@ button:focus-visible {
 
 .auth-panel {
   padding: 24px 40px 28px;
-  background: linear-gradient(180deg, #5a3d27 0%, #39271b 100%);
+  background: var(--paper);
 }
 
 .auth-card {
@@ -1880,23 +2142,23 @@ button:focus-visible {
 }
 
 .auth-badge {
-  color: #d6a45d;
+  color: #967044;
   font: 11px Arial, sans-serif;
   letter-spacing: .3em;
 }
 
 .auth-card h1 {
   margin: 0;
-  font-size: clamp(26px, 2.8vw, 38px);
+  font-size: clamp(26px, 2.6vw, 34px);
   line-height: 1.15;
   letter-spacing: .08em;
   font-weight: 500;
-  color: #f4e4ca;
+  color: #675747;
 }
 
 .auth-lead {
   margin: 0;
-  color: #d5bea0;
+  color: #655747;
   max-width: 42ch;
   font-size: 13px;
   line-height: 2;
@@ -1916,13 +2178,13 @@ button:focus-visible {
 .auth-field label {
   font-size: 11px;
   letter-spacing: .16em;
-  color: #e0c59b;
+  color: #655747;
 }
 
 .auth-field input {
   width: 100%;
   border: 1px solid #cdbca1;
-  background: #fffaf1;
+  background: #fffaf0;
   padding: 10px 12px;
   color: #27221d;
   font: inherit;
@@ -1965,7 +2227,7 @@ button:focus-visible {
 }
 
 .auth-password-toggle:hover {
-  color: #d6a45d;
+  color: #967044;
 }
 
 .auth-password-toggle:focus-visible {
@@ -1974,13 +2236,13 @@ button:focus-visible {
 }
 
 .auth-field-hint {
-  color: #c9a779;
+  color: #746b5e;
   font-size: 11px;
 }
 
 .auth-error {
   margin: 0;
-  color: #f0a18a;
+  color: #a72c25;
   font-size: 11px;
   line-height: 1.5;
 }
@@ -1993,7 +2255,7 @@ button:focus-visible {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #d1b894;
+  color: #655747;
   font-size: 12px;
   line-height: 1.6;
 }
@@ -2006,35 +2268,36 @@ button:focus-visible {
 
 .auth-submit {
   margin-top: 4px;
-  border: 1px solid #7f633f;
-  background: #30261d;
-  color: #f5e6c9;
+  border: 1px solid #675747;
+  border-radius: 3px;
+  background: #675747;
+  color: #fffaf0;
   padding: 11px 18px;
   letter-spacing: .16em;
   cursor: pointer;
 }
 
 .auth-submit:hover {
-  background: #b88d4a;
-  color: #211913;
+  background: #806f5e;
+  color: #fffaf0;
 }
 
 .auth-note {
   margin: 0;
-  color: #c9b08c;
+  color: #655747;
   font-size: 12px;
   line-height: 1.9;
 }
 
 .action-link {
-  color: #e0b66f;
+  color: #806745;
   text-decoration: none;
   border-bottom: 1px solid #c39a5e;
   padding-bottom: 2px;
 }
 
 .action-link:hover {
-  color: #f4d49d;
+  color: #4d3c2d;
   border-bottom-color: currentColor;
 }
 
@@ -2045,7 +2308,7 @@ button:focus-visible {
   border: 0;
   background: none;
   color: #eadbc9;
-  font-size: 12px;
+  font-size: 16px;
   letter-spacing: .12em;
   cursor: pointer;
   position: relative;
@@ -2061,9 +2324,13 @@ button:focus-visible {
 }
 
 .museum-header nav .nav-cta span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: #d2ad6e;
   padding-left: 5px;
   font-size: 17px;
+  line-height: 1;
 }
 
 .login-button {
@@ -2128,31 +2395,17 @@ button:focus-visible {
 
 .post-shell {
   position: relative;
-  height: 100dvh;
+  height: calc(100dvh - 76px);
   display: grid;
   place-items: center;
   padding: 20px;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   background:
-    radial-gradient(circle at center, #d8b98a55 0%, transparent 46%),
-    radial-gradient(ellipse at center, #faf5ec 0%, #f4ecdf 52%, #e7dbc9 100%),
-    #f4ecdf;
+    repeating-linear-gradient(112deg, transparent 0 68px, var(--wall-line) 69px 70px),
+    linear-gradient(180deg, #beb3a6 0%, #b5aa9d 64%, #aca093 100%);
   isolation: isolate;
-}
-
-.post-shell::before {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  top: -28%;
-  left: 12%;
-  width: 34%;
-  height: 160%;
-  transform: rotate(18deg);
-  background: linear-gradient(90deg, transparent, #fffdf5aa 48%, transparent);
-  filter: blur(18px);
-  pointer-events: none;
 }
 
 .post-hero {
@@ -2245,11 +2498,11 @@ button:focus-visible {
   z-index: 1;
   width: min(760px, 100%);
   padding: 18px 32px 22px;
-  border-radius: 22px;
-  border: 1px solid #b9966844;
-  background: linear-gradient(145deg, #f0dfc5ee 0%, #e2c8a4ee 52%, #d4b487ee 100%);
-  box-shadow: 0 0 72px #c29a6766, 0 18px 70px #8d704b44;
-  backdrop-filter: blur(8px);
+  border-radius: 4px;
+  border: 1px solid #9d8e79;
+  border-top: 5px solid #a9803b;
+  background: var(--paper);
+  box-shadow: 0 18px 42px rgba(58, 43, 31, .28);
 }
 
 .post-heading {
@@ -2259,7 +2512,7 @@ button:focus-visible {
 
 .post-heading h1 {
   margin: 8px 0 0;
-  color: #806b5b;
+  color: var(--ink);
   font-size: clamp(26px, 2.8vw, 38px);
   line-height: 1.15;
   letter-spacing: .08em;
@@ -2272,12 +2525,12 @@ button:focus-visible {
   border: 0;
   background: transparent;
   padding: 0;
-  color: #795634;
+  color: #806745;
 }
 
 .post-heading .post-back-link:hover {
   background: transparent;
-  color: #5d3d25;
+  color: #4d3c2d;
 }
 
 .post-form {
@@ -2307,7 +2560,7 @@ button:focus-visible {
 }
 
 .post-field label {
-  color: #6e5238;
+  color: #655747;
   font-size: 11px;
   letter-spacing: .16em;
 }
@@ -2324,7 +2577,7 @@ button:focus-visible {
 .post-field textarea {
   width: 100%;
   border: 1px solid #cdbca1;
-  background: #fffcf6;
+  background: #fffaf0;
   padding: 9px 12px;
   border-radius: 18px 22px 16px 20px;
   color: #2b251f;
@@ -2380,15 +2633,15 @@ button:focus-visible {
   padding: 26px 14px;
   border-radius: 10px;
   border: 1px dashed #a98a5f;
-  background: linear-gradient(135deg, #faf4ea, #f0e4d0);
+  background: #f2e8d6;
   color: #564a3b;
   text-align: center;
   cursor: pointer;
 }
 
 .post-dropzone.is-dragging {
-  border-color: #956f82;
-  background: #ead9df;
+  border-color: #806745;
+  background: #ded0b9;
 }
 
 .post-dropzone span {
@@ -2408,14 +2661,14 @@ button:focus-visible {
 }
 
 .post-image-link {
-  color: #956f82;
+  color: #806745;
   font-size: 12px;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
 .post-image-link:hover {
-  color: #7f5c70;
+  color: #4d3c2d;
 }
 
 .post-dropzone input {
@@ -2430,7 +2683,7 @@ button:focus-visible {
 }
 
 .post-image-label {
-  color: #6e5238;
+  color: #655747;
   font-size: 11px;
   letter-spacing: .16em;
 }
@@ -2454,13 +2707,13 @@ button:focus-visible {
   border: 1px solid #cbbca8;
   border-radius: 6px;
   background: #fffaf2;
-  color: #956f82;
+  color: #806745;
   cursor: pointer;
 }
 
 .post-image-remove:hover {
-  color: #7f5c70;
-  background: #f3e7db;
+  color: #4d3c2d;
+  background: #ded0b9;
 }
 
 .post-image-remove:focus-visible {
@@ -2471,7 +2724,9 @@ button:focus-visible {
 .post-actions {
   grid-column: 1 / -1;
   display: flex;
-  justify-content: flex-end;
+  width: 100%;
+  justify-self: stretch;
+  justify-content: center;
   gap: 9px;
   margin-top: 18px;
 }
@@ -2491,14 +2746,15 @@ button:focus-visible {
 }
 
 .post-primary {
-  border-color: #5a3b28;
-  background: #3a211d;
-  color: #f5e7cb;
+  margin-inline: auto;
+  border-color: #675747;
+  background: #675747;
+  color: #fffaf0;
 }
 
 .post-primary:hover {
-  background: #5a3426;
-  color: #fff0dc;
+  background: #806f5e;
+  color: #fffaf0;
 }
 
 .post-secondary:hover {
