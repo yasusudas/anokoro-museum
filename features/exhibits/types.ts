@@ -11,6 +11,7 @@ export type ExhibitItem = {
   imageUrl?: string | null;
   theme: string;
   shinmiriCount: number;
+  isShinmiri?: boolean;
   userName?: string;
   createdAt: string;
 };
@@ -38,4 +39,10 @@ export type CreateExhibitData = {
   id: string;
   title: string;
   imageUrl: string | null;
+};
+
+export type ToggleShinmiriData = {
+  itemId: string;
+  isShinmiri: boolean;
+  shinmiriCount: number;
 };
