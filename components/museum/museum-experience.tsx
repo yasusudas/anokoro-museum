@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Settings } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CommentThread } from "@/components/comments/comment-thread";
 import type { ExhibitItem } from "@/features/exhibits/types";
 import type { AuthUser } from "@/features/auth/types";
 import { signOutAction } from "@/features/auth/actions/sign-out";
+import { toggleShinmiriAction } from "@/features/exhibits/actions/toggle-shinmiri";
 
 type MuseumExperienceProps = {
   initialExhibits: ExhibitItem[];
@@ -91,6 +92,7 @@ function ExhibitArt({ theme, title }: { theme: string; title: string }) {
 }
 
 export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperienceProps) {
+  const router = useRouter();
   const corridorRef = useRef<HTMLDivElement>(null);
   const modalCloseRef = useRef<HTMLButtonElement>(null);
   const accountMenuRef = useRef<HTMLDivElement>(null);
@@ -102,7 +104,16 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
   const isRequestedExhibitMissing = Boolean(requestedExhibitId) && !requestedExhibit;
   const [activeCategory, setActiveCategory] = useState("すべて");
   const [selected, setSelected] = useState<ExhibitItem | null>(() => requestedExhibit);
-  const [shinmiriItems, setShinmiriItems] = useState<string[]>([]);
+  const [shinmiriItems, setShinmiriItems] = useState<string[]>(() =>
+    initialExhibits.filter((item) => item.isShinmiri).map((item) => item.id)
+  );
+  const [shinmiriCounts, setShinmiriCounts] = useState<Record<string, number>>(() => {
+    const counts: Record<string, number> = {};
+    for (const item of initialExhibits) {
+      counts[item.id] = item.shinmiriCount;
+    }
+    return counts;
+  });
   const [showGuide, setShowGuide] = useState(true);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [canScroll, setCanScroll] = useState(false);
@@ -113,9 +124,17 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
 
   const exhibits = initialExhibits;
 
-  // カテゴリ一覧を動的に生成
   const categories = useMemo(() => {
-    const defaultCategories = ["すべて", "おかし", "ゲーム", "たべもの", "ほん", "できごと"];
+    const defaultCategories = [
+      "すべて",
+      "おかし",
+      "ゲーム",
+      "たべもの",
+      "ほん",
+      "できごと",
+      "ガジェット",
+      "インターネット",
+    ];
     const itemCategories = exhibits.map((e) => e.category).filter(Boolean);
     const set = new Set([...defaultCategories, ...itemCategories]);
     return Array.from(set);
@@ -210,10 +229,41 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
     };
   }, [isAccountMenuOpen]);
 
-  const toggleShinmiri = (id: string) =>
+  const toggleShinmiri = (id: string) => {
+    if (!currentUser) {
+      router.push(`/sign-in?next=${encodeURIComponent(selected ? `/?exhibit=${selected.id}` : "/")}`);
+      return;
+    }
+
+    const isCurrentlyLiked = shinmiriItems.includes(id);
+    const nextIsLiked = !isCurrentlyLiked;
+    const currentCount = shinmiriCounts[id] ?? 0;
+    const nextCount = Math.max(0, currentCount + (nextIsLiked ? 1 : -1));
+
     setShinmiriItems((current) =>
-      current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
+      nextIsLiked ? [...current, id] : current.filter((item) => item !== id)
     );
+    setShinmiriCounts((current) => ({ ...current, [id]: nextCount }));
+
+    startTransition(async () => {
+      try {
+        const result = await toggleShinmiriAction(id);
+        if (!result.ok) {
+          setShinmiriItems((current) =>
+            isCurrentlyLiked ? [...current, id] : current.filter((item) => item !== id)
+          );
+          setShinmiriCounts((current) => ({ ...current, [id]: currentCount }));
+          return;
+        }
+        setShinmiriCounts((current) => ({ ...current, [id]: result.data.shinmiriCount }));
+      } catch {
+        setShinmiriItems((current) =>
+          isCurrentlyLiked ? [...current, id] : current.filter((item) => item !== id)
+        );
+        setShinmiriCounts((current) => ({ ...current, [id]: currentCount }));
+      }
+    });
+  };
 
   const handleSignOut = () => {
     setSignOutError(null);
@@ -365,7 +415,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                     aria-label="しんみりする"
                   >
                     <NostalgiaIcon />
-                    <b>{item.shinmiriCount + (shinmiriItems.includes(item.id) ? 1 : 0)}</b>
+                    <b>{shinmiriCounts[item.id] ?? item.shinmiriCount}</b>
                     <small>しんみり</small>
                   </button>
                 </div>
@@ -436,7 +486,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                   >
                     <NostalgiaIcon />
                     <span>しんみり</span>
-                    <b>{selected.shinmiriCount + (shinmiriItems.includes(selected.id) ? 1 : 0)}</b>
+                    <b>{shinmiriCounts[selected.id] ?? selected.shinmiriCount}</b>
                   </button>
                 </div>
                 <p className="modal-memory">{selected.description}</p>
