@@ -1,24 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const categories = ["おかし", "ゲーム", "たべもの", "ほん", "できごと"];
 
 export function MemoryPostForm() {
-  const [hasImage, setHasImage] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState("");
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  function selectImage(file: File | undefined) {
+    if (!file || !file.type.startsWith("image/")) return;
+
+    setSelectedFileName(file.name);
+    setPreviewUrl((currentUrl) => {
+      if (currentUrl) URL.revokeObjectURL(currentUrl);
+      return URL.createObjectURL(file);
+    });
+  }
 
   return (
     <form className="post-form" onSubmit={(event) => event.preventDefault()}>
       <div className="post-field post-field-wide">
         <label htmlFor="memory-title">展示タイトル</label>
-        <input id="memory-title" name="title" type="text" placeholder="ひもQのあの長さ" />
+        <input id="memory-title" name="title" type="text" placeholder="（例）妖怪ウォッチ" />
       </div>
 
       <div className="post-field">
-        <label htmlFor="memory-category">カテゴリ</label>
+        <label htmlFor="memory-category">ジャンル</label>
         <select id="memory-category" name="category" defaultValue="">
           <option value="" disabled>
-            選んでください
+            選択してください
           </option>
           {categories.map((category) => (
             <option key={category} value={category}>
@@ -29,44 +48,83 @@ export function MemoryPostForm() {
       </div>
 
       <div className="post-field">
-        <label htmlFor="memory-year">生まれ年</label>
-        <input id="memory-year" name="year" type="text" inputMode="numeric" placeholder="2006" />
-      </div>
-
-      <div className="post-field post-field-wide">
-        <label htmlFor="memory-subtitle">ひとこと</label>
-        <input id="memory-subtitle" name="subtitle" type="text" placeholder="なが〜いグミ、覚えてる？" />
-      </div>
-
-      <div className="post-field post-field-wide">
-        <label htmlFor="memory-body">思い出の本文</label>
-        <textarea id="memory-body" name="body" rows={6} placeholder="その頃の空気や、友だちとの会話をそのまま書く。" />
-      </div>
-
-      <label className="post-dropzone" htmlFor="memory-image">
-        <span>画像を追加</span>
-        <strong>ドラッグ & ドロップか、クリックで選択</strong>
-        <small>著作権・商標・肖像権を確認した画像だけ追加できます。</small>
+        <label htmlFor="memory-year">流行った年</label>
         <input
-          id="memory-image"
-          name="image"
-          type="file"
-          accept="image/*"
-          onChange={(event) => setHasImage(Boolean(event.currentTarget.files?.length))}
+          id="memory-year"
+          name="year"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          placeholder="（例）2007"
+          onInput={(event) => {
+            event.currentTarget.value = event.currentTarget.value.replace(/[^0-9]/g, "");
+          }}
         />
-      </label>
+      </div>
 
-      <label className="post-consent">
-        <input name="imageRightsConfirmed" type="checkbox" required={hasImage} disabled={!hasImage} />
-        <span>この画像の利用条件を確認し、公開する権利があることを確認しました。</span>
-      </label>
+      <div className="post-field post-field-wide">
+        <label htmlFor="memory-subtitle">説明</label>
+        <textarea id="memory-subtitle" name="subtitle" rows={3} placeholder="その展示についての説明を書いてください。" />
+      </div>
+
+      <div className="post-image-field">
+        <span className="post-image-label">画像を追加</span>
+        <label
+          className={`post-dropzone${isDragging ? " is-dragging" : ""}`}
+          htmlFor="memory-image"
+          onDragOver={(event) => {
+            event.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={(event) => {
+            event.preventDefault();
+            setIsDragging(false);
+            const file = event.dataTransfer.files[0];
+
+            if (file) {
+              const dataTransfer = new DataTransfer();
+              dataTransfer.items.add(file);
+              if (imageInputRef.current) imageInputRef.current.files = dataTransfer.files;
+              selectImage(file);
+            }
+          }}
+        >
+          <strong>ドラッグ & ドロップまたはクリックで選択</strong>
+          {previewUrl ? (
+            <a className="post-image-link" href={previewUrl} target="_blank" rel="noreferrer">
+              {selectedFileName}
+            </a>
+          ) : (
+            <small>画像を選択すると、ここにファイル名が表示されます</small>
+          )}
+          <input
+            id="memory-image"
+            name="image"
+            type="file"
+            accept="image/*"
+            ref={imageInputRef}
+            onChange={(event) => selectImage(event.currentTarget.files?.[0])}
+          />
+        </label>
+        {selectedFileName && (
+          <button
+            className="post-image-remove"
+            type="button"
+            onClick={() => {
+              setSelectedFileName("");
+              setPreviewUrl("");
+              if (imageInputRef.current) imageInputRef.current.value = "";
+            }}
+          >
+            画像を削除
+          </button>
+        )}
+      </div>
 
       <div className="post-actions">
-        <button className="post-secondary" type="button">
-          下書き保存
-        </button>
         <button className="post-primary" type="submit">
-          展示を送る
+          展示する
         </button>
       </div>
     </form>
