@@ -13,6 +13,10 @@ type FieldErrors = Partial<Record<FieldName, string>>;
 export function MemoryPostForm() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("");
+  const [year, setYear] = useState("");
+  const [description, setDescription] = useState("");
   const [selectedFileName, setSelectedFileName] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
   const [isDragging, setIsDragging] = useState(false);
@@ -22,6 +26,15 @@ export function MemoryPostForm() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const titleCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const isFormComplete =
+    title.trim().length > 0 &&
+    category.trim().length > 0 &&
+    /^[0-9]{4}$/.test(year.trim()) &&
+    description.trim().length > 0 &&
+    Boolean(selectedFileName);
+
+  const isSubmitDisabled = isPending || isTitleDuplicate || !isFormComplete;
+
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -29,8 +42,8 @@ export function MemoryPostForm() {
     };
   }, [previewUrl]);
 
-  const performDuplicateCheck = useCallback(async (title: string) => {
-    const trimmed = title.trim();
+  const performDuplicateCheck = useCallback(async (checkTitle: string) => {
+    const trimmed = checkTitle.trim();
     if (!trimmed) {
       setIsTitleDuplicate(false);
       return;
@@ -52,6 +65,7 @@ export function MemoryPostForm() {
 
   function handleTitleInput(event: React.ChangeEvent<HTMLInputElement>) {
     const val = event.currentTarget.value;
+    setTitle(val);
     setIsTitleDuplicate(false);
     clearFieldError("title");
 
@@ -176,6 +190,7 @@ export function MemoryPostForm() {
           id="memory-title"
           name="title"
           type="text"
+          value={title}
           required
           disabled={isPending}
           aria-invalid={Boolean(fieldErrors.title)}
@@ -198,19 +213,22 @@ export function MemoryPostForm() {
             <select
               id="memory-category"
               name="category"
-              defaultValue=""
+              value={category}
               required
               disabled={isPending}
               aria-invalid={Boolean(fieldErrors.category)}
               aria-describedby={fieldErrors.category ? "memory-category-error" : undefined}
-              onChange={() => clearFieldError("category")}
+              onChange={(event) => {
+                setCategory(event.target.value);
+                clearFieldError("category");
+              }}
             >
               <option value="" disabled>
                 選択してください
               </option>
-              {EXHIBIT_CATEGORIES.map((category) => (
-                <option key={category} value={category}>
-                  {category}
+              {EXHIBIT_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
                 </option>
               ))}
             </select>
@@ -229,6 +247,7 @@ export function MemoryPostForm() {
             id="memory-year"
             name="year"
             type="text"
+            value={year}
             inputMode="numeric"
             pattern="[0-9]{4}"
             minLength={4}
@@ -239,7 +258,8 @@ export function MemoryPostForm() {
             aria-describedby={fieldErrors.year ? "memory-year-error" : undefined}
             placeholder="（例）2007"
             onInput={(event) => {
-              event.currentTarget.value = event.currentTarget.value.replace(/[^0-9]/g, "").slice(0, 4);
+              const cleanVal = event.currentTarget.value.replace(/[^0-9]/g, "").slice(0, 4);
+              setYear(cleanVal);
               clearFieldError("year");
             }}
           />
@@ -256,13 +276,17 @@ export function MemoryPostForm() {
         <textarea
           id="memory-description"
           name="description"
+          value={description}
           rows={3}
           required
           disabled={isPending}
           aria-invalid={Boolean(fieldErrors.description)}
           aria-describedby={fieldErrors.description ? "memory-description-error" : undefined}
           placeholder="その展示についての説明を書いてください。"
-          onInput={() => clearFieldError("description")}
+          onInput={(event) => {
+            setDescription(event.currentTarget.value);
+            clearFieldError("description");
+          }}
         />
         {fieldErrors.description && (
           <p id="memory-description-error" className="post-field-error" role="alert">
@@ -349,8 +373,8 @@ export function MemoryPostForm() {
         <button
           className="post-primary"
           type="submit"
-          disabled={isPending || isTitleDuplicate}
-          aria-disabled={isPending || isTitleDuplicate}
+          disabled={isSubmitDisabled}
+          aria-disabled={isSubmitDisabled}
         >
           {isPending ? "展示中..." : "展示する"}
         </button>
