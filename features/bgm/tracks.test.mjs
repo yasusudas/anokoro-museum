@@ -13,7 +13,7 @@ assert.equal(offTrack.src, undefined);
 
 const bgm1 = getBgmTrack("bgm-1");
 assert.equal(bgm1.id, "bgm-1");
-assert.equal(bgm1.name, "年の陽炎");
+assert.equal(bgm1.name, "陽炎");
 assert.equal(bgm1.src, "/bgm/年の陽炎.mp3");
 
 const bgm2 = getBgmTrack("bgm-2");

@@ -15,7 +15,7 @@ export const BGM_TRACKS: BgmTrack[] = [
   },
   {
     id: "bgm-1",
-    name: "年の陽炎",
+    name: "陽炎",
     description: "ノスタルジックな調べ",
     src: "/bgm/年の陽炎.mp3",
   },

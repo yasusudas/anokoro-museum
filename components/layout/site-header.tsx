@@ -149,10 +149,7 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
                           className={`bgm-track-item ${isSelected ? "selected" : ""}`}
                           onClick={() => selectTrack(track.id)}
                         >
-                          <div className="bgm-track-info">
-                            <span className="bgm-track-name">{track.name}</span>
-                            <span className="bgm-track-desc">{track.description}</span>
-                          </div>
+                          <span className="bgm-track-name">{track.name}</span>
                           {isSelected && <span className="bgm-track-check">✓</span>}
                         </button>
                       );
