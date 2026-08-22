@@ -328,7 +328,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
             className={`floor-selector-button ${isFloorMenuOpen ? "active" : ""}`}
             onClick={() => setIsFloorMenuOpen((prev) => !prev)}
             aria-expanded={isFloorMenuOpen}
-            aria-haspopup="listbox"
+            aria-haspopup="menu"
             aria-label={`フロア移動: 現在 ${activeFloor.label} ${activeFloor.name}`}
           >
             <span className="floor-badge">{activeFloor.label}</span>
@@ -340,7 +340,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
           </button>
 
           {isFloorMenuOpen && (
-            <div className="floor-dropdown-menu" role="listbox" aria-label="フロア一覧">
+            <div className="floor-dropdown-menu" aria-label="フロア一覧">
               <div className="floor-dropdown-header">
                 <span>フロア移動</span>
                 <small>階を選択</small>
@@ -349,10 +349,11 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                 {MUSEUM_FLOORS.map((floor) => {
                   const isSelected = floor.id === activeFloorId;
                   return (
-                    <li key={floor.id} role="option" aria-selected={isSelected}>
+                    <li key={floor.id}>
                       <button
                         type="button"
                         className={`floor-item-button ${isSelected ? "selected" : ""}`}
+                        aria-current={isSelected ? "true" : undefined}
                         onClick={() => {
                           setActiveFloorId(floor.id);
                           setIsFloorMenuOpen(false);
@@ -385,7 +386,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
           <section className="gallery" aria-live="polite">
             {visible.length === 0 ? (
               <div className="gallery-empty-state">
-                {activeFloorId === "B1F" ? (
+                {activeFloorId === "B1F" && floorFilteredExhibits.length === 0 ? (
                   currentUser ? (
                     <div className="gallery-empty-content">
                       <p className="gallery-empty-title">まだ「しんみり」した展示がありません</p>
