@@ -452,7 +452,6 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                         <div className="floor-item-info">
                           <span className="floor-item-era">{floor.era}</span>
                           <span className="floor-item-name">{floor.name}</span>
-                          <span className="floor-item-desc">{floor.description}</span>
                         </div>
                         {isSelected && <span className="floor-item-check" aria-hidden="true">✓</span>}
                       </button>
