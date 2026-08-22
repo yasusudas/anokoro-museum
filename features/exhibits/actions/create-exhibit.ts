@@ -89,6 +89,30 @@ export async function createExhibitAction(
     };
   }
 
+  const { data: existingItem, error: checkError } = await supabase
+    .from("items")
+    .select("id")
+    .eq("title", title)
+    .limit(1)
+    .maybeSingle();
+
+  if (checkError) {
+    console.error("Database duplicate check error:", checkError);
+  }
+
+  if (existingItem) {
+    return {
+      ok: false,
+      error: {
+        code: "CONFLICT",
+        message: "その展示品は寄贈されています",
+        fieldErrors: {
+          title: ["その展示品は寄贈されています"],
+        },
+      },
+    };
+  }
+
   const validImageFile = imageFile as File;
   let finalImageUrl: string;
   let uploadedStoragePath: string | null = null;
@@ -151,6 +175,19 @@ export async function createExhibitAction(
 
     if (uploadedStoragePath) {
       await supabase.storage.from("exhibits").remove([uploadedStoragePath]).catch(() => {});
+    }
+
+    if (insertError?.code === "23505") {
+      return {
+        ok: false,
+        error: {
+          code: "CONFLICT",
+          message: "その展示品は寄贈されています",
+          fieldErrors: {
+            title: ["その展示品は寄贈されています"],
+          },
+        },
+      };
     }
 
     return {
