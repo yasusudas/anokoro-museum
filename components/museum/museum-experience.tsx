@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { Settings } from "lucide-react";
+import { ExternalLink, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -485,14 +485,26 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                   <div>
                     <h2>{selected.title}</h2>
                   </div>
-                  <button
-                    className={shinmiriItems.includes(selected.id) ? "modal-like liked" : "modal-like"}
-                    onClick={() => toggleShinmiri(selected.id)}
-                  >
-                    <NostalgiaIcon />
-                    <span>しんみり</span>
-                    <b>{shinmiriCounts[selected.id] ?? selected.shinmiriCount}</b>
-                  </button>
+                  <div className="modal-actions">
+                    <button
+                      className={shinmiriItems.includes(selected.id) ? "modal-like liked" : "modal-like"}
+                      onClick={() => toggleShinmiri(selected.id)}
+                    >
+                      <NostalgiaIcon />
+                      <span>しんみり</span>
+                      <b>{shinmiriCounts[selected.id] ?? selected.shinmiriCount}</b>
+                    </button>
+                    <a
+                      href={`https://www.google.com/search?q=${encodeURIComponent(selected.title)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="modal-search-link"
+                      aria-label={`${selected.title}をGoogleで検索して詳しく知る（新しいタブで開きます）`}
+                    >
+                      <span>もっと詳しく知る</span>
+                      <ExternalLink size={13} strokeWidth={1.8} aria-hidden="true" />
+                    </a>
+                  </div>
                 </div>
                 <p className="modal-memory">{selected.description}</p>
               </div>
