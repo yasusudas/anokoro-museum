@@ -486,6 +486,14 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                     <h2>{selected.title}</h2>
                   </div>
                   <div className="modal-actions">
+                    <button
+                      className={shinmiriItems.includes(selected.id) ? "modal-like liked" : "modal-like"}
+                      onClick={() => toggleShinmiri(selected.id)}
+                    >
+                      <NostalgiaIcon />
+                      <span>しんみり</span>
+                      <b>{shinmiriCounts[selected.id] ?? selected.shinmiriCount}</b>
+                    </button>
                     <a
                       href={`https://www.google.com/search?q=${encodeURIComponent(selected.title)}`}
                       target="_blank"
@@ -496,14 +504,6 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                       <span>もっと詳しく知る</span>
                       <ExternalLink size={13} strokeWidth={1.8} aria-hidden="true" />
                     </a>
-                    <button
-                      className={shinmiriItems.includes(selected.id) ? "modal-like liked" : "modal-like"}
-                      onClick={() => toggleShinmiri(selected.id)}
-                    >
-                      <NostalgiaIcon />
-                      <span>しんみり</span>
-                      <b>{shinmiriCounts[selected.id] ?? selected.shinmiriCount}</b>
-                    </button>
                   </div>
                 </div>
                 <p className="modal-memory">{selected.description}</p>
