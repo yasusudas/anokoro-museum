@@ -20,6 +20,7 @@ import { toggleShinmiriAction } from "@/features/exhibits/actions/toggle-shinmir
 type MuseumExperienceProps = {
   initialExhibits: ExhibitItem[];
   currentUser?: AuthUser | null;
+  isPreview?: boolean;
 };
 
 function useAutoFitFontSize<T extends HTMLElement>(
@@ -132,9 +133,11 @@ function AutoFitTitle({ title }: { title: string }) {
   const fontSize = useAutoFitFontSize(ref, title, 2, baseFontSize, 10);
 
   return (
-    <h2 ref={ref} style={{ fontSize }}>
+    <h2 ref={ref} style={{ fontSize, lineHeight: 1.2 }}>
       {titleLines.map((line, index) => (
-        <span key={`${line}-${index}`}>{line}</span>
+        <span key={`${line}-${index}`} style={{ display: "block" }}>
+          {renderCardTitle(line)}
+        </span>
       ))}
     </h2>
   );
@@ -147,9 +150,11 @@ function AutoFitModalTitle({ title }: { title: string }) {
 
   return (
     <div className="modal-title-frame">
-      <h2 ref={ref} style={{ fontSize }}>
+      <h2 ref={ref} style={{ fontSize, lineHeight: 1.2 }}>
         {titleLines.map((line, index) => (
-          <span key={`${line}-${index}`}>{line}</span>
+          <span key={`${line}-${index}`} style={{ display: "block" }}>
+            {line}
+          </span>
         ))}
       </h2>
     </div>
@@ -183,7 +188,19 @@ function NostalgiaIcon() {
   );
 }
 
-export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperienceProps) {
+function renderCardTitle(title: string) {
+  return title.split(/(Q)/g).map((part, index) =>
+    part === "Q" ? (
+      <span className="title-q" key={`${part}-${index}`}>
+        {part}
+      </span>
+    ) : (
+      part
+    ),
+  );
+}
+
+export function MuseumExperience({ initialExhibits, currentUser, isPreview = false }: MuseumExperienceProps) {
   const router = useRouter();
   const corridorRef = useRef<HTMLDivElement>(null);
   const modalCloseRef = useRef<HTMLButtonElement>(null);
@@ -195,7 +212,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
     : null;
   const isRequestedExhibitMissing = Boolean(requestedExhibitId) && !requestedExhibit;
   const [activeCategory, setActiveCategory] = useState("すべて");
-  const [activeFloorId, setActiveFloorId] = useState<FloorId>("2F");
+  const [activeFloorId, setActiveFloorId] = useState<FloorId>(isPreview ? "1F" : "2F");
   const [isFloorMenuOpen, setIsFloorMenuOpen] = useState(false);
   const [selected, setSelected] = useState<ExhibitItem | null>(() => requestedExhibit);
   const [shinmiriItems, setShinmiriItems] = useState<string[]>(() =>
@@ -318,8 +335,9 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
   const pendingShinmiriIdsRef = useRef<Set<string>>(new Set());
 
   const toggleShinmiri = (id: string) => {
+    if (isPreview) return;
     if (!currentUser) {
-      router.push(`/sign-in?next=${encodeURIComponent(selected ? `/?exhibit=${selected.id}` : "/")}`);
+      router.push(`/sign-in?next=${encodeURIComponent(selected ? `/floor/2?exhibit=${selected.id}` : "/floor/2")}`);
       return;
     }
 
@@ -349,7 +367,16 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
           setShinmiriCounts((current) => ({ ...current, [id]: currentCount }));
           return;
         }
-        setShinmiriCounts((current) => ({ ...current, [id]: result.data.shinmiriCount }));
+        setShinmiriItems((current) => {
+          if (result.data.isShinmiri) {
+            return current.includes(id) ? current : [...current, id];
+          }
+          return current.filter((item) => item !== id);
+        });
+        const updatedCount = result.data.shinmiriCount;
+        if (updatedCount !== undefined) {
+          setShinmiriCounts((current) => ({ ...current, [id]: updatedCount }));
+        }
       } catch {
         setShinmiriItems((current) =>
           isCurrentlyLiked ? [...current, id] : current.filter((item) => item !== id)
@@ -414,6 +441,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
             onClick={() => setIsFloorMenuOpen((prev) => !prev)}
             aria-expanded={isFloorMenuOpen}
             aria-haspopup="menu"
+            aria-controls="floor-dropdown-menu"
             aria-label={`フロア移動: 現在 ${activeFloor.label} ${activeFloor.name}`}
           >
             <span className="floor-badge">{activeFloor.label}</span>
@@ -425,23 +453,32 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
           </button>
 
           {isFloorMenuOpen && (
-            <div className="floor-dropdown-menu" aria-label="フロア一覧">
+            <div id="floor-dropdown-menu" className="floor-dropdown-menu" role="menu" aria-label="フロア一覧">
               <div className="floor-dropdown-header">
                 <span>フロア移動</span>
                 <small>階を選択</small>
               </div>
-              <ul className="floor-dropdown-list">
+              <ul className="floor-dropdown-list" role="none">
                 {MUSEUM_FLOORS.map((floor) => {
                   const isSelected = floor.id === activeFloorId;
                   return (
-                    <li key={floor.id}>
+                    <li key={floor.id} role="none">
                       <button
                         type="button"
                         className={`floor-item-button ${isSelected ? "selected" : ""}`}
-                        aria-current={isSelected ? "true" : undefined}
+                        role="menuitemradio"
+                        aria-checked={isSelected}
                         onClick={() => {
-                          setActiveFloorId(floor.id);
                           setIsFloorMenuOpen(false);
+                          if (floor.id === "1F" && !isPreview) {
+                            router.push("/floor/1");
+                            return;
+                          }
+                          if (floor.id !== "1F" && isPreview) {
+                            router.push(currentUser ? "/floor/2" : "/sign-in?next=/floor/2");
+                            return;
+                          }
+                          setActiveFloorId(floor.id);
                           corridorRef.current?.scrollTo({ left: 0 });
                         }}
                       >
@@ -485,7 +522,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                       <p className="gallery-empty-desc">
                         ログインすると、「しんみり」した思い出の品だけを集めた特別な展示室をお楽しみいただけます。
                       </p>
-                      <Link href="/sign-in" className="gallery-empty-action">
+                      <Link href="/sign-in?next=/floor/2" className="gallery-empty-action">
                         ログインする
                       </Link>
                     </div>
@@ -529,9 +566,11 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                     </p>
                   </div>
                   <button
-                    className={shinmiriItems.includes(item.id) ? "nostalgia liked" : "nostalgia"}
+                    className={`${shinmiriItems.includes(item.id) ? "nostalgia liked" : "nostalgia"}${isPreview ? " is-display-only" : ""}`}
                     onClick={() => toggleShinmiri(item.id)}
                     aria-label="しんみりする"
+                    disabled={isPreview}
+                    aria-pressed={shinmiriItems.includes(item.id)}
                   >
                     <NostalgiaIcon />
                     <b>{shinmiriCounts[item.id] ?? item.shinmiriCount}</b>
@@ -600,8 +639,10 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                   </div>
                   <div className="modal-actions">
                     <button
-                      className={shinmiriItems.includes(selected.id) ? "modal-like liked" : "modal-like"}
+                      className={`${shinmiriItems.includes(selected.id) ? "modal-like liked" : "modal-like"}${isPreview ? " is-display-only" : ""}`}
                       onClick={() => toggleShinmiri(selected.id)}
+                      disabled={isPreview}
+                      aria-pressed={shinmiriItems.includes(selected.id)}
                     >
                       <NostalgiaIcon />
                       <span>しんみり</span>
@@ -622,9 +663,22 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                 <p className="modal-memory">{selected.description}</p>
               </div>
             </div>
-            <aside className="modal-comments" aria-label="コメント欄">
-              <CommentThread key={selected.id} itemId={selected.id} />
-            </aside>
+            {isPreview ? (
+              <aside className="preview-invitation" aria-label="上階のご案内">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="5" y="10" width="14" height="10" rx="1" />
+                  <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                </svg>
+                <p>{currentUser ? "2Fで、みんなの展示を見られます" : "ログインすると2Fの展示を見られます"}</p>
+                <Link href={currentUser ? "/floor/2" : "/sign-in?next=/floor/2"}>
+                  {currentUser ? "2Fを見る" : "ログイン"} <b aria-hidden="true">→</b>
+                </Link>
+              </aside>
+            ) : (
+              <aside className="modal-comments" aria-label="コメント欄">
+                <CommentThread key={selected.id} itemId={selected.id} />
+              </aside>
+            )}
           </section>
         </div>
       )}
@@ -634,6 +688,13 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
           <span aria-hidden="true">← →</span>
           <small>マウスホイールや矢印キーで移動</small>
         </div>
+      )}
+
+      {isPreview && !selected && (
+        <Link className="floor-up-cta" href={currentUser ? "/floor/2" : "/sign-in?next=/floor/2"}>
+          <span><small>NEXT FLOOR</small><b>みんなの思い出を見る</b></span>
+          <i>{currentUser ? "2Fへ" : "ログイン"} →</i>
+        </Link>
       )}
     </main>
   );

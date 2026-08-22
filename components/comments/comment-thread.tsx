@@ -329,7 +329,7 @@ export function CommentThread({ itemId }: CommentThreadProps) {
         </form>
       ) : (
         <p className="comment-login-prompt">
-          コメントするには <Link href={`/sign-in?next=${encodeURIComponent(`/?exhibit=${itemId}`)}`}>ログイン</Link> してください。
+          コメントするには <Link href={`/sign-in?next=${encodeURIComponent(`/floor/2?exhibit=${itemId}`)}`}>ログイン</Link> してください。
         </p>
       )}
 

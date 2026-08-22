@@ -43,6 +43,18 @@ export async function getCommentsAction(itemId: string): Promise<ActionResult<Co
     return { ok: true, data: [] };
   }
 
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return {
+      ok: false,
+      error: { code: "UNAUTHENTICATED", message: "コメントを見るにはログインが必要です" },
+    };
+  }
+
   try {
     return { ok: true, data: await findComments(itemId) };
   } catch (error) {

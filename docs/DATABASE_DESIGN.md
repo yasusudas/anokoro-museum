@@ -55,7 +55,7 @@ erDiagram
 | --- | --- | --- |
 | `id` | uuid | PK、DEFAULT `gen_random_uuid()` |
 | `user_id` | uuid | FK `users.id` (ON DELETE CASCADE)、NULL可 |
-| `title` | varchar | NOT NULL。Unicode空白を除くtrim後1〜40文字。`items_title_length_check`でDB側も上限を保証 |
+| `title` | varchar | NOT NULL、UNIQUE。Unicode空白を除くtrim後1〜40文字。`items_title_length_check`でDB側も上限を保証 |
 | `description` | text | NOT NULL。Unicode空白を除くtrim後1〜500文字 |
 | `category` | varchar | NOT NULL。CHECK制約で `食べ物` / `テレビ` / `アニメ` / `ゲーム` / `音楽` / `本` / `出来事` / `その他` に限定。アプリ側の正規定義は `features/exhibits/categories.ts` |
 | `image_url` | text | Supabase Storageの公開画像URL。投稿時は画像添付必須 |
@@ -67,6 +67,7 @@ erDiagram
 - `image_url` は額縁に飾る展示写真を保持する。表示用画像はSupabase Storageで管理し、リポジトリのpublic配下には置かない
 - 過去にpublic配下を参照していた展示は `20260822230000_migrate_local_exhibit_images_to_storage.sql` で既存Storageオブジェクトの公開URLへ移行する
 - `title` の文字数はPostgreSQLの `char_length`（Unicodeコードポイント単位）で検証し、`items_title_length_check`により40文字を超える値をDBでも拒否する
+- `items_title_key` により同じタイトルの同時投稿もDBで拒否し、展示名の一意性を保証する
 - `year` は展示アイテムの年代（流行年や発売年など）を表す
 - `user_id` のNULL許容は既存のDB管理展示との互換性のために残す。新規投稿は認証ユーザーのUUIDを必須とする
 - 展示本文と画像の正はSupabase Database / Storageとし、ローカルseedや表示用モックは管理しない
@@ -113,12 +114,14 @@ erDiagram
 | table | SELECT | INSERT | UPDATE | DELETE |
 | --- | --- | --- | --- | --- |
 | `users` | 全員 | トリガー経由のみ | 本人 | 不可（`auth.users` 削除にCASCADE） |
-| `items` | 全員 | ログイン済み・本人名義 | 不可（編集なし） | 不可（投稿者・運営ともに取り下げなし。`auth.users` 削除時の CASCADE による連鎖削除のみ例外） |
-| `comments` | 全員 | ログイン済み・本人名義 | 不可（編集なし） | 本人 |
+| `items` | 匿名は1F固定展示のみ、ログイン済みは全件 | ログイン済み・本人名義 | 不可（編集なし） | 不可（投稿者・運営ともに取り下げなし。`auth.users` 削除時の CASCADE による連鎖削除のみ例外） |
+| `comments` | ログイン済み | ログイン済み・本人名義 | 不可（編集なし） | 本人 |
 | `comment_likes` | 本人の行のみ | ログイン済み・本人名義 | 不可 | 本人 |
-| `shinmiri_reactions` | 全員 | ログイン済み・本人名義 | 不可 | 本人 |
+| `shinmiri_reactions` | ログイン済み | ログイン済み・本人名義 | 不可 | 本人 |
 
 - INSERTは `WITH CHECK (auth.uid() = user_id)` で本人名義を強制する
+- 匿名の `items` SELECTはseedで共通管理する1F固定UUIDだけを許可し、投稿展示はDB/RLS境界で非公開にする
+- `comments` と `shinmiri_reactions` のSELECTは認証済みに限定し、URLやSupabase APIの直接呼び出しでも匿名閲覧を許可しない
 - DELETEは `USING (auth.uid() = user_id)` で所有者を照合する。ただし `items` は公開後の取り下げを認めないため、policyもtable権限も与えない
 - `items` の UPDATE は table権限に加え、列単位権限も与えない。残存しうる列単位 UPDATE 権限は `20260822190000_revoke_item_column_update_privileges.sql` で存在する列だけを動的に revoke する
 - 上記の `items` UPDATE/DELETE 禁止は `authenticated` 向けの RLS と GRANT で強制する。`service_role` は RLS を迂回できるが、展示の更新・削除には使わない（アプリにも運営用の更新・削除経路を持たない）

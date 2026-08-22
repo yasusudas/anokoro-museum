@@ -118,11 +118,13 @@ export async function toggleShinmiriAction(
 
   if (countError || count === null) {
     console.error("Error fetching updated shinmiri count:", countError);
+    revalidatePath("/", "layout");
+
     return {
-      ok: false,
-      error: {
-        code: "INTERNAL_ERROR",
-        message: "しんみり件数の取得に失敗しました。",
+      ok: true,
+      data: {
+        itemId,
+        isShinmiri,
       },
     };
   }
