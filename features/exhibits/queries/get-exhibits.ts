@@ -2,17 +2,6 @@ import { createClient } from "@/lib/supabase/server";
 import { normalizeExhibitCategory } from "../categories";
 import type { ExhibitItem } from "../types";
 
-function resolveTheme(title: string, category: string): string {
-  if (title.includes("ひもQ") || title.includes("グミ")) return "gummy";
-  if (title.includes("妖怪") || title.includes("ウォッチ")) return "watch";
-  if (title.includes("タピオカ")) return "tapioca";
-  if (title.includes("ゾロリ") || category === "本") return "book";
-  if (title.includes("ソーラン") || category === "音楽") return "soran";
-  if (category === "ゲーム") return "watch";
-  if (category === "食べ物") return "gummy";
-  return "book";
-}
-
 type GetExhibitsOptions = {
   isFirstFloor?: boolean;
 };
@@ -86,7 +75,6 @@ export async function getExhibits(options: GetExhibitsOptions = {}): Promise<Exh
     const shinmiriCount = reactionCounts[item.id] || 0;
     const isShinmiri = userReactionSet.has(item.id);
     const category = normalizeExhibitCategory(item.category);
-    const theme = resolveTheme(item.title, category);
     const user = Array.isArray(item.users) ? item.users[0] : item.users;
     const userName = user?.user_name ?? undefined;
 
@@ -102,7 +90,6 @@ export async function getExhibits(options: GetExhibitsOptions = {}): Promise<Exh
       year: yearStr,
       description: item.description,
       imageUrl: item.image_url,
-      theme,
       shinmiriCount,
       isShinmiri,
       userName,
