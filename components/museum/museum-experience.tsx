@@ -200,66 +200,6 @@ function renderCardTitle(title: string) {
   );
 }
 
-function ExhibitArt({ theme, title }: { theme: string; title: string }) {
-  if (theme === "gummy") {
-    return (
-      <div className="art art-gummy">
-        <span className="gummy-line one" />
-        <span className="gummy-line two" />
-        <strong>{title}</strong>
-        <small>超ひも級！</small>
-      </div>
-    );
-  }
-  if (theme === "watch") {
-    return (
-      <div className="art art-watch">
-        <span className="watch-face">
-          <i>✦</i>
-        </span>
-        <strong>{title}</strong>
-      </div>
-    );
-  }
-  if (theme === "tapioca") {
-    return (
-      <div className="art art-tapioca">
-        <span className="straw" />
-        <span className="cup">
-          <i />
-          <i />
-          <i />
-          <i />
-          <i />
-          <i />
-        </span>
-        <strong>{title}</strong>
-      </div>
-    );
-  }
-  if (theme === "book") {
-    return (
-      <div className="art art-book">
-        <span className="book-cover">
-          <b>Z</b>
-          <i>{title}</i>
-        </span>
-        <span className="book-shadow" />
-      </div>
-    );
-  }
-  return (
-    <div className="art art-soran">
-      <span className="sun" />
-      <span className="dancer">
-        <i />
-        <b />
-      </span>
-      <strong>{title}</strong>
-    </div>
-  );
-}
-
 export function MuseumExperience({ initialExhibits, currentUser, isPreview = false }: MuseumExperienceProps) {
   const router = useRouter();
   const corridorRef = useRef<HTMLDivElement>(null);
@@ -610,7 +550,7 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
                         loading="lazy"
                       />
                     ) : (
-                      <ExhibitArt theme={item.theme} title={item.title} />
+                      <span className="frame-image-missing">画像が登録されていません</span>
                     )}
                   </span>
                 </button>
@@ -684,7 +624,7 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={selected.imageUrl} alt={selected.title} className="frame-photo" />
                     ) : (
-                      <ExhibitArt theme={selected.theme} title={selected.title} />
+                      <span className="frame-image-missing">画像が登録されていません</span>
                     )}
                   </span>
                 </div>

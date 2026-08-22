@@ -38,7 +38,6 @@ lib/
     middleware.ts
 supabase/
   migrations/
-  seed.sql
 docs/
 ```
 
@@ -67,6 +66,8 @@ docs/
 ### 公開展示一覧
 
 `app/page.tsx` は薄く保ち、表示の中心を `components/museum/museum-experience.tsx` に置く。routeを分割する段階では `app/(museum)/page.tsx` がsearch paramsを解釈し、`features/exhibits/infrastructure/find-published-exhibits.ts` を呼ぶ。横移動は `components/museum/exhibit-corridor.tsx` に分離する。
+
+展示本文と画像はSupabase Database / Storageだけで管理する。リポジトリに表示用モックデータやseedファイルを置かず、ローカル環境も接続先DBの展示を表示する。
 
 ### 認証導線
 
