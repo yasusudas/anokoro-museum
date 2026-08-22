@@ -103,6 +103,17 @@ function AutoFitTitle({ title }: { title: string }) {
   );
 }
 
+function AutoFitModalTitle({ title }: { title: string }) {
+  const ref = useRef<HTMLHeadingElement>(null);
+  const fontSize = useAutoFitFontSize(ref, title, 2, 44, 14);
+
+  return (
+    <h2 ref={ref} style={{ fontSize }}>
+      {title}
+    </h2>
+  );
+}
+
 function AutoFitDonor({ userName }: { userName: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const fontSize = useAutoFitFontSize(ref, userName, 1, 10, 7);
@@ -496,8 +507,8 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                   {selected.year ? `${selected.year}年　${selected.category}` : selected.category}
                 </p>
                 <div className="modal-title-row">
-                  <div>
-                    <h2>{selected.title}</h2>
+                  <div className="modal-title">
+                    <AutoFitModalTitle title={selected.title} />
                   </div>
                   <div className="modal-actions">
                     <button

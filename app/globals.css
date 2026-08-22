@@ -1062,10 +1062,21 @@ button:focus-visible {
   padding: 28px 18px 0;
 }
 
-.modal-content h2 {
+.modal-title {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.modal-title h2 {
   margin: 0;
-  font-size: clamp(30px, 3.2vw, 44px);
+  line-height: 1.2;
   letter-spacing: .12em;
+  display: -webkit-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .modal-title-row {
