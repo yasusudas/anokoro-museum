@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
+import { checkDuplicateExhibitTitle } from "../features/exhibits/queries/check-duplicate-title";
 
 if (fs.existsSync(".env.local")) {
   const envContent = fs.readFileSync(".env.local", "utf-8");
@@ -29,25 +30,15 @@ async function testDuplicateTitleFlow() {
     password: testPassword,
   });
 
-  let user = signInResult.data.user;
-
-  if (!user) {
-    const signUpResult = await supabase.auth.signUp({
-      email: testEmail,
-      password: testPassword,
-    });
-    user = signUpResult.data.user;
-  }
-
-  if (!user) {
-    console.error("❌ Authentication failed");
+  const user = signInResult.data.user;
+  if (!user || signInResult.error) {
+    console.error("❌ Authentication failed:", signInResult.error?.message);
     process.exitCode = 1;
     return;
   }
 
   console.log(`✅ Authenticated user: ${user.id}`);
 
-  // 1. 既存の展示アイテムを1件取得
   const { data: existingItem, error: fetchError } = await supabase
     .from("items")
     .select("id, title")
@@ -62,41 +53,20 @@ async function testDuplicateTitleFlow() {
 
   console.log(`📌 Existing Exhibit in DB: "${existingItem.title}" (${existingItem.id})\n`);
 
-  // 2. 同一タイトルでの重複チェッククエリを検証
-  const { data: duplicateMatch, error: checkError } = await supabase
-    .from("items")
-    .select("id")
-    .eq("title", existingItem.title)
-    .limit(1)
-    .maybeSingle();
-
-  if (checkError) {
-    console.error("❌ Duplicate check query failed:", checkError.message);
-    process.exitCode = 1;
-    return;
-  }
-
-  if (duplicateMatch && duplicateMatch.id === existingItem.id) {
-    console.log(`✅ Duplicate title detected correctly: "${existingItem.title}"`);
-    console.log('   Expected Error: "その展示品は寄贈されています"');
+  const { isDuplicate: actionDuplicateResult } = await checkDuplicateExhibitTitle(supabase, existingItem.title);
+  if (actionDuplicateResult === true) {
+    console.log(`✅ Duplicate check correctly detected duplicate: "${existingItem.title}"`);
   } else {
-    console.error("❌ Failed to detect duplicate title!");
+    console.error("❌ Duplicate check failed to detect duplicate!");
     process.exitCode = 1;
   }
 
-  // 3. 存在しないタイトルの場合は検出されないことを検証
   const uniqueTitle = `まったく新しい寄贈品_${Date.now()}`;
-  const { data: nonDuplicateMatch } = await supabase
-    .from("items")
-    .select("id")
-    .eq("title", uniqueTitle)
-    .limit(1)
-    .maybeSingle();
-
-  if (!nonDuplicateMatch) {
-    console.log(`✅ Non-duplicate title passed check: "${uniqueTitle}"`);
+  const { isDuplicate: actionUniqueResult } = await checkDuplicateExhibitTitle(supabase, uniqueTitle);
+  if (actionUniqueResult === false) {
+    console.log(`✅ Duplicate check passed for unique title: "${uniqueTitle}"`);
   } else {
-    console.error("❌ False positive on non-duplicate title!");
+    console.error("❌ False positive on unique title!");
     process.exitCode = 1;
   }
 

@@ -26,6 +26,7 @@ export function MemoryPostForm() {
   const [generalError, setGeneralError] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const titleCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const latestCheckIdRef = useRef(0);
 
   const isFormComplete =
     title.trim().length > 0 &&
@@ -50,8 +51,12 @@ export function MemoryPostForm() {
       return;
     }
 
+    const checkId = ++latestCheckIdRef.current;
+
     try {
       const { isDuplicate } = await checkExhibitTitleAction(trimmed);
+      if (latestCheckIdRef.current !== checkId) return;
+
       setIsTitleDuplicate(isDuplicate);
       if (isDuplicate) {
         setFieldErrors((currentErrors) => ({
@@ -60,7 +65,7 @@ export function MemoryPostForm() {
         }));
       }
     } catch {
-      // ネットワーク等のエラー時は送信時の検証に任せる
+      if (latestCheckIdRef.current !== checkId) return;
     }
   }, []);
 
