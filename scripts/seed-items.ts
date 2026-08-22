@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
+import type { ExhibitCategory } from "../features/exhibits/categories";
 
 const envContent = fs.readFileSync(".env.local", "utf-8");
 for (const line of envContent.split("\n")) {
@@ -18,13 +19,22 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const dummyUserId = "11111111-1111-1111-1111-111111111111";
 
-const exhibits = [
+const exhibits: Array<{
+  id: string;
+  user_id: string;
+  title: string;
+  description: string;
+  category: ExhibitCategory;
+  year: number;
+  image_url: string;
+  created_at: string;
+}> = [
   {
     id: "abccab1c-030a-46ca-a77e-403558a7b4e3",
     user_id: dummyUserId,
     title: "ひもQ",
     description: "遠足の日、ちぎれないように端から大事に食べた、あの長いグミ。友だちと長さを比べるのも定番でした。",
-    category: "おかし",
+    category: "食べ物",
     year: 2004,
     image_url: "/mock-images/himo-q.jpg",
     created_at: "2026-08-01T00:00:00+09:00",
@@ -44,7 +54,7 @@ const exhibits = [
     user_id: dummyUserId,
     title: "タピオカ",
     description: "長い列に並んで、黒糖ミルクを片手に写真を撮った放課後。太いストローも含めて思い出。",
-    category: "たべもの",
+    category: "食べ物",
     year: 2018,
     image_url: "https://images.unsplash.com/photo-1541658016709-82535e94bc69?w=600&auto=format&fit=crop&q=80",
     created_at: "2026-08-01T02:00:00+09:00",
@@ -54,7 +64,7 @@ const exhibits = [
     user_id: dummyUserId,
     title: "かいけつゾロリ",
     description: "休み時間の図書室。貸出中なら次の巻を探して、最後のなぞなぞまでしっかり読んだ。",
-    category: "ほん",
+    category: "本",
     year: 2000,
     image_url: "/mock-images/zorori.jpg",
     created_at: "2026-08-01T03:00:00+09:00",
@@ -64,7 +74,7 @@ const exhibits = [
     user_id: dummyUserId,
     title: "ソーラン節",
     description: "運動会前、筋肉痛になるまで低い姿勢を練習した。クラス全員の掛け声が揃った瞬間は忘れられない。",
-    category: "できごと",
+    category: "音楽",
     year: 2005,
     image_url: "https://images.unsplash.com/photo-1533105079780-92b9be482077?w=600&auto=format&fit=crop&q=80",
     created_at: "2026-08-01T04:00:00+09:00",
@@ -94,7 +104,7 @@ const exhibits = [
     user_id: dummyUserId,
     title: "ガラケー",
     description: "メアド交換は赤外線通信！携帯をピタッとくっつけて受信して、キラキラのデコメで返信するのが定番でした。",
-    category: "ガジェット",
+    category: "その他",
     year: 2007,
     image_url: "https://images.unsplash.com/photo-1520923642038-b4259acecbd7?w=600&auto=format&fit=crop&q=80",
     created_at: "2026-08-21T07:07:46.552256+00:00",

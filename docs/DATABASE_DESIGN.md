@@ -57,7 +57,7 @@ erDiagram
 | `user_id` | uuid | FK `users.id` (ON DELETE CASCADE)、NULL可 |
 | `title` | varchar | NOT NULL。Unicode空白を除くtrim後1〜100文字 |
 | `description` | text | NOT NULL。Unicode空白を除くtrim後1〜500文字 |
-| `category` | varchar | NOT NULL。CHECK制約で `おかし` / `ゲーム` / `たべもの` / `ほん` / `できごと` / `ガジェット` / `インターネット` に限定 |
+| `category` | varchar | NOT NULL。CHECK制約で `食べ物` / `テレビ` / `アニメ` / `ゲーム` / `音楽` / `本` / `出来事` / `その他` に限定。アプリ側の正規定義は `features/exhibits/categories.ts` |
 | `image_url` | text | 表示可能な画像URLまたはpublic配下のパス（投稿時は画像添付必須。既存seed等で未指定時はテーマアートへフォールバック） |
 | `year` | int | 展示品の年代（西暦4桁、1900年〜現在年、例: `2004`） |
 | `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
