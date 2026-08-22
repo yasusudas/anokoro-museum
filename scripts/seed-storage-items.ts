@@ -90,7 +90,7 @@ const mockExhibits = [
     description: "裸眼立体視の3D映像やすれちがい通信にワクワクした。すれちがいMii広場のピース集めも夢中でした。",
     category: "ガジェット",
     year: 2011,
-    imageFileName: "ds-lite.jpg",
+    imageFileName: "3ds.jpg",
     created_at: "2026-08-21T07:07:46.552256+00:00",
   },
   {
