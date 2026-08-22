@@ -124,7 +124,10 @@ erDiagram
 
 RLS有効下ではクライアントから `users` をINSERTできない。`auth.users` へのINSERTに対する `SECURITY DEFINER` トリガーを唯一の作成経路とする。
 
-- `user_name` は利用者が指定した `user_name` / `display_name` から取得し、無い場合はメールアドレスを使わずランダムな既定名を生成する
+- `user_name` は `auth.users.raw_user_meta_data` から `user_name` → `display_name` → `full_name` → `name` の順に、前後空白を除いて空でない最初の値を採用する。いずれも無い場合はメールアドレスを使わず、`あのころの来場者-` + UUID由来の16進8文字というランダムな既定名を生成する
+- メールアドレス登録では自前の登録フォームが渡す `user_name` / `display_name` を使う。GoogleなどのOAuthではproviderが `full_name` / `name` を入れるため、この2つを見ないと全員がランダムな既定名になる
+- `full_name` / `name` を参照していなかった時期に作られたユーザーは、`20260822140000_fix_oauth_user_name_fallback.sql` のバックフィルで救済する。ランダム既定名の形式（`^あのころの来場者-[0-9a-f]{8}$`）に完全一致する行だけを更新するため、利用者が自分で付けた名前は上書きしない
+- アプリ側の `features/auth/queries/get-current-user.ts` も、`users` 行が無い場合のフォールバックを同じ優先順に揃える
 - トリガーが無いと、サインアップ直後の投稿・コメントが外部キー違反で失敗する
 
 ## `updated_at` の更新
