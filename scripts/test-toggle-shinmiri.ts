@@ -21,7 +21,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 const adminSupabase = serviceRoleKey ? createClient(supabaseUrl, serviceRoleKey) : null;
 
 async function testShinmiriFlow() {
-  console.log("🧪 Starting Shinmiri Reaction Test with Isolated Fixture Item...\n");
+  console.log("🧪 Starting Shinmiri Reaction Test...\n");
 
   const testEmail = process.env.TEST_USER_EMAIL || "test_runner@anokoro.local";
   const testPassword = process.env.TEST_USER_PASSWORD || "TestRunnerPassword123!";
@@ -51,10 +51,11 @@ async function testShinmiriFlow() {
 
   console.log(`✅ Authenticated user: ${user.id}`);
 
-  let fixtureItemId: string | null = null;
+  let targetItemId: string;
+  let isDynamicFixture = false;
 
-  try {
-    const { data: fixtureItem, error: createFixtureError } = await supabase
+  if (adminSupabase) {
+    const { data: fixtureItem, error: createFixtureError } = await adminSupabase
       .from("items")
       .insert({
         user_id: user.id,
@@ -72,16 +73,40 @@ async function testShinmiriFlow() {
       return;
     }
 
-    fixtureItemId = fixtureItem.id;
-    console.log(`📌 Isolated Test Exhibit Created: ${fixtureItem.title} (${fixtureItemId})\n`);
+    targetItemId = fixtureItem.id;
+    isDynamicFixture = true;
+    console.log(`📌 Isolated Test Exhibit Created: ${fixtureItem.title} (${targetItemId})\n`);
+  } else {
+    const { data: existingItem, error: fetchError } = await supabase
+      .from("items")
+      .select("id, title")
+      .limit(1)
+      .single();
+
+    if (fetchError || !existingItem) {
+      console.error("❌ Failed to fetch existing exhibit item:", fetchError?.message);
+      process.exitCode = 1;
+      return;
+    }
+
+    targetItemId = existingItem.id;
+    console.log(`📌 Using Existing Exhibit: ${existingItem.title} (${targetItemId})\n`);
+  }
+
+  try {
+    await supabase
+      .from("shinmiri_reactions")
+      .delete()
+      .eq("item_id", targetItemId)
+      .eq("user_id", user.id);
 
     const { count: baselineCount, error: baselineError } = await supabase
       .from("shinmiri_reactions")
       .select("id", { count: "exact", head: true })
-      .eq("item_id", fixtureItemId);
+      .eq("item_id", targetItemId);
 
-    if (baselineError || baselineCount !== 0) {
-      console.error("❌ Baseline reaction count is not 0:", baselineError?.message);
+    if (baselineError || baselineCount === null) {
+      console.error("❌ Failed to fetch baseline reaction count:", baselineError?.message);
       process.exitCode = 1;
       return;
     }
@@ -89,7 +114,7 @@ async function testShinmiriFlow() {
     const { error: insertError } = await supabase
       .from("shinmiri_reactions")
       .insert({
-        item_id: fixtureItemId,
+        item_id: targetItemId,
         user_id: user.id,
       });
 
@@ -102,10 +127,12 @@ async function testShinmiriFlow() {
     const { count: countAfterAdd, error: countAddError } = await supabase
       .from("shinmiri_reactions")
       .select("id", { count: "exact", head: true })
-      .eq("item_id", fixtureItemId);
+      .eq("item_id", targetItemId);
 
-    if (countAddError || countAfterAdd !== 1) {
-      console.error(`❌ Reaction count after add is invalid. Expected: 1, Actual: ${countAfterAdd}`);
+    if (countAddError || countAfterAdd !== baselineCount + 1) {
+      console.error(
+        `❌ Reaction count after add is invalid. Expected: ${baselineCount + 1}, Actual: ${countAfterAdd}`
+      );
       process.exitCode = 1;
       return;
     }
@@ -114,7 +141,7 @@ async function testShinmiriFlow() {
     const { error: duplicateError } = await supabase
       .from("shinmiri_reactions")
       .insert({
-        item_id: fixtureItemId,
+        item_id: targetItemId,
         user_id: user.id,
       });
 
@@ -131,7 +158,7 @@ async function testShinmiriFlow() {
     const { error: deleteError } = await supabase
       .from("shinmiri_reactions")
       .delete()
-      .eq("item_id", fixtureItemId)
+      .eq("item_id", targetItemId)
       .eq("user_id", user.id);
 
     if (deleteError) {
@@ -143,24 +170,39 @@ async function testShinmiriFlow() {
     const { count: countAfterDelete, error: countDeleteError } = await supabase
       .from("shinmiri_reactions")
       .select("id", { count: "exact", head: true })
-      .eq("item_id", fixtureItemId);
+      .eq("item_id", targetItemId);
 
-    if (countDeleteError || countAfterDelete !== 0) {
-      console.error(`❌ Reaction count after remove is invalid. Expected: 0, Actual: ${countAfterDelete}`);
+    if (countDeleteError || countAfterDelete !== baselineCount) {
+      console.error(
+        `❌ Reaction count after remove is invalid. Expected: ${baselineCount}, Actual: ${countAfterDelete}`
+      );
       process.exitCode = 1;
       return;
     }
     console.log(`✅ Shinmiri reaction REMOVED successfully (Count: ${countAfterDelete}).`);
   } finally {
-    if (fixtureItemId) {
-      await supabase.from("shinmiri_reactions").delete().eq("item_id", fixtureItemId);
-      if (adminSupabase) {
-        const { error: adminDeleteError } = await adminSupabase.from("items").delete().eq("id", fixtureItemId);
-        if (adminDeleteError) {
-          console.error("⚠️ Failed to delete fixture item with admin client:", adminDeleteError.message);
-        } else {
-          console.log("🧹 Cleaned up isolated test exhibit.");
-        }
+    const { error: reactionCleanupError } = await supabase
+      .from("shinmiri_reactions")
+      .delete()
+      .eq("item_id", targetItemId)
+      .eq("user_id", user.id);
+
+    if (reactionCleanupError) {
+      console.error("⚠️ Failed to clean up reaction:", reactionCleanupError.message);
+      process.exitCode = 1;
+    }
+
+    if (isDynamicFixture && adminSupabase) {
+      const { error: adminDeleteError } = await adminSupabase
+        .from("items")
+        .delete()
+        .eq("id", targetItemId);
+
+      if (adminDeleteError) {
+        console.error("⚠️ Failed to clean up fixture item:", adminDeleteError.message);
+        process.exitCode = 1;
+      } else {
+        console.log("🧹 Cleaned up isolated test exhibit.");
       }
     }
   }
@@ -168,7 +210,7 @@ async function testShinmiriFlow() {
   if (process.exitCode === 1) {
     console.error("\n⚠️ Test finished with errors.");
   } else {
-    console.log("\n🎉 Shinmiri Reaction Isolated Test Passed!");
+    console.log("\n🎉 Shinmiri Reaction Test Passed!");
   }
 }
 
