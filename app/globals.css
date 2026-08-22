@@ -244,9 +244,12 @@ button:focus-visible {
 }
 
 .category-tabs {
+  position: absolute;
+  left: 50%;
   display: flex;
   justify-content: center;
   gap: 7px;
+  transform: translateX(-50%);
 }
 
 .category-tabs button {
@@ -1697,11 +1700,6 @@ button:focus-visible {
     display: none
   }
 
-  .category-tabs {
-    justify-content: flex-start;
-    overflow: auto
-  }
-
   .category-tabs button {
     white-space: nowrap
   }
@@ -1773,6 +1771,16 @@ button:focus-visible {
 
   .museum-shell {
     min-height: 560px
+  }
+}
+
+@media(max-width:700px) {
+  .category-tabs {
+    right: 20px;
+    left: 20px;
+    justify-content: flex-start;
+    overflow-x: auto;
+    transform: none;
   }
 }
 
