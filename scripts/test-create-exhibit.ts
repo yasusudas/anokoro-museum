@@ -2,7 +2,6 @@ import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
 
-// .env.local の環境変数をロード
 const envContent = fs.readFileSync(".env.local", "utf-8");
 for (const line of envContent.split("\n")) {
   const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
@@ -19,10 +18,8 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 async function testExhibitRegistration() {
-  console.log("🧪 --- 新規登録機能（Storageアップロード & DB保存）の動作テスト開始 ---\n");
+  console.log("🧪 Starting Exhibit Registration Test...\n");
 
-  // 1. テストユーザーを作成/ログイン
-  console.log("1️⃣ テストユーザーで認証中...");
   const testEmail = `tester_${Date.now()}@anokoro.local`;
   const testPassword = "password123!";
 
@@ -31,61 +28,51 @@ async function testExhibitRegistration() {
     password: testPassword,
   });
 
-  if (authError || !authData.user) {
-    console.error("❌ 認証失敗:", authError?.message);
+  if (authError || !authData.user || !authData.session) {
+    console.error("❌ Authentication failed:", authError?.message ?? "Session not created");
     return;
   }
-  console.log(`✅ 認証成功！ ユーザーID: ${authData.user.id}\n`);
+  console.log(`✅ Authenticated! User ID: ${authData.user.id}\n`);
 
   const userId = authData.user.id;
 
-  // 2. モック画像と入力データを準備
-  console.log("2️⃣ モック画像と入力データの準備...");
   const mockItem = {
     title: "たまごっち (テスト登録)",
     description: "お腹がすいたらピピッとお知らせ。授業中に鳴らないかヒヤヒヤしながら育てていました。",
     category: "ゲーム",
     year: 1996,
-    imageFileName: "youkai-watch.jpg", // public/mock-images/ 内の画像を使用
+    imageFileName: "youkai-watch.png",
   };
 
   const imagesDir = path.join(process.cwd(), "public/mock-images");
   const imagePath = path.join(imagesDir, mockItem.imageFileName);
 
   if (!fs.existsSync(imagePath)) {
-    console.error("❌ 画像ファイルが見つかりません:", imagePath);
+    console.error("❌ Image file not found:", imagePath);
     return;
   }
 
   const fileBuffer = fs.readFileSync(imagePath);
-  console.log(`✅ 画像ファイル読み込み完了: ${mockItem.imageFileName} (${fileBuffer.length} bytes)\n`);
-
-  // 3. Supabase Storage への画像アップロード & URL 発行
-  console.log("3️⃣ Supabase Storage (exhibits バケット) へアップロード中...");
-  const ext = mockItem.imageFileName.split(".").pop() || "jpg";
+  const ext = mockItem.imageFileName.split(".").pop() || "png";
+  const contentType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
   const fileName = `${userId}/${Date.now()}_test_${crypto.randomUUID()}.${ext}`;
 
   const { data: uploadData, error: uploadError } = await supabase.storage
     .from("exhibits")
     .upload(fileName, fileBuffer, {
-      contentType: "image/jpeg",
+      contentType,
       upsert: false,
     });
 
-  let imageUrl: string | null = null;
-
-  if (uploadError) {
-    console.warn(`⚠️ Storage アップロード結果: ${uploadError.message}`);
-    console.log("   （※Supabaseダッシュボードで 'exhibits' バケットが作成されていない場合はフォールバックURLを使用します）");
-    imageUrl = "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop&q=80";
-  } else {
-    const { data: publicData } = supabase.storage.from("exhibits").getPublicUrl(uploadData.path);
-    imageUrl = publicData.publicUrl;
-    console.log(`✅ Storage アップロード成功！ 発行URL: ${imageUrl}\n`);
+  if (uploadError || !uploadData) {
+    console.error("❌ Storage upload failed:", uploadError?.message);
+    return;
   }
 
-  // 4. items テーブルへ INSERT 保存
-  console.log("4️⃣ データベース (public.items) に展示データを保存中...");
+  const { data: publicData } = supabase.storage.from("exhibits").getPublicUrl(uploadData.path);
+  const imageUrl = publicData.publicUrl;
+  console.log(`✅ Storage upload succeeded! Public URL: ${imageUrl}\n`);
+
   const { data: newItem, error: insertError } = await supabase
     .from("items")
     .insert({
@@ -100,18 +87,22 @@ async function testExhibitRegistration() {
     .single();
 
   if (insertError || !newItem) {
-    console.error("❌ DB 保存失敗:", insertError?.message);
+    console.error("❌ DB insert failed:", insertError?.message);
     return;
   }
 
-  console.log(`✅ DB 保存成功！`);
-  console.log(`   展示ID: ${newItem.id}`);
-  console.log(`   タイトル: ${newItem.title}`);
-  console.log(`   カテゴリ: ${newItem.category} / 年代: ${newItem.year}年`);
-  console.log(`   画像URL: ${newItem.image_url}`);
-  console.log(`   保存日時: ${newItem.created_at}\n`);
+  console.log(`✅ DB insert succeeded!`);
+  console.log(`   ID: ${newItem.id}`);
+  console.log(`   Title: ${newItem.title}`);
+  console.log(`   Category: ${newItem.category} / Year: ${newItem.year}`);
+  console.log(`   Image URL: ${newItem.image_url}`);
+  console.log(`   Created At: ${newItem.created_at}\n`);
 
-  console.log("🎉 --- 新規登録機能の動作確認テストが【すべて正常に完了】しました！ ---");
+  // テスト用レコードをクリーンアップ
+  await supabase.from("items").delete().eq("id", newItem.id);
+  console.log("🧹 Test item cleaned up.");
+
+  console.log("🎉 Exhibit Registration Test Complete!");
 }
 
 testExhibitRegistration();

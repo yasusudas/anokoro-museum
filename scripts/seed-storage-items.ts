@@ -2,7 +2,6 @@ import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
 
-// .env.local の環境変数をロード
 const envContent = fs.readFileSync(".env.local", "utf-8");
 for (const line of envContent.split("\n")) {
   const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
@@ -18,14 +17,9 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const dummyUserId = "11111111-1111-1111-1111-111111111111";
-
-// 登録したいモックデータのリスト
-// public/mock-images/ に画像を置き、imageFileName にそのファイル名を指定します
 const mockExhibits = [
   {
     id: "11111111-1111-4111-8111-111111111111",
-    user_id: dummyUserId,
     title: "ひもQ",
     description: "遠足の日、ちぎれないように端から大事に食べた、あの長いグミ。友だちと長さを比べるのも定番でした。",
     category: "おかし",
@@ -35,7 +29,6 @@ const mockExhibits = [
   },
   {
     id: "22222222-2222-4222-8222-222222222222",
-    user_id: dummyUserId,
     title: "妖怪ウォッチ",
     description: "放課後になると、みんなで妖怪メダルを見せ合った。あの召喚ソングは今でも口ずさめるかも。",
     category: "ゲーム",
@@ -45,7 +38,6 @@ const mockExhibits = [
   },
   {
     id: "33333333-3333-4333-8333-333333333333",
-    user_id: dummyUserId,
     title: "タピオカ",
     description: "長い列に並んで、黒糖ミルクを片手に写真を撮った放課後。太いストローも含めて思い出。",
     category: "たべもの",
@@ -55,7 +47,6 @@ const mockExhibits = [
   },
   {
     id: "44444444-4444-4444-8444-444444444444",
-    user_id: dummyUserId,
     title: "かいけつゾロリ",
     description: "休み時間の図書室。貸出中なら次の巻を探して、最後のなぞなぞまでしっかり読んだ。",
     category: "ほん",
@@ -65,7 +56,6 @@ const mockExhibits = [
   },
   {
     id: "55555555-5555-4555-8555-555555555555",
-    user_id: dummyUserId,
     title: "ソーラン節",
     description: "運動会前、筋肉痛になるまで低い姿勢を練習した。クラス全員の掛け声が揃った瞬間は忘れられない。",
     category: "できごと",
@@ -75,7 +65,6 @@ const mockExhibits = [
   },
   {
     id: "052dd450-347a-4166-8b4c-da075e9a796d",
-    user_id: dummyUserId,
     title: "あつまれ どうぶつの森",
     description: "無人島でのDIY生活や、オンラインで友達の島に遊びに行くのがおうち時間の定番でした。",
     category: "ゲーム",
@@ -85,17 +74,15 @@ const mockExhibits = [
   },
   {
     id: "5a802a54-d1eb-490d-a167-53714978ffeb",
-    user_id: dummyUserId,
     title: "ニンテンドー3DS",
     description: "裸眼立体視の3D映像やすれちがい通信にワクワクした。すれちがいMii広場のピース集めも夢中でした。",
-    category: "ガジェット",
+    category: "ゲーム",
     year: 2011,
     imageFileName: "3ds.jpg",
     created_at: "2026-08-21T07:07:46.552256+00:00",
   },
   {
     id: "3bf75231-81b2-4701-a1f5-2a28ec4918b5",
-    user_id: dummyUserId,
     title: "ガラケー",
     description: "メアド交換は赤外線通信！携帯をピタッとくっつけて受信して、キラキラのデコメで返信するのが定番でした。",
     category: "ガジェット",
@@ -108,7 +95,6 @@ const mockExhibits = [
 async function seedStorageItems() {
   console.log("🚀 Starting Supabase Storage Upload & DB Seeding...\n");
 
-  // 認証用テストユーザーの作成/ログイン
   const testEmail = `seed_uploader_${Date.now()}@anokoro.local`;
   const testPassword = "password123!";
 
@@ -117,8 +103,8 @@ async function seedStorageItems() {
     password: testPassword,
   });
 
-  if (authError || !authData.user) {
-    console.error("❌ Authentication error:", authError?.message);
+  if (authError || !authData.user || !authData.session) {
+    console.error("❌ Authentication error:", authError?.message ?? "Session not created");
     return;
   }
 
@@ -139,7 +125,6 @@ async function seedStorageItems() {
         const storagePath = `${userId}/mock_${item.id}.${ext}`;
         const contentType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
 
-        // Supabase Storage にアップロード
         const { error: uploadError } = await supabase.storage
           .from("exhibits")
           .upload(storagePath, fileBuffer, {
@@ -150,7 +135,6 @@ async function seedStorageItems() {
         if (uploadError) {
           console.error(`⚠️ Failed to upload image for ${item.title}:`, uploadError.message);
         } else {
-          // 公開URLを取得
           const { data: publicData } = supabase.storage
             .from("exhibits")
             .getPublicUrl(storagePath);
@@ -163,11 +147,15 @@ async function seedStorageItems() {
       }
     }
 
-    // items テーブルに保存
+    if (!imageUrl) {
+      console.warn(`⏭️ Skipped DB upsert for ${item.title} due to missing image.`);
+      continue;
+    }
+
     const { error: dbError } = await supabase.from("items").upsert(
       {
         id: item.id,
-        user_id: item.user_id,
+        user_id: userId,
         title: item.title,
         description: item.description,
         category: item.category,
@@ -185,7 +173,6 @@ async function seedStorageItems() {
     }
   }
 
-  // 最新のDBアイテム一覧を表示
   const { data: allItems } = await supabase
     .from("items")
     .select("id, title, category, year, image_url")

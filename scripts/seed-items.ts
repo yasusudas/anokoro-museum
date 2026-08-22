@@ -84,7 +84,7 @@ const exhibits = [
     user_id: dummyUserId,
     title: "ニンテンドー3DS",
     description: "裸眼立体視の3D映像やすれちがい通信にワクワクした。すれちがいMii広場のピース集めも夢中でした。",
-    category: "ガジェット",
+    category: "ゲーム",
     year: 2011,
     image_url: "https://images.unsplash.com/photo-1592840496694-26d035b52b48?w=600&auto=format&fit=crop&q=80",
     created_at: "2026-08-21T07:07:46.552256+00:00",
