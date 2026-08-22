@@ -1,15 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { ExternalLink, Settings } from "lucide-react";
-import Image from "next/image";
+import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CommentThread } from "@/components/comments/comment-thread";
+import { SiteHeader } from "@/components/layout/site-header";
 import { EXHIBIT_CATEGORIES } from "@/features/exhibits/categories";
 import type { ExhibitItem } from "@/features/exhibits/types";
 import type { AuthUser } from "@/features/auth/types";
-import { signOutAction } from "@/features/auth/actions/sign-out";
 import { toggleShinmiriAction } from "@/features/exhibits/actions/toggle-shinmiri";
 
 type MuseumExperienceProps = {
@@ -97,7 +96,6 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
   const router = useRouter();
   const corridorRef = useRef<HTMLDivElement>(null);
   const modalCloseRef = useRef<HTMLButtonElement>(null);
-  const accountMenuRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
   const requestedExhibitId = searchParams.get("exhibit");
   const requestedExhibit = requestedExhibitId
@@ -119,10 +117,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
   const [showGuide, setShowGuide] = useState(true);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [canScroll, setCanScroll] = useState(false);
-  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
-
-  const [signOutError, setSignOutError] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
 
   const exhibits = initialExhibits;
 
@@ -199,24 +194,6 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
     if (selected) modalCloseRef.current?.focus();
   }, [selected]);
 
-  useEffect(() => {
-    if (!isAccountMenuOpen) return;
-
-    const closeOnOutsideClick = (event: PointerEvent) => {
-      if (!accountMenuRef.current?.contains(event.target as Node)) setIsAccountMenuOpen(false);
-    };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setIsAccountMenuOpen(false);
-    };
-
-    document.addEventListener("pointerdown", closeOnOutsideClick);
-    window.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.removeEventListener("pointerdown", closeOnOutsideClick);
-      window.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [isAccountMenuOpen]);
-
   const pendingShinmiriIdsRef = useRef<Set<string>>(new Set());
 
   const toggleShinmiri = (id: string) => {
@@ -263,16 +240,6 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
     });
   };
 
-  const handleSignOut = () => {
-    setSignOutError(null);
-    startTransition(async () => {
-      const result = await signOutAction();
-      if (result && !result.ok) {
-        setSignOutError(result.error.message || "ログアウトに失敗しました。もう一度お試しください。");
-      }
-    });
-  };
-
   const handleScrollbarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const corridor = corridorRef.current;
     if (!corridor) return;
@@ -298,65 +265,10 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
 
   return (
     <main className="museum-shell">
-      <header className="museum-header">
-        <button
-          className="brand"
-          onClick={() => corridorRef.current?.scrollTo({ left: 0, behavior: "smooth" })}
-          aria-label="入口へ戻る"
-        >
-          <Image
-            className="brand-mark"
-            src="/site-logo-mark.svg"
-            alt=""
-            width={39}
-            height={39}
-            aria-hidden="true"
-          />
-          <span>
-            <b>あのころ</b>
-            <small>ミュージアム</small>
-          </span>
-        </button>
-
-        <nav aria-label="メインナビゲーション">
-          <button className="nav-active">展示をめぐる</button>
-          <Link className="nav-cta" href="/exhibits/new">
-            思い出を追加する <span>＋</span>
-          </Link>
-        </nav>
-
-        {currentUser ? (
-          <div className="account-menu" ref={accountMenuRef}>
-            <button
-              className="account-menu-trigger"
-              type="button"
-              aria-label="アカウントメニューを開く"
-              aria-expanded={isAccountMenuOpen}
-              aria-controls="account-menu-panel"
-              onClick={() => setIsAccountMenuOpen((isOpen) => !isOpen)}
-            >
-              <Settings aria-hidden="true" size={21} strokeWidth={1.7} />
-            </button>
-            {isAccountMenuOpen && (
-              <div className="account-menu-panel" id="account-menu-panel">
-                <p className="account-menu-user">{currentUser.userName}</p>
-                <button className="account-menu-signout" type="button" onClick={handleSignOut} disabled={isPending}>
-                  {isPending ? "ログアウト中..." : "ログアウト"}
-                </button>
-                {signOutError && (
-                  <p className="account-menu-error" role="alert">
-                    {signOutError}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        ) : (
-          <Link className="login-button" href="/sign-in">
-            ログイン
-          </Link>
-        )}
-      </header>
+      <SiteHeader
+        currentUser={currentUser}
+        onBrandClick={() => corridorRef.current?.scrollTo({ left: 0, behavior: "smooth" })}
+      />
 
       <section className="controls" aria-label="展示の絞り込み">
         <div className="category-tabs">

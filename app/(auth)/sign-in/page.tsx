@@ -12,7 +12,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   return (
     <AuthCard
       eyebrow="ログイン"
-      title="あのころミュージアム"
+      title="ログイン"
       lead=""
       asideTitle="帰ってきたくなる、入口"
       asideCopy="ログインすると、保存した反応やあとで読み返したい展示にすぐ戻れます。"
