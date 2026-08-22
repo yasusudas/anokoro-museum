@@ -131,8 +131,8 @@ button:focus-visible {
   position: absolute;
   bottom: 0;
   height: 2px;
-  left: 10%;
-  right: 10%;
+  left: 0;
+  right: 0;
   background: #f1c565;
 }
 
