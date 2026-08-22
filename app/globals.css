@@ -294,6 +294,12 @@ button:focus-visible {
   color: #29251f;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .account-menu {
   position: relative;
   flex: 0 0 auto;
@@ -320,20 +326,145 @@ button:focus-visible {
   z-index: 80;
   top: calc(100% + 10px);
   right: 0;
-  width: 220px;
+  width: 260px;
   border: 1px solid #9b856e;
-  border-radius: 4px;
+  border-radius: 6px;
   background: #f2e8d6;
   padding: 14px;
   color: #342d25;
   box-shadow: 0 10px 28px rgba(36, 25, 17, .28);
 }
 
+.account-menu-header {
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed rgba(155, 133, 110, .4);
+}
+
 .account-menu-user {
-  margin: 0 0 12px;
+  margin: 0;
   overflow-wrap: anywhere;
   color: #655747;
   font-size: 13px;
+  font-weight: 600;
+}
+
+.bgm-settings-section {
+  margin-bottom: 12px;
+}
+
+.bgm-settings-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: #4d3c2d;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .06em;
+}
+
+.bgm-settings-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bgm-playback-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #806745;
+  border-radius: 999px;
+  background: #fffaf0;
+  padding: 2px 8px;
+  color: #564634;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+
+.bgm-playback-toggle:hover {
+  background: #ded0b9;
+  color: #2b2218;
+}
+
+.bgm-track-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.bgm-track-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: rgba(255, 250, 240, .5);
+  padding: 6px 8px;
+  text-align: left;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+
+.bgm-track-item:hover {
+  background: #fffaf0;
+  border-color: #cdbca1;
+}
+
+.bgm-track-item.selected {
+  background: #4d3c2d;
+  border-color: #4d3c2d;
+  color: #fffaf0;
+}
+
+.bgm-track-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.bgm-track-name {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+
+.bgm-track-desc {
+  font-size: 10px;
+  opacity: .75;
+}
+
+.bgm-track-check {
+  font-size: 12px;
+  font-weight: bold;
+  color: #e5bc76;
+}
+
+.bgm-volume-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: rgba(255, 250, 240, .6);
+  color: #655747;
+}
+
+.bgm-volume-slider {
+  flex: 1;
+  height: 4px;
+  accent-color: #806745;
+  cursor: pointer;
+}
+
+.account-menu-footer {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(155, 133, 110, .4);
 }
 
 .account-menu-signout {
@@ -341,7 +472,7 @@ button:focus-visible {
   border: 1px solid #806745;
   border-radius: 3px;
   background: transparent;
-  padding: 9px 12px;
+  padding: 7px 12px;
   color: #4d3c2d;
   font: inherit;
   font-size: 11px;
@@ -356,6 +487,19 @@ button:focus-visible {
 .account-menu-signout:disabled {
   cursor: wait;
   opacity: .6;
+}
+
+.account-menu-login-link {
+  display: block;
+  text-align: center;
+  color: #806745;
+  font-size: 11px;
+  text-decoration: underline;
+  padding: 4px 0;
+}
+
+.account-menu-login-link:hover {
+  color: #4d3c2d;
 }
 
 .account-menu-error {

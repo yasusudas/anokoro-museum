@@ -3,10 +3,12 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Settings } from "lucide-react";
+import { Music, Pause, Play, Settings, Volume2 } from "lucide-react";
 
 import { signOutAction } from "@/features/auth/actions/sign-out";
 import type { AuthUser } from "@/features/auth/types";
+import { useBgm } from "@/features/bgm/bgm-context";
+import { BGM_TRACKS } from "@/features/bgm/tracks";
 
 type SiteHeaderProps = {
   currentUser?: AuthUser | null;
@@ -24,6 +26,7 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const isAuthenticated = Boolean(currentUser?.id);
+  const { currentTrackId, isPlaying, volume, selectTrack, togglePlay, setVolume } = useBgm();
 
   useEffect(() => {
     if (!isAccountMenuOpen) return;
@@ -143,30 +146,90 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
 
       {mode !== "brand-only" &&
         (isAuthenticated && currentUser ? (
-          <div className="account-menu" ref={accountMenuRef}>
-            <button
-              className="account-menu-trigger"
-              type="button"
-              aria-label="アカウントメニューを開く"
-              aria-expanded={isAccountMenuOpen}
-              aria-controls="account-menu-panel"
-              onClick={() => setIsAccountMenuOpen((isOpen) => !isOpen)}
-            >
-              <Settings aria-hidden="true" size={21} strokeWidth={1.7} />
-            </button>
-            {isAccountMenuOpen && (
-              <div className="account-menu-panel" id="account-menu-panel">
-                <p className="account-menu-user">{currentUser.userName}</p>
-                <button className="account-menu-signout" type="button" onClick={handleSignOut} disabled={isPending}>
-                  {isPending ? "ログアウト中..." : "ログアウト"}
-                </button>
-                {signOutError && (
-                  <p className="account-menu-error" role="alert">
-                    {signOutError}
-                  </p>
-                )}
-              </div>
-            )}
+          <div className="header-actions">
+            <div className="account-menu" ref={accountMenuRef}>
+              <button
+                className="account-menu-trigger"
+                type="button"
+                aria-label="館内設定メニューを開く"
+                aria-expanded={isAccountMenuOpen}
+                aria-controls="account-menu-panel"
+                onClick={() => setIsAccountMenuOpen((isOpen) => !isOpen)}
+              >
+                <Settings aria-hidden="true" size={21} strokeWidth={1.7} />
+              </button>
+              {isAccountMenuOpen && (
+                <div className="account-menu-panel" id="account-menu-panel">
+                  <div className="account-menu-header">
+                    <p className="account-menu-user">{currentUser.userName}</p>
+                  </div>
+
+                <div className="bgm-settings-section">
+                  <div className="bgm-settings-title">
+                    <div className="bgm-settings-label">
+                      <Music size={15} aria-hidden="true" />
+                      <span>館内BGM</span>
+                    </div>
+                    {currentTrackId !== "none" && (
+                      <button
+                        type="button"
+                        className="bgm-playback-toggle"
+                        onClick={togglePlay}
+                        aria-label={isPlaying ? "BGMを一時停止" : "BGMを再生"}
+                      >
+                        {isPlaying ? <Pause size={13} /> : <Play size={13} />}
+                        <span>{isPlaying ? "再生中" : "停止中"}</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="bgm-track-list">
+                    {BGM_TRACKS.map((track) => {
+                      const isSelected = track.id === currentTrackId;
+                      return (
+                        <button
+                          key={track.id}
+                          type="button"
+                          className={`bgm-track-item ${isSelected ? "selected" : ""}`}
+                          onClick={() => selectTrack(track.id)}
+                        >
+                          <span className="bgm-track-name">{track.name}</span>
+                          {isSelected && <span className="bgm-track-check">✓</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {currentTrackId !== "none" && (
+                    <div className="bgm-volume-control">
+                      <Volume2 size={14} aria-hidden="true" />
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={volume}
+                        onChange={(e) => setVolume(parseFloat(e.target.value))}
+                        aria-label="BGMの音量"
+                        className="bgm-volume-slider"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                  <div className="account-menu-footer">
+                    <button className="account-menu-signout" type="button" onClick={handleSignOut} disabled={isPending}>
+                      {isPending ? "ログアウト中..." : "ログアウト"}
+                    </button>
+                    {signOutError && (
+                      <p className="account-menu-error" role="alert">
+                        {signOutError}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <Link className="login-button" href="/sign-in">
