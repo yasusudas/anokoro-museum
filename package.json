@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --test features/comments/domain/comment.test.mjs"
+    "test": "node --experimental-strip-types --test \"features/**/*.test.mjs\""
   },
   "dependencies": {
     "lucide-react": "^1.33.0",

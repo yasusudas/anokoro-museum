@@ -22,6 +22,8 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     profile?.user_name ||
     (user.user_metadata?.user_name as string) ||
     (user.user_metadata?.display_name as string) ||
+    (user.user_metadata?.full_name as string) ||
+    (user.user_metadata?.name as string) ||
     "あのころの来場者";
 
   return {

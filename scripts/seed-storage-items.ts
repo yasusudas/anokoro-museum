@@ -19,7 +19,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const mockExhibits = [
   {
-    id: "11111111-1111-4111-8111-111111111111",
+    id: "abccab1c-030a-46ca-a77e-403558a7b4e3",
     title: "ひもQ",
     description: "遠足の日、ちぎれないように端から大事に食べた、あの長いグミ。友だちと長さを比べるのも定番でした。",
     category: "おかし",
@@ -28,7 +28,7 @@ const mockExhibits = [
     created_at: "2026-08-01T00:00:00+09:00",
   },
   {
-    id: "22222222-2222-4222-8222-222222222222",
+    id: "96d0cc6b-ef33-4d69-b5f0-8e5371ab3c29",
     title: "妖怪ウォッチ",
     description: "放課後になると、みんなで妖怪メダルを見せ合った。あの召喚ソングは今でも口ずさめるかも。",
     category: "ゲーム",
@@ -37,7 +37,7 @@ const mockExhibits = [
     created_at: "2026-08-01T01:00:00+09:00",
   },
   {
-    id: "33333333-3333-4333-8333-333333333333",
+    id: "01b2a5ce-d7f5-48a5-83be-c02acbe44673",
     title: "タピオカ",
     description: "長い列に並んで、黒糖ミルクを片手に写真を撮った放課後。太いストローも含めて思い出。",
     category: "たべもの",
@@ -46,7 +46,7 @@ const mockExhibits = [
     created_at: "2026-08-01T02:00:00+09:00",
   },
   {
-    id: "44444444-4444-4444-8444-444444444444",
+    id: "f5336f5e-34f3-4dad-b26a-516a70e92e1f",
     title: "かいけつゾロリ",
     description: "休み時間の図書室。貸出中なら次の巻を探して、最後のなぞなぞまでしっかり読んだ。",
     category: "ほん",
@@ -55,7 +55,7 @@ const mockExhibits = [
     created_at: "2026-08-01T03:00:00+09:00",
   },
   {
-    id: "55555555-5555-4555-8555-555555555555",
+    id: "5fbf3448-5776-4765-8676-8a7a7ca7531f",
     title: "ソーラン節",
     description: "運動会前、筋肉痛になるまで低い姿勢を練習した。クラス全員の掛け声が揃った瞬間は忘れられない。",
     category: "できごと",

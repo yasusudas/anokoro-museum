@@ -1,6 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import type { ExhibitItem } from "../types";
 
+const bundledImagePathByItemId: Record<string, string> = {
+  "11111111-1111-4111-8111-111111111111": "/mock-images/himo-q.jpg",
+  "abccab1c-030a-46ca-a77e-403558a7b4e3": "/mock-images/himo-q.jpg",
+  "44444444-4444-4444-8444-444444444444": "/mock-images/zorori.jpg",
+  "f5336f5e-34f3-4dad-b26a-516a70e92e1f": "/mock-images/zorori.jpg",
+};
+
 /**
  * 展示タイトルやカテゴリに応じたフォールバックテーマを決定する
  */
@@ -80,7 +87,7 @@ export async function getExhibits(): Promise<ExhibitItem[]> {
       category: item.category,
       year: yearStr,
       description: item.description,
-      imageUrl: item.image_url,
+      imageUrl: bundledImagePathByItemId[item.id] ?? item.image_url,
       theme,
       shinmiriCount,
       userName,

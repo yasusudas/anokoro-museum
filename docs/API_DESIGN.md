@@ -28,6 +28,7 @@
 | コメントいいね件数取得 | Supabase RPC `get_comment_like_counts` | 不要 | F-05 |
 | 展示候補投稿 | Server Action | 必要 | F-06 |
 | 画像アップロード確定 | Server Action | 必要 | F-06 |
+| Google OAuth callback | `GET /auth/callback` Route Handler | OAuth認可コード | F-03 |
 
 ## 3. 共通入力・出力
 
@@ -69,6 +70,52 @@ type ActionResult<T> =
 
 具体APIは導入済みNext.jsのローカルドキュメントを確認して選択する。
 
-## 6. 将来のRoute Handler
+## 6. Google OAuth callback
 
-外部サービスのWebhookなど外部から呼ばれる処理を追加するときは、メソッド、path、認証、冪等性、request/response例、timeout、retry方針をこの文書へ追記する。
+GoogleからSupabase経由で返される認可コードをセッションへ交換し、サインイン画面または検証済みの復帰先へリダイレクトするRoute Handler。ブラウザからAPIとしてJSONを取得する用途ではない。
+
+### 契約
+
+| 項目 | 内容 |
+| --- | --- |
+| Method / path | `GET /auth/callback` |
+| 認証 | callback開始前のアプリセッションは不要。Supabaseが発行した一時的な`code`を受け取り、サーバー側でセッション交換する。サービスロールキーは使用しない |
+| Query | `code`（認可成功時に必須、OAuth認可コード）、`next`（任意、同一サイト内の相対パス）、`error` / `error_description`（プロバイダ側が認可に失敗したときだけ付与） |
+| 成功レスポンス | `307`で`next`へリダイレクト。`next`がない、外部URL、解釈できない値の場合は`/`へ戻す |
+| 中断レスポンス | `error=access_denied`（利用者がGoogleの同意画面で中断）の場合は失敗扱いにせず、検証済みの`next`を付けて`307 /sign-in?next=...`へリダイレクトする。`error`は付けないためサインイン画面にエラーは表示しない |
+| 失敗レスポンス | `access_denied`以外の`error`、`code`がない、Supabaseのセッション交換に失敗のいずれかの場合は、検証済みの`next`を付けて`307 /sign-in?error=oauth_callback&next=...`へリダイレクト |
+| エラー値の扱い | プロバイダの`error` / `error_description`を画面へそのまま渡さない。既知の識別子（`access_denied`かそれ以外）へ判定してから、アプリ側の固定コード`oauth_callback`だけをクエリに載せる。原文はサーバーログにのみ残す |
+| セッション | セッション交換成功時にSupabase SSRクライアントが認証Cookieを設定する |
+| 冪等性 | 認可コードは一時的かつ再利用不可のため、同じcallback URLの自動再送で二重ログインや二重データ作成を行わない。失敗後は同じ`code`を再送せず、新しいOAuth認証を開始する |
+| timeout | Route Handler独自のタイムアウトは設定しない。セッション交換はNext.js実行環境とSupabaseクライアントの既定タイムアウトに従い、完了しない場合は失敗として扱う |
+| retry | `exchangeCodeForSession`の自動再試行は行わない。タイムアウトや交換失敗時はサインイン画面へ戻し、利用者が新しいOAuthフローを開始する |
+
+### Request / response例
+
+```text
+GET /auth/callback?code=<authorization-code>&next=/?exhibit=<exhibit-id>
+
+HTTP/1.1 307 Temporary Redirect
+Location: /?exhibit=<exhibit-id>
+Set-Cookie: <Supabase session cookies>
+```
+
+利用者がGoogleの同意画面で中断した場合は、エラーを表示せずサインイン画面へ戻す。
+
+```text
+GET /auth/callback?error=access_denied&error_description=<provider-message>&next=/?exhibit=<exhibit-id>
+
+HTTP/1.1 307 Temporary Redirect
+Location: /sign-in?next=%2F%3Fexhibit%3D%3Cexhibit-id%3E
+```
+
+それ以外のプロバイダ側エラー、認可コードがない場合、セッション交換に失敗した場合は、次のエラー導線へリダイレクトする。
+
+```text
+GET /auth/callback?error=server_error&error_description=<provider-message>&next=/?exhibit=<exhibit-id>
+
+HTTP/1.1 307 Temporary Redirect
+Location: /sign-in?error=oauth_callback&next=%2F%3Fexhibit%3D%3Cexhibit-id%3E
+```
+
+`next`は相対URLとして解釈した結果のoriginがリクエストのoriginと一致する場合だけ採用し、外部サイトへのオープンリダイレクトを許可しない。判定は`features/auth/domain/next-path.ts`の`getSafeNextPath(value, origin)`に集約し、Route Handlerとサインイン画面の両方から同じ実装を使う。
