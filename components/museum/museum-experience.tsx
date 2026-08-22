@@ -314,7 +314,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
           />
           <span>
             <b>あのころ</b>
-            <small>MUSEUM</small>
+            <small>ミュージアム</small>
           </span>
         </button>
 
