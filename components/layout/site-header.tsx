@@ -12,11 +12,17 @@ import { BGM_TRACKS } from "@/features/bgm/tracks";
 
 type SiteHeaderProps = {
   currentUser?: AuthUser | null;
+  loginReturnPath?: string;
   mode?: "browse" | "create" | "brand-only";
   onBrandClick?: () => void;
 };
 
-export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteHeaderProps) {
+export function SiteHeader({
+  currentUser,
+  loginReturnPath = "/floor/1",
+  mode = "browse",
+  onBrandClick,
+}: SiteHeaderProps) {
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const authGateRef = useRef<HTMLElement>(null);
   const authGateCloseRef = useRef<HTMLButtonElement>(null);
@@ -233,7 +239,10 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
             </div>
           </div>
         ) : (
-          <Link className="login-button" href="/sign-in?next=/floor/1">
+          <Link
+            className="login-button"
+            href={`/sign-in?next=${encodeURIComponent(loginReturnPath)}`}
+          >
             ログイン
           </Link>
         ))}

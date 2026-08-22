@@ -9,7 +9,11 @@ export default async function NewExhibitPage() {
 
   return (
     <div className="post-page">
-      <SiteHeader currentUser={currentUser} mode="create" />
+      <SiteHeader
+        currentUser={currentUser}
+        loginReturnPath="/exhibits/new"
+        mode="create"
+      />
       <main className="post-shell">
         <section className="post-panel" aria-label="思い出の投稿フォーム">
           <div className="post-heading">
