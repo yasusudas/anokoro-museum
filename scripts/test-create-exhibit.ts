@@ -125,10 +125,14 @@ async function testExhibitRegistration() {
       }
     }
   } finally {
+    let dbCleanupFailed = false;
+
     if (insertedItemId) {
       const { error: deleteDbError } = await supabase.from("items").delete().eq("id", insertedItemId);
       if (deleteDbError) {
         console.error("⚠️ Failed to clean up test DB item:", deleteDbError.message);
+        console.error("   Please delete the test item row manually.");
+        dbCleanupFailed = true;
         hasError = true;
         process.exitCode = 1;
       } else {
@@ -136,7 +140,7 @@ async function testExhibitRegistration() {
       }
     }
 
-    if (uploadedStoragePath) {
+    if (uploadedStoragePath && !dbCleanupFailed) {
       const { error: deleteStorageError } = await supabase.storage
         .from("exhibits")
         .remove([uploadedStoragePath]);
@@ -147,6 +151,8 @@ async function testExhibitRegistration() {
       } else {
         console.log("🧹 Test storage image cleaned up.");
       }
+    } else if (uploadedStoragePath && dbCleanupFailed) {
+      console.warn("⚠️ Preserving storage object due to failed DB item cleanup. Path:", uploadedStoragePath);
     }
   }
 
