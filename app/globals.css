@@ -397,8 +397,8 @@ button:focus-visible {
 
 .eyebrow {
   margin: 0 0 22px;
-  color: #967044;
-  font: 9px/1.2 Arial, sans-serif;
+  color: var(--ink);
+  font: 13px/1.2 Arial, sans-serif;
   letter-spacing: .36em;
 }
 
@@ -508,6 +508,12 @@ button:focus-visible {
   line-clamp: 2;
   letter-spacing: .12em;
   font-weight: 600;
+}
+
+.exhibit-label h2 > span,
+.modal-title-frame h2 > span {
+  display: block;
+  white-space: nowrap;
 }
 
 .exhibit-label p {
@@ -1068,10 +1074,19 @@ button:focus-visible {
   flex: 1 1 auto;
 }
 
-.modal-title h2 {
+.modal-title-frame {
+  display: flex;
+  align-items: center;
+  height: 105.6px;
+  min-width: 0;
+}
+
+.modal-title-frame h2 {
+  width: 100%;
   margin: 0;
   line-height: 1.2;
   letter-spacing: .12em;
+  transform: translateY(-10px);
   display: -webkit-box;
   overflow: hidden;
   text-overflow: ellipsis;

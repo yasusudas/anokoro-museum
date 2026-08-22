@@ -30,15 +30,17 @@ function useAutoFitFontSize<T extends HTMLElement>(
     if (!element) return;
 
     let isMeasuring = false;
+    let isActive = true;
 
     const measure = () => {
-      if (isMeasuring) return;
+      if (!isActive || isMeasuring) return;
       isMeasuring = true;
 
       const originalStyles = {
         display: element.style.display,
         height: element.style.height,
         maxHeight: element.style.maxHeight,
+        minHeight: element.style.minHeight,
         overflow: element.style.overflow,
         textOverflow: element.style.textOverflow,
         lineClamp: element.style.getPropertyValue("-webkit-line-clamp"),
@@ -49,6 +51,7 @@ function useAutoFitFontSize<T extends HTMLElement>(
       element.style.display = "block";
       element.style.height = "auto";
       element.style.maxHeight = "none";
+      element.style.minHeight = "0";
       element.style.overflow = "visible";
       element.style.textOverflow = "clip";
       element.style.setProperty("-webkit-line-clamp", "unset");
@@ -61,7 +64,18 @@ function useAutoFitFontSize<T extends HTMLElement>(
         }
 
         const lineHeight = Number.parseFloat(getComputedStyle(element).lineHeight);
-        return element.getBoundingClientRect().height <= lineHeight * maxLines + 1;
+        const lineElements = [...element.children].filter(
+          (child): child is HTMLElement => child instanceof HTMLElement
+        );
+        if (lineElements.length > 0) {
+          return lineElements.every(
+            (lineElement) =>
+              lineElement.scrollWidth <= lineElement.clientWidth + 1 &&
+              lineElement.getBoundingClientRect().height <= lineHeight + 1
+          );
+        }
+
+        return element.scrollHeight <= lineHeight * maxLines + 1;
       };
 
       while (nextFontSize > minFontSize && !fits()) {
@@ -72,6 +86,7 @@ function useAutoFitFontSize<T extends HTMLElement>(
       element.style.display = originalStyles.display;
       element.style.height = originalStyles.height;
       element.style.maxHeight = originalStyles.maxHeight;
+      element.style.minHeight = originalStyles.minHeight;
       element.style.overflow = originalStyles.overflow;
       element.style.textOverflow = originalStyles.textOverflow;
       element.style.setProperty("-webkit-line-clamp", originalStyles.lineClamp);
@@ -81,36 +96,57 @@ function useAutoFitFontSize<T extends HTMLElement>(
       isMeasuring = false;
     };
 
-    measure();
+    const animationFrame = requestAnimationFrame(measure);
     const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
     resizeObserver?.observe(element);
+    document.fonts?.ready.then(measure);
 
-    return () => resizeObserver?.disconnect();
+    return () => {
+      isActive = false;
+      cancelAnimationFrame(animationFrame);
+      resizeObserver?.disconnect();
+    };
   }, [baseFontSize, maxLines, minFontSize, ref, text]);
 
   return fontSize;
 }
 
+function splitTitleIntoLines(title: string) {
+  const characters = [...title];
+  if (characters.length <= 20) return [title];
+
+  const midpoint = Math.ceil(characters.length / 2);
+  return [characters.slice(0, midpoint).join(""), characters.slice(midpoint).join("")];
+}
+
 function AutoFitTitle({ title }: { title: string }) {
   const ref = useRef<HTMLHeadingElement>(null);
-  const baseFontSize = title.length > 20 ? 14 : 18;
+  const titleLines = splitTitleIntoLines(title);
+  const baseFontSize = titleLines.length > 1 ? 14 : 18;
   const fontSize = useAutoFitFontSize(ref, title, 2, baseFontSize, 10);
 
   return (
     <h2 ref={ref} style={{ fontSize }}>
-      {title}
+      {titleLines.map((line, index) => (
+        <span key={`${line}-${index}`}>{line}</span>
+      ))}
     </h2>
   );
 }
 
 function AutoFitModalTitle({ title }: { title: string }) {
   const ref = useRef<HTMLHeadingElement>(null);
+  const titleLines = splitTitleIntoLines(title);
   const fontSize = useAutoFitFontSize(ref, title, 2, 44, 14);
 
   return (
-    <h2 ref={ref} style={{ fontSize }}>
-      {title}
-    </h2>
+    <div className="modal-title-frame">
+      <h2 ref={ref} style={{ fontSize }}>
+        {titleLines.map((line, index) => (
+          <span key={`${line}-${index}`}>{line}</span>
+        ))}
+      </h2>
+    </div>
   );
 }
 
