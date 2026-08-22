@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, Trash2 } from "lucide-react";
 import { checkExhibitTitleAction } from "@/features/exhibits/actions/check-title-availability";
 import { createExhibitAction } from "@/features/exhibits/actions/create-exhibit";
+import { MAX_EXHIBIT_TITLE_LENGTH } from "@/features/exhibits/constants";
 import { EXHIBIT_CATEGORIES } from "@/features/exhibits/categories";
 
 type FieldName = "title" | "category" | "year" | "description" | "image";
@@ -191,6 +192,7 @@ export function MemoryPostForm() {
           name="title"
           type="text"
           value={title}
+          maxLength={MAX_EXHIBIT_TITLE_LENGTH}
           required
           disabled={isPending}
           aria-invalid={Boolean(fieldErrors.title)}
