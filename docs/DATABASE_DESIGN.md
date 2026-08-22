@@ -76,7 +76,7 @@ erDiagram
 | `item_id` | uuid | FK `items.id` (ON DELETE CASCADE)、NOT NULL |
 | `user_id` | uuid | FK `users.id` (ON DELETE CASCADE)、NOT NULL |
 | `content` | text | NOT NULL。CHECK制約でUnicode空白を除くtrim後1〜500文字 |
-| `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
+| `created_at`, `updated_at` | timestamptz | NOT NULL DEFAULT `now()` |
 
 編集を提供しないため `updated_at` を持たない。本人削除は物理削除とする。
 
@@ -87,7 +87,7 @@ erDiagram
 | `id` | uuid | PK、DEFAULT `gen_random_uuid()` |
 | `comment_id` | uuid | FK `comments.id` (ON DELETE CASCADE)、NOT NULL |
 | `user_id` | uuid | FK `users.id` (ON DELETE CASCADE)、NOT NULL |
-| `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
+| `created_at`, `updated_at` | timestamptz | NOT NULL DEFAULT `now()` |
 
 制約: `UNIQUE(comment_id, user_id)`。ログインユーザーは付与・解除でき、匿名ユーザーは件数だけを閲覧する。コメントが物理削除されると、関連するいいねもCASCADEで削除される。
 
@@ -98,7 +98,7 @@ erDiagram
 | `id` | uuid | PK、DEFAULT `gen_random_uuid()` |
 | `item_id` | uuid | FK `items.id` (ON DELETE CASCADE)、NOT NULL |
 | `user_id` | uuid | FK `users.id` (ON DELETE CASCADE)、NOT NULL |
-| `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
+| `created_at`, `updated_at` | timestamptz | NOT NULL DEFAULT `now()` |
 
 制約: `UNIQUE(item_id, user_id)`。1ユーザーにつき1展示1回までをDBレベルで保証する。行を更新しないため `updated_at` を持たない。
 
@@ -109,13 +109,13 @@ erDiagram
 | table | SELECT | INSERT | UPDATE | DELETE |
 | --- | --- | --- | --- | --- |
 | `users` | 全員 | トリガー経由のみ | 本人 | 不可（`auth.users` 削除にCASCADE） |
-| `items` | 全員 | ログイン済み・本人名義 | 不可（編集なし） | 本人 |
+| `items` | 全員 | ログイン済み・本人名義 | 不可（編集なし） | 不可（取り下げは運営がサーバー側権限で対応） |
 | `comments` | 全員 | ログイン済み・本人名義 | 不可（編集なし） | 本人 |
 | `comment_likes` | 本人の行のみ | ログイン済み・本人名義 | 不可 | 本人 |
 | `shinmiri_reactions` | 全員 | ログイン済み・本人名義 | 不可 | 本人 |
 
 - INSERTは `WITH CHECK (auth.uid() = user_id)` で本人名義を強制する
-- DELETEは `USING (auth.uid() = user_id)` で所有者を照合する
+- DELETEは `USING (auth.uid() = user_id)` で所有者を照合する。ただし `items` は公開後の取り下げを認めないため、policyもtable権限も与えない
 - `users` の所有者列は `id`、それ以外の所有者付きtableは `user_id` を使う
 - `comment_likes` の匿名件数は生テーブルを公開せず、集計RPC `get_comment_like_counts` から取得する
 - 公開状態（status）を持たないため、SELECTに条件分岐は不要
