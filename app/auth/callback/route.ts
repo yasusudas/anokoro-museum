@@ -14,12 +14,21 @@ function getSafeNextPath(value: string | null) {
   }
 }
 
+function getOAuthCallbackErrorRedirect(url: URL, next: string) {
+  const errorUrl = new URL("/sign-in", url.origin);
+  errorUrl.searchParams.set("error", "oauth_callback");
+  errorUrl.searchParams.set("next", next);
+
+  return NextResponse.redirect(errorUrl);
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
+  const next = getSafeNextPath(url.searchParams.get("next"));
 
   if (!code) {
-    return NextResponse.redirect(new URL("/sign-in?error=oauth_callback", url.origin));
+    return getOAuthCallbackErrorRedirect(url, next);
   }
 
   const supabase = await createClient();
@@ -27,9 +36,8 @@ export async function GET(request: Request) {
 
   if (error) {
     console.error("Supabase OAuth callback error:", error);
-    return NextResponse.redirect(new URL("/sign-in?error=oauth_callback", url.origin));
+    return getOAuthCallbackErrorRedirect(url, next);
   }
 
-  const next = getSafeNextPath(url.searchParams.get("next"));
   return NextResponse.redirect(new URL(next, url.origin));
 }

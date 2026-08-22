@@ -4,6 +4,7 @@ import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { signInAction } from "@/features/auth/actions/sign-in";
 import { createClient } from "@/lib/supabase/browser";
+import styles from "./sign-in-form.module.css";
 
 type SignInErrors = {
   email?: string;
@@ -31,7 +32,9 @@ function getSafeNextPath() {
 
 export function SignInForm({ initialError }: SignInFormProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isEmailPending, startEmailTransition] = useTransition();
+  const [isGooglePending, startGoogleTransition] = useTransition();
+  const isPending = isEmailPending || isGooglePending;
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<SignInErrors>(() =>
     initialError === "oauth_callback"
@@ -42,7 +45,7 @@ export function SignInForm({ initialError }: SignInFormProps) {
   function handleGoogleSignIn() {
     setErrors({});
 
-    startTransition(async () => {
+    startGoogleTransition(async () => {
       const supabase = createClient();
       const callbackUrl = new URL("/auth/callback", window.location.origin);
       callbackUrl.searchParams.set("next", getSafeNextPath());
@@ -88,7 +91,7 @@ export function SignInForm({ initialError }: SignInFormProps) {
 
     setErrors({});
 
-    startTransition(async () => {
+    startEmailTransition(async () => {
       const result = await signInAction(formData);
 
       if (!result.ok) {
@@ -168,17 +171,17 @@ export function SignInForm({ initialError }: SignInFormProps) {
         )}
       </div>
 
-      <div className="auth-divider" aria-hidden="true">
+      <div className={styles.divider} aria-hidden="true">
         <span>または</span>
       </div>
 
       <button
-        className="auth-google"
+        className={styles.googleButton}
         type="button"
         onClick={handleGoogleSignIn}
         disabled={isPending}
       >
-        <svg className="auth-google-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">
+        <svg className={styles.googleMark} viewBox="0 0 18 18" aria-hidden="true" focusable="false">
           <path
             fill="#4285F4"
             d="M17.64 9.205c0-.638-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.614Z"
@@ -196,11 +199,11 @@ export function SignInForm({ initialError }: SignInFormProps) {
             d="M9 3.579c1.321 0 2.508.454 3.441 1.345l2.582-2.582C13.463.89 11.426 0 9 0A9 9 0 0 0 .954 4.958L3.96 7.29C4.672 5.163 6.656 3.579 9 3.579Z"
           />
         </svg>
-        <span>{isPending ? "Google へ移動中…" : "Google で続行"}</span>
+        <span>{isGooglePending ? "Google へ移動中…" : "Google で続行"}</span>
       </button>
 
       <button className="auth-submit" type="submit" disabled={isPending}>
-        {isPending ? "ログイン中..." : "ログイン"}
+        {isEmailPending ? "ログイン中..." : "ログイン"}
       </button>
     </form>
   );
