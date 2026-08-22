@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { Settings } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CommentThread } from "@/components/comments/comment-thread";
@@ -92,6 +93,7 @@ function ExhibitArt({ theme, title }: { theme: string; title: string }) {
 export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperienceProps) {
   const corridorRef = useRef<HTMLDivElement>(null);
   const modalCloseRef = useRef<HTMLButtonElement>(null);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
   const requestedExhibitId = searchParams.get("exhibit");
   const requestedExhibit = requestedExhibitId
@@ -102,6 +104,9 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
   const [selected, setSelected] = useState<ExhibitItem | null>(() => requestedExhibit);
   const [shinmiriItems, setShinmiriItems] = useState<string[]>([]);
   const [showGuide, setShowGuide] = useState(true);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [canScroll, setCanScroll] = useState(false);
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const [signOutError, setSignOutError] = useState<string | null>(null);
@@ -147,6 +152,13 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
       }
     };
 
+    const updateScrollState = () => {
+      const maxScrollLeft = corridor.scrollWidth - corridor.clientWidth;
+      setCanScroll(maxScrollLeft > 1);
+      setScrollProgress(maxScrollLeft > 0 ? (corridor.scrollLeft / maxScrollLeft) * 100 : 0);
+      if (corridor.scrollLeft > 4) setShowGuide(false);
+    };
+
     const arrows = (event: KeyboardEvent) => {
       if (event.key === "Escape" && selected) {
         event.preventDefault();
@@ -160,17 +172,43 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
     };
 
     corridor.addEventListener("wheel", horizontalWheel, { passive: false });
+    const resizeObserver = new ResizeObserver(updateScrollState);
+    resizeObserver.observe(corridor);
+    if (corridor.firstElementChild) resizeObserver.observe(corridor.firstElementChild);
+
+    updateScrollState();
+    corridor.addEventListener("scroll", updateScrollState, { passive: true });
     window.addEventListener("keydown", arrows);
 
     return () => {
       corridor.removeEventListener("wheel", horizontalWheel);
+      corridor.removeEventListener("scroll", updateScrollState);
+      resizeObserver.disconnect();
       window.removeEventListener("keydown", arrows);
     };
-  }, [closeModal, move, selected]);
+  }, [closeModal, move, selected, visible.length]);
 
   useEffect(() => {
     if (selected) modalCloseRef.current?.focus();
   }, [selected]);
+
+  useEffect(() => {
+    if (!isAccountMenuOpen) return;
+
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!accountMenuRef.current?.contains(event.target as Node)) setIsAccountMenuOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsAccountMenuOpen(false);
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isAccountMenuOpen]);
 
   const toggleShinmiri = (id: string) =>
     setShinmiriItems((current) =>
@@ -185,6 +223,14 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
         setSignOutError(result.error.message || "ログアウトに失敗しました。もう一度お試しください。");
       }
     });
+  };
+
+  const handleScrollbarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const corridor = corridorRef.current;
+    if (!corridor) return;
+
+    const maxScrollLeft = corridor.scrollWidth - corridor.clientWidth;
+    corridor.scrollLeft = (Number(event.currentTarget.value) / 100) * maxScrollLeft;
   };
 
   if (isRequestedExhibitMissing) {
@@ -219,43 +265,34 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
 
         <nav aria-label="メインナビゲーション">
           <button className="nav-active">展示をめぐる</button>
-          <button onClick={() => setShowGuide(true)}>はじめての方へ</button>
           <Link className="nav-cta" href="/exhibits/new">
-            思い出を展示する <span>＋</span>
+            思い出を追加する <span>＋</span>
           </Link>
         </nav>
 
         {currentUser ? (
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", position: "relative" }}>
-            <span style={{ fontSize: "0.875rem", color: "var(--fg-muted, #888)" }}>
-              {currentUser.userName}
-            </span>
+          <div className="account-menu" ref={accountMenuRef}>
             <button
-              className="login-button"
-              onClick={handleSignOut}
-              disabled={isPending}
-              style={{ background: "transparent", border: "1px solid currentColor" }}
+              className="account-menu-trigger"
+              type="button"
+              aria-label="アカウントメニューを開く"
+              aria-expanded={isAccountMenuOpen}
+              aria-controls="account-menu-panel"
+              onClick={() => setIsAccountMenuOpen((isOpen) => !isOpen)}
             >
-              {isPending ? "..." : "ログアウト"}
+              <Settings aria-hidden="true" size={21} strokeWidth={1.7} />
             </button>
-            {signOutError && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: "100%",
-                  right: 0,
-                  marginTop: "0.5rem",
-                  padding: "0.5rem 0.75rem",
-                  background: "rgba(220, 50, 50, 0.9)",
-                  color: "#fff",
-                  fontSize: "0.8rem",
-                  borderRadius: "4px",
-                  whiteSpace: "nowrap",
-                  zIndex: 10,
-                }}
-                role="alert"
-              >
-                {signOutError}
+            {isAccountMenuOpen && (
+              <div className="account-menu-panel" id="account-menu-panel">
+                <p className="account-menu-user">{currentUser.userName}</p>
+                <button className="account-menu-signout" type="button" onClick={handleSignOut} disabled={isPending}>
+                  {isPending ? "ログアウト中..." : "ログアウト"}
+                </button>
+                {signOutError && (
+                  <p className="account-menu-error" role="alert">
+                    {signOutError}
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -292,9 +329,11 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
       </section>
 
       <div className="corridor-wrap">
-        <button className="scroll-arrow left" onClick={() => move(-1)} aria-label="前の展示へ">
-          <ArrowIcon direction="left" />
-        </button>
+        {canScroll && scrollProgress > 0.5 && (
+          <button className="scroll-arrow left" onClick={() => move(-1)} aria-label="前の展示へ">
+            <ArrowIcon direction="left" />
+          </button>
+        )}
         <div className="corridor" ref={corridorRef}>
           <section className="gallery" aria-live="polite">
             {visible.map((item) => (
@@ -319,7 +358,6 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                   <div>
                     <h2>{item.title}</h2>
                     <p>{item.subtitle}</p>
-                    <small>{item.year ? `${item.year} 年の記憶` : "あのころの記憶"}</small>
                   </div>
                   <button
                     className={shinmiriItems.includes(item.id) ? "nostalgia liked" : "nostalgia"}
@@ -333,32 +371,28 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                 </div>
               </article>
             ))}
-            <article className="end-panel">
-              <span>YOUR MEMORY</span>
-              <h2>
-                あなたの「あのころ」も
-                <br />
-                展示しませんか？
-              </h2>
-              <p>誰かにとっては、忘れられない思い出かもしれません。</p>
-              <Link className="end-panel-link" href="/exhibits/new">
-                思い出を展示する ＋
-              </Link>
-            </article>
           </section>
         </div>
-        <button className="scroll-arrow right" onClick={() => move(1)} aria-label="次の展示へ">
-          <ArrowIcon />
-        </button>
+        {canScroll && scrollProgress < 99.5 && (
+          <button className="scroll-arrow right" onClick={() => move(1)} aria-label="次の展示へ">
+            <ArrowIcon />
+          </button>
+        )}
         <div className="floor">
           <span className="floor-line" />
         </div>
-        <div className="scroll-hint">
-          <span>SCROLL TO EXPLORE</span>
-          <i>
-            <b />
-          </i>
-        </div>
+        {canScroll && (
+          <input
+            className="corridor-scrollbar"
+            type="range"
+            min="0"
+            max="100"
+            step="0.1"
+            value={scrollProgress}
+            aria-label="展示回廊のスクロール位置"
+            onChange={handleScrollbarChange}
+          />
+        )}
       </div>
 
       {selected && (
@@ -390,12 +424,11 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
               </div>
               <div className="modal-content">
                 <p className="eyebrow">
-                  EXHIBIT {selected.number} · {selected.category}
+                  {selected.year ? `${selected.year}年　${selected.category}` : selected.category}
                 </p>
                 <div className="modal-title-row">
                   <div>
                     <h2>{selected.title}</h2>
-                    <p className="modal-subtitle">{selected.subtitle}</p>
                   </div>
                   <button
                     className={shinmiriItems.includes(selected.id) ? "modal-like liked" : "modal-like"}
@@ -407,13 +440,6 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                   </button>
                 </div>
                 <p className="modal-memory">{selected.description}</p>
-                <div className="memory-tag">
-                  {selected.year ? (
-                    <>主に <b>{selected.year}年</b> の記憶</>
-                  ) : (
-                    <><b>あのころ</b> の記憶</>
-                  )}
-                </div>
               </div>
             </div>
             <aside className="modal-comments" aria-label="コメント欄">

@@ -70,7 +70,7 @@ export async function getExhibits(): Promise<ExhibitItem[]> {
     const userName = user?.user_name ?? undefined;
 
     const yearStr = item.year ? String(item.year) : "";
-    const subtitle = item.year ? `${item.year}年の思い出` : "あのころの思い出";
+    const subtitle = item.year ? `${item.year}年の出来事` : "あのころの出来事";
 
     return {
       id: item.id,
