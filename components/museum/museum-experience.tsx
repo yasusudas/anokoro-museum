@@ -6,12 +6,15 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CommentThread } from "@/components/comments/comment-thread";
 import { SiteHeader } from "@/components/layout/site-header";
+import { useBgm } from "@/features/bgm/bgm-context";
+import { MUSEUM_DEFAULT_TRACK_ID } from "@/features/bgm/tracks";
 import { EXHIBIT_CATEGORIES } from "@/features/exhibits/categories";
 import {
   type FloorId,
   MUSEUM_FLOORS,
   filterExhibitsByFloor,
   getFloorDefinition,
+  isFloorId,
 } from "@/features/exhibits/floors";
 import type { ExhibitItem } from "@/features/exhibits/types";
 import type { AuthUser } from "@/features/auth/types";
@@ -262,17 +265,29 @@ function ExhibitArt({ theme, title }: { theme: string; title: string }) {
 
 export function MuseumExperience({ initialExhibits, currentUser, isPreview = false }: MuseumExperienceProps) {
   const router = useRouter();
+  const { selectTrack } = useBgm();
+  const hasStartedBgmRef = useRef(false);
   const corridorRef = useRef<HTMLDivElement>(null);
   const modalCloseRef = useRef<HTMLButtonElement>(null);
   const floorMenuRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
+  const requestedFloorValue = searchParams.get("floor");
+  const requestedFloorId = requestedFloorValue && isFloorId(requestedFloorValue)
+    ? requestedFloorValue
+    : null;
   const requestedExhibitId = searchParams.get("exhibit");
   const requestedExhibit = requestedExhibitId
     ? initialExhibits.find((item) => item.id === requestedExhibitId) ?? null
     : null;
   const isRequestedExhibitMissing = Boolean(requestedExhibitId) && !requestedExhibit;
   const [activeCategory, setActiveCategory] = useState("すべて");
-  const [activeFloorId, setActiveFloorId] = useState<FloorId>(isPreview ? "1F" : "2F");
+  const [activeFloorId, setActiveFloorId] = useState<FloorId>(
+    isPreview
+      ? "1F"
+      : requestedFloorId && requestedFloorId !== "1F"
+        ? requestedFloorId
+        : "2F"
+  );
   const [isFloorMenuOpen, setIsFloorMenuOpen] = useState(false);
   const [selected, setSelected] = useState<ExhibitItem | null>(() => requestedExhibit);
   const [shinmiriItems, setShinmiriItems] = useState<string[]>(() =>
@@ -289,6 +304,12 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
   const [scrollProgress, setScrollProgress] = useState(0);
   const [canScroll, setCanScroll] = useState(false);
   const [, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (!currentUser || hasStartedBgmRef.current) return;
+    hasStartedBgmRef.current = true;
+    selectTrack(MUSEUM_DEFAULT_TRACK_ID);
+  }, [currentUser, selectTrack]);
 
   const exhibits = initialExhibits;
 
@@ -535,7 +556,12 @@ export function MuseumExperience({ initialExhibits, currentUser, isPreview = fal
                             return;
                           }
                           if (floor.id !== "1F" && isPreview) {
-                            router.push(currentUser ? "/floor/2" : "/sign-in?next=/floor/2");
+                            const destination = `/floor/2?floor=${encodeURIComponent(floor.id)}`;
+                            router.push(
+                              currentUser
+                                ? destination
+                                : `/sign-in?next=${encodeURIComponent(destination)}`
+                            );
                             return;
                           }
                           setActiveFloorId(floor.id);

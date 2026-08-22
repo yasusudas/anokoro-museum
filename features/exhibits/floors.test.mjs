@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { filterExhibitsByFloor } from "./floors.ts";
+import { filterExhibitsByFloor, isFloorId } from "./floors.ts";
 
 const mockExhibits = [
   {
@@ -89,6 +89,11 @@ const mockExhibits = [
 ];
 
 console.log("🧪 Testing Museum Floor Filtering Logic...\n");
+
+assert.equal(isFloorId("4F"), true);
+assert.equal(isFloorId("6F"), true);
+assert.equal(isFloorId("7F"), false);
+assert.equal(isFloorId(""), false);
 
 // 1. B1F（自分だけの企画展: shinmiriItems）
 const b1fItems = filterExhibitsByFloor(mockExhibits, "B1F", ["item-1", "item-3"]);

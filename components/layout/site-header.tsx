@@ -100,6 +100,7 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
 
   const handleSignOut = () => {
     setSignOutError(null);
+    selectTrack("none");
     startTransition(async () => {
       const result = await signOutAction();
       if (result && !result.ok) {
@@ -232,7 +233,7 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
             </div>
           </div>
         ) : (
-          <Link className="login-button" href="/sign-in">
+          <Link className="login-button" href="/sign-in?next=/floor/1">
             ログイン
           </Link>
         ))}

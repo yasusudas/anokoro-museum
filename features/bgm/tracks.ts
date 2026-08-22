@@ -1,5 +1,7 @@
 import type { BgmTrack, BgmTrackId } from "./types";
 
+export const MUSEUM_DEFAULT_TRACK_ID: BgmTrackId = "bgm-2";
+
 export const BGM_TRACKS: BgmTrack[] = [
   {
     id: "bgm-3",

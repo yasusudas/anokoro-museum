@@ -72,6 +72,10 @@ export const MUSEUM_FLOORS: FloorDefinition[] = [
   },
 ];
 
+export function isFloorId(value: string): value is FloorId {
+  return MUSEUM_FLOORS.some((floor) => floor.id === value);
+}
+
 export function getFloorDefinition(floorId: FloorId): FloorDefinition {
   return (
     MUSEUM_FLOORS.find((f) => f.id === floorId) ??

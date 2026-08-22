@@ -62,9 +62,13 @@ export function BgmProvider({ children }: { children: ReactNode }) {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playbackRequestIdRef = useRef(0);
+  const autoplayCleanupRef = useRef<(() => void) | null>(null);
+  const volumeRef = useRef(volume);
 
   const selectTrack = useCallback((trackId: BgmTrackId) => {
     const requestId = ++playbackRequestIdRef.current;
+    autoplayCleanupRef.current?.();
+    autoplayCleanupRef.current = null;
     setCurrentTrackId(trackId);
     try {
       localStorage.setItem(STORAGE_KEY_TRACK, trackId);
@@ -84,7 +88,7 @@ export function BgmProvider({ children }: { children: ReactNode }) {
     if (!audioRef.current) {
       audioRef.current = new Audio(track.src);
       audioRef.current.loop = true;
-      audioRef.current.volume = volume;
+      audioRef.current.volume = volumeRef.current;
     } else {
       audioRef.current.src = track.src;
     }
@@ -100,9 +104,34 @@ export function BgmProvider({ children }: { children: ReactNode }) {
         if (playbackRequestIdRef.current === requestId) {
           console.warn("BGM playback blocked by autoplay policy or file missing:", error);
           setIsPlaying(false);
+
+          const resumePlayback = () => {
+            autoplayCleanupRef.current?.();
+            autoplayCleanupRef.current = null;
+            if (playbackRequestIdRef.current !== requestId || !audioRef.current) return;
+
+            audioRef.current
+              .play()
+              .then(() => {
+                if (playbackRequestIdRef.current === requestId) setIsPlaying(true);
+              })
+              .catch((playbackError) => {
+                if (playbackRequestIdRef.current === requestId) {
+                  console.warn("BGM playback error:", playbackError);
+                }
+              });
+          };
+          const removeAutoplayListeners = () => {
+            window.removeEventListener("pointerdown", resumePlayback);
+            window.removeEventListener("keydown", resumePlayback);
+          };
+
+          autoplayCleanupRef.current = removeAutoplayListeners;
+          window.addEventListener("pointerdown", resumePlayback, { once: true });
+          window.addEventListener("keydown", resumePlayback, { once: true });
         }
       });
-  }, [volume]);
+  }, []);
 
   const togglePlay = useCallback(() => {
     const requestId = ++playbackRequestIdRef.current;
@@ -145,6 +174,7 @@ export function BgmProvider({ children }: { children: ReactNode }) {
 
   const setVolume = useCallback((newVolume: number) => {
     const clamped = Math.max(0, Math.min(1, newVolume));
+    volumeRef.current = clamped;
     setVolumeState(clamped);
     if (audioRef.current) {
       audioRef.current.volume = clamped;
@@ -162,6 +192,7 @@ export function BgmProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     return () => {
+      autoplayCleanupRef.current?.();
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
