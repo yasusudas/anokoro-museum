@@ -99,16 +99,6 @@ const exhibits = [
     image_url: "https://images.unsplash.com/photo-1520923642038-b4259acecbd7?w=600&auto=format&fit=crop&q=80",
     created_at: "2026-08-21T07:07:46.552256+00:00",
   },
-  {
-    id: "d84e958f-2699-457e-8955-04b5be1c581b",
-    user_id: dummyUserId,
-    title: "前略プロフィール",
-    description: "自分の「プロフ」を作って、友達にURLを教え合うのが流行ってました。質問項目を埋めるのに必死だった思い出。",
-    category: "インターネット",
-    year: 2008,
-    image_url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80",
-    created_at: "2026-08-21T07:07:46.552256+00:00",
-  },
 ];
 
 async function run() {

@@ -103,16 +103,6 @@ const mockExhibits = [
     imageFileName: "garakei.jpg",
     created_at: "2026-08-21T07:07:46.552256+00:00",
   },
-  {
-    id: "d84e958f-2699-457e-8955-04b5be1c581b",
-    user_id: dummyUserId,
-    title: "前略プロフィール",
-    description: "自分の「プロフ」を作って、友達にURLを教え合うのが流行ってました。質問項目を埋めるのに必死だった思い出。",
-    category: "インターネット",
-    year: 2008,
-    imageFileName: "zenryaku-prof.jpg",
-    created_at: "2026-08-21T07:07:46.552256+00:00",
-  },
 ];
 
 async function seedStorageItems() {
