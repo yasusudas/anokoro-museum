@@ -78,7 +78,7 @@ PR前の最低条件は `lint` と `build`。テスト導入後はCIとローカ
 
 ## 6. 未解決事項
 
-- OAuthプロバイダーの選定
+- Google OAuthの本番同意画面・ドメイン認証の運用確認
 - アナリティクス製品とCookie同意の要否
 - Preview / Productionへのmigration適用担当と自動化方式
 

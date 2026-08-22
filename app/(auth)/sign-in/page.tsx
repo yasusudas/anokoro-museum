@@ -1,7 +1,14 @@
 import { AuthCard } from "@/components/auth/auth-card";
 import { SignInForm } from "@/components/auth/sign-in-form";
 
-export default function SignInPage() {
+type SignInPageProps = {
+  searchParams: Promise<{ error?: string | string[] }>;
+};
+
+export default async function SignInPage({ searchParams }: SignInPageProps) {
+  const params = await searchParams;
+  const error = Array.isArray(params.error) ? params.error[0] : params.error;
+
   return (
     <AuthCard
       eyebrow="ログイン"
@@ -14,7 +21,7 @@ export default function SignInPage() {
       footerHref="/sign-up"
       footerLinkLabel="アカウントを制作"
     >
-      <SignInForm />
+      <SignInForm initialError={error} />
     </AuthCard>
   );
 }
