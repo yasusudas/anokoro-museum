@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition, type RefObject } from "react";
 import { Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -16,6 +16,104 @@ type MuseumExperienceProps = {
   initialExhibits: ExhibitItem[];
   currentUser?: AuthUser | null;
 };
+
+function useAutoFitFontSize<T extends HTMLElement>(
+  ref: RefObject<T | null>,
+  text: string,
+  maxLines: number,
+  baseFontSize: number,
+  minFontSize: number
+) {
+  const [fontSize, setFontSize] = useState(baseFontSize);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+
+    let isMeasuring = false;
+
+    const measure = () => {
+      if (isMeasuring) return;
+      isMeasuring = true;
+
+      const originalStyles = {
+        display: element.style.display,
+        height: element.style.height,
+        maxHeight: element.style.maxHeight,
+        overflow: element.style.overflow,
+        textOverflow: element.style.textOverflow,
+        lineClamp: element.style.getPropertyValue("-webkit-line-clamp"),
+        boxOrient: element.style.getPropertyValue("-webkit-box-orient"),
+      };
+
+      element.style.fontSize = `${baseFontSize}px`;
+      element.style.display = "block";
+      element.style.height = "auto";
+      element.style.maxHeight = "none";
+      element.style.overflow = "visible";
+      element.style.textOverflow = "clip";
+      element.style.setProperty("-webkit-line-clamp", "unset");
+      element.style.setProperty("-webkit-box-orient", "initial");
+
+      let nextFontSize = baseFontSize;
+      const fits = () => {
+        if (maxLines === 1) {
+          return element.scrollWidth <= element.clientWidth + 1;
+        }
+
+        const lineHeight = Number.parseFloat(getComputedStyle(element).lineHeight);
+        return element.getBoundingClientRect().height <= lineHeight * maxLines + 1;
+      };
+
+      while (nextFontSize > minFontSize && !fits()) {
+        nextFontSize = Math.max(minFontSize, nextFontSize - 0.5);
+        element.style.fontSize = `${nextFontSize}px`;
+      }
+
+      element.style.display = originalStyles.display;
+      element.style.height = originalStyles.height;
+      element.style.maxHeight = originalStyles.maxHeight;
+      element.style.overflow = originalStyles.overflow;
+      element.style.textOverflow = originalStyles.textOverflow;
+      element.style.setProperty("-webkit-line-clamp", originalStyles.lineClamp);
+      element.style.setProperty("-webkit-box-orient", originalStyles.boxOrient);
+      element.style.fontSize = `${nextFontSize}px`;
+      setFontSize(nextFontSize);
+      isMeasuring = false;
+    };
+
+    measure();
+    const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    resizeObserver?.observe(element);
+
+    return () => resizeObserver?.disconnect();
+  }, [baseFontSize, maxLines, minFontSize, ref, text]);
+
+  return fontSize;
+}
+
+function AutoFitTitle({ title }: { title: string }) {
+  const ref = useRef<HTMLHeadingElement>(null);
+  const baseFontSize = title.length > 20 ? 14 : 18;
+  const fontSize = useAutoFitFontSize(ref, title, 2, baseFontSize, 10);
+
+  return (
+    <h2 ref={ref} style={{ fontSize }}>
+      {title}
+    </h2>
+  );
+}
+
+function AutoFitDonor({ userName }: { userName: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const fontSize = useAutoFitFontSize(ref, userName, 1, 10, 7);
+
+  return (
+    <span ref={ref} className="exhibit-donor" style={{ fontSize }}>
+      {userName}
+    </span>
+  );
+}
 
 function ArrowIcon({ direction = "right" }: { direction?: "left" | "right" }) {
   return (
@@ -409,10 +507,15 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                   </span>
                 </button>
                 <div className="exhibit-label">
-                  <span className="item-number">{item.number}</span>
-                  <div>
-                    <h2>{item.title}</h2>
-                    <p>{item.subtitle}</p>
+                  <div className="exhibit-caption">
+                    <AutoFitTitle title={item.title} />
+                    <p>
+                      <span className="exhibit-subtitle-prefix">
+                        {item.subtitle}
+                        {item.userName ? "　寄贈：" : null}
+                      </span>
+                      {item.userName ? <AutoFitDonor userName={item.userName} /> : null}
+                    </p>
                   </div>
                   <button
                     className={shinmiriItems.includes(item.id) ? "nostalgia liked" : "nostalgia"}
@@ -421,7 +524,6 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                   >
                     <NostalgiaIcon />
                     <b>{shinmiriCounts[item.id] ?? item.shinmiriCount}</b>
-                    <small>しんみり</small>
                   </button>
                 </div>
               </article>

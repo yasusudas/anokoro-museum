@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Trash2 } from "lucide-react";
 import { createExhibitAction } from "@/features/exhibits/actions/create-exhibit";
+import { MAX_EXHIBIT_TITLE_LENGTH } from "@/features/exhibits/constants";
 import { EXHIBIT_CATEGORIES } from "@/features/exhibits/categories";
 
 type FieldName = "title" | "category" | "year" | "description" | "image";
@@ -117,6 +118,7 @@ export function MemoryPostForm() {
           id="memory-title"
           name="title"
           type="text"
+          maxLength={MAX_EXHIBIT_TITLE_LENGTH}
           required
           disabled={isPending}
           aria-invalid={Boolean(fieldErrors.title)}

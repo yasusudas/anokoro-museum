@@ -1,0 +1,1 @@
+export const MAX_EXHIBIT_TITLE_LENGTH = 40;
