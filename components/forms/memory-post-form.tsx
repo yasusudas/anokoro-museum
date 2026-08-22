@@ -17,6 +17,7 @@ export function MemoryPostForm() {
   const [previewUrl, setPreviewUrl] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [isTitleDuplicate, setIsTitleDuplicate] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const titleCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -30,10 +31,14 @@ export function MemoryPostForm() {
 
   const performDuplicateCheck = useCallback(async (title: string) => {
     const trimmed = title.trim();
-    if (!trimmed) return;
+    if (!trimmed) {
+      setIsTitleDuplicate(false);
+      return;
+    }
 
     try {
       const { isDuplicate } = await checkExhibitTitleAction(trimmed);
+      setIsTitleDuplicate(isDuplicate);
       if (isDuplicate) {
         setFieldErrors((currentErrors) => ({
           ...currentErrors,
@@ -47,6 +52,7 @@ export function MemoryPostForm() {
 
   function handleTitleInput(event: React.ChangeEvent<HTMLInputElement>) {
     const val = event.currentTarget.value;
+    setIsTitleDuplicate(false);
     clearFieldError("title");
 
     if (titleCheckTimerRef.current) {
@@ -96,6 +102,14 @@ export function MemoryPostForm() {
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setGeneralError(null);
+
+    if (isTitleDuplicate) {
+      setFieldErrors((currentErrors) => ({
+        ...currentErrors,
+        title: "その展示品は寄贈されています",
+      }));
+      return;
+    }
 
     const formElement = event.currentTarget;
     const formData = new FormData(formElement);
@@ -332,7 +346,12 @@ export function MemoryPostForm() {
       </div>
 
       <div className="post-actions">
-        <button className="post-primary" type="submit" disabled={isPending}>
+        <button
+          className="post-primary"
+          type="submit"
+          disabled={isPending || isTitleDuplicate}
+          aria-disabled={isPending || isTitleDuplicate}
+        >
           {isPending ? "展示中..." : "展示する"}
         </button>
       </div>

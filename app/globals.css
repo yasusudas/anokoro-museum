@@ -2684,6 +2684,13 @@ button:focus-visible {
   color: #fffaf0;
 }
 
+.post-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #806f5e;
+  border-color: #806f5e;
+}
+
 .post-secondary:hover {
   background: #f0e0c2;
 }
