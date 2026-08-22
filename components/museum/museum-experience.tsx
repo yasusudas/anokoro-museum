@@ -432,7 +432,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
             <div className="floor-dropdown-menu" role="listbox" aria-label="フロア一覧">
               <div className="floor-dropdown-header">
                 <span>フロア移動</span>
-                <small>年代・企画展を選択</small>
+                <small>階を選択</small>
               </div>
               <ul className="floor-dropdown-list">
                 {MUSEUM_FLOORS.map((floor) => {
