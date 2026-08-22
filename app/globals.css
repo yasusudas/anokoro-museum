@@ -72,14 +72,10 @@ button:focus-visible {
 }
 
 .brand-mark {
-  display: grid;
-  place-items: center;
+  display: block;
   width: 39px;
   height: 39px;
-  border: 1px solid #e7c987;
-  border-radius: 50%;
-  color: #ffe3a3;
-  font-size: 20px;
+  object-fit: contain;
 }
 
 .brand b {

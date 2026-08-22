@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Settings } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CommentThread } from "@/components/comments/comment-thread";
@@ -316,7 +317,14 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
           onClick={() => corridorRef.current?.scrollTo({ left: 0, behavior: "smooth" })}
           aria-label="入口へ戻る"
         >
-          <span className="brand-mark">あ</span>
+          <Image
+            className="brand-mark"
+            src="/site-logo-mark.svg"
+            alt=""
+            width={39}
+            height={39}
+            aria-hidden="true"
+          />
           <span>
             <b>あのころ</b>
             <small>MUSEUM</small>
