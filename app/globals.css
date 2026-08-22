@@ -99,6 +99,10 @@ button:focus-visible {
 }
 
 .museum-header nav {
+  position: absolute;
+  left: 50%;
+  height: 100%;
+  transform: translateX(-50%);
   align-self: stretch;
   display: flex;
   align-items: center;
@@ -154,6 +158,77 @@ button:focus-visible {
 .login-button:hover {
   background: #eee2cc;
   color: #29251f;
+}
+
+.account-menu {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.account-menu-trigger {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: #fffaf0;
+  cursor: pointer;
+}
+
+.account-menu-trigger:hover,
+.account-menu-trigger[aria-expanded="true"] {
+  color: #e5bc76;
+}
+
+.account-menu-panel {
+  position: absolute;
+  z-index: 80;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 220px;
+  border: 1px solid #9b856e;
+  border-radius: 4px;
+  background: #f2e8d6;
+  padding: 14px;
+  color: #342d25;
+  box-shadow: 0 10px 28px rgba(36, 25, 17, .28);
+}
+
+.account-menu-user {
+  margin: 0 0 12px;
+  overflow-wrap: anywhere;
+  color: #655747;
+  font-size: 13px;
+}
+
+.account-menu-signout {
+  width: 100%;
+  border: 1px solid #806745;
+  border-radius: 3px;
+  background: transparent;
+  padding: 9px 12px;
+  color: #4d3c2d;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: .12em;
+  cursor: pointer;
+}
+
+.account-menu-signout:hover:not(:disabled) {
+  background: #ded0b9;
+}
+
+.account-menu-signout:disabled {
+  cursor: wait;
+  opacity: .6;
+}
+
+.account-menu-error {
+  margin: 10px 0 0;
+  color: #a72c25;
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .controls {
@@ -273,6 +348,50 @@ button:focus-visible {
   display: none;
 }
 
+.corridor-scrollbar {
+  position: absolute;
+  z-index: 15;
+  left: 50%;
+  bottom: 12px;
+  width: 25%;
+  min-width: 160px;
+  max-width: 320px;
+  height: 18px;
+  margin: 0;
+  appearance: none;
+  transform: translateX(-50%);
+  background: transparent;
+  cursor: ew-resize;
+}
+
+.corridor-scrollbar::-webkit-slider-runnable-track {
+  height: 2px;
+  background: rgba(57, 42, 31, .55);
+}
+
+.corridor-scrollbar::-webkit-slider-thumb {
+  width: 44px;
+  height: 4px;
+  margin-top: -1px;
+  border: 0;
+  border-radius: 0;
+  appearance: none;
+  background: #d2ad6e;
+}
+
+.corridor-scrollbar::-moz-range-track {
+  height: 2px;
+  background: rgba(57, 42, 31, .55);
+}
+
+.corridor-scrollbar::-moz-range-thumb {
+  width: 44px;
+  height: 4px;
+  border: 0;
+  border-radius: 0;
+  background: #d2ad6e;
+}
+
 .eyebrow {
   margin: 0 0 22px;
   color: #967044;
@@ -291,6 +410,7 @@ button:focus-visible {
 .gallery {
   flex: 0 0 auto;
   width: max-content;
+  min-width: 100%;
   height: 76%;
   display: flex;
   background-color: var(--wall);
@@ -530,49 +650,6 @@ button:focus-visible {
 
 .scroll-arrow .flip {
   transform: scaleX(-1);
-}
-
-.scroll-hint {
-  position: absolute;
-  z-index: 15;
-  bottom: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  color: #a8a096;
-  font: 7px Arial, sans-serif;
-  letter-spacing: .3em;
-}
-
-.scroll-hint i {
-  width: 48px;
-  height: 1px;
-  background: #685e50;
-  position: relative;
-}
-
-.scroll-hint b {
-  position: absolute;
-  width: 14px;
-  height: 1px;
-  background: #d2ad6e;
-  animation: travel 2s infinite ease-in-out;
-}
-
-@keyframes travel {
-  0% {
-    left: 0
-  }
-
-  50% {
-    left: 34px
-  }
-
-  100% {
-    left: 0
-  }
 }
 
 .end-panel {
