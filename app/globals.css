@@ -401,8 +401,9 @@ button:focus-visible {
 .eyebrow {
   margin: 0 0 22px;
   color: var(--ink);
-  font: 13px/1.2 Arial, sans-serif;
+  font: 16px/1.2 Arial, sans-serif;
   letter-spacing: .36em;
+  text-align: left;
 }
 
 .scroll-arrow svg {
