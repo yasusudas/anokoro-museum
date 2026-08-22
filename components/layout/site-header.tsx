@@ -32,7 +32,15 @@ export function SiteHeader({
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const isAuthenticated = Boolean(currentUser?.id);
-  const { currentTrackId, isPlaying, volume, selectTrack, togglePlay, setVolume } = useBgm();
+  const {
+    currentTrackId,
+    isPlaying,
+    volume,
+    stopMuseumBgm,
+    selectTrack,
+    togglePlay,
+    setVolume,
+  } = useBgm();
 
   useEffect(() => {
     if (!isAccountMenuOpen) return;
@@ -106,7 +114,7 @@ export function SiteHeader({
 
   const handleSignOut = () => {
     setSignOutError(null);
-    selectTrack("none");
+    stopMuseumBgm();
     startTransition(async () => {
       const result = await signOutAction();
       if (result && !result.ok) {

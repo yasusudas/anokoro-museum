@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getBgmTrack } from "./tracks";
+import { getBgmTrack, MUSEUM_DEFAULT_TRACK_ID } from "./tracks";
 import type { BgmContextValue, BgmTrackId } from "./types";
 
 const STORAGE_KEY_TRACK = "anokoro_bgm_track";
@@ -19,6 +19,8 @@ const defaultContextValue: BgmContextValue = {
   currentTrackId: "none",
   isPlaying: false,
   volume: 0.4,
+  startMuseumBgm: () => {},
+  stopMuseumBgm: () => {},
   selectTrack: () => {},
   togglePlay: () => {},
   setVolume: () => {},
@@ -63,6 +65,7 @@ export function BgmProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playbackRequestIdRef = useRef(0);
   const autoplayCleanupRef = useRef<(() => void) | null>(null);
+  const hasStartedMuseumBgmRef = useRef(false);
   const volumeRef = useRef(volume);
 
   const selectTrack = useCallback((trackId: BgmTrackId) => {
@@ -132,6 +135,17 @@ export function BgmProvider({ children }: { children: ReactNode }) {
         }
       });
   }, []);
+
+  const startMuseumBgm = useCallback(() => {
+    if (hasStartedMuseumBgmRef.current) return;
+    hasStartedMuseumBgmRef.current = true;
+    selectTrack(MUSEUM_DEFAULT_TRACK_ID);
+  }, [selectTrack]);
+
+  const stopMuseumBgm = useCallback(() => {
+    hasStartedMuseumBgmRef.current = false;
+    selectTrack("none");
+  }, [selectTrack]);
 
   const togglePlay = useCallback(() => {
     const requestId = ++playbackRequestIdRef.current;
@@ -206,6 +220,8 @@ export function BgmProvider({ children }: { children: ReactNode }) {
         currentTrackId,
         isPlaying,
         volume,
+        startMuseumBgm,
+        stopMuseumBgm,
         selectTrack,
         togglePlay,
         setVolume,

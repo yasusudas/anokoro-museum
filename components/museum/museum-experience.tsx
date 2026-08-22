@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { CommentThread } from "@/components/comments/comment-thread";
 import { SiteHeader } from "@/components/layout/site-header";
 import { useBgm } from "@/features/bgm/bgm-context";
-import { MUSEUM_DEFAULT_TRACK_ID } from "@/features/bgm/tracks";
 import { EXHIBIT_CATEGORIES } from "@/features/exhibits/categories";
 import {
   type FloorId,
@@ -211,8 +210,7 @@ export function MuseumExperience({
   isPreview = false,
 }: MuseumExperienceProps) {
   const router = useRouter();
-  const { selectTrack } = useBgm();
-  const hasStartedBgmRef = useRef(false);
+  const { startMuseumBgm } = useBgm();
   const corridorRef = useRef<HTMLDivElement>(null);
   const modalCloseRef = useRef<HTMLButtonElement>(null);
   const floorMenuRef = useRef<HTMLDivElement>(null);
@@ -242,10 +240,9 @@ export function MuseumExperience({
   const [, startTransition] = useTransition();
 
   useEffect(() => {
-    if (!currentUser || hasStartedBgmRef.current) return;
-    hasStartedBgmRef.current = true;
-    selectTrack(MUSEUM_DEFAULT_TRACK_ID);
-  }, [currentUser, selectTrack]);
+    if (!currentUser) return;
+    startMuseumBgm();
+  }, [currentUser, startMuseumBgm]);
 
   const exhibits = initialExhibits;
 
