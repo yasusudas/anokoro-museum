@@ -132,9 +132,11 @@ function AutoFitTitle({ title }: { title: string }) {
   const fontSize = useAutoFitFontSize(ref, title, 2, baseFontSize, 10);
 
   return (
-    <h2 ref={ref} style={{ fontSize }}>
+    <h2 ref={ref} style={{ fontSize, lineHeight: 1.2 }}>
       {titleLines.map((line, index) => (
-        <span key={`${line}-${index}`}>{renderCardTitle(line)}</span>
+        <span key={`${line}-${index}`} style={{ display: "block" }}>
+          {renderCardTitle(line)}
+        </span>
       ))}
     </h2>
   );
@@ -147,9 +149,11 @@ function AutoFitModalTitle({ title }: { title: string }) {
 
   return (
     <div className="modal-title-frame">
-      <h2 ref={ref} style={{ fontSize }}>
+      <h2 ref={ref} style={{ fontSize, lineHeight: 1.2 }}>
         {titleLines.map((line, index) => (
-          <span key={`${line}-${index}`}>{line}</span>
+          <span key={`${line}-${index}`} style={{ display: "block" }}>
+            {line}
+          </span>
         ))}
       </h2>
     </div>
@@ -421,7 +425,16 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
           setShinmiriCounts((current) => ({ ...current, [id]: currentCount }));
           return;
         }
-        setShinmiriCounts((current) => ({ ...current, [id]: result.data.shinmiriCount }));
+        setShinmiriItems((current) => {
+          if (result.data.isShinmiri) {
+            return current.includes(id) ? current : [...current, id];
+          }
+          return current.filter((item) => item !== id);
+        });
+        const updatedCount = result.data.shinmiriCount;
+        if (updatedCount !== undefined) {
+          setShinmiriCounts((current) => ({ ...current, [id]: updatedCount }));
+        }
       } catch {
         setShinmiriItems((current) =>
           isCurrentlyLiked ? [...current, id] : current.filter((item) => item !== id)
@@ -485,7 +498,6 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
             className={`floor-selector-button ${isFloorMenuOpen ? "active" : ""}`}
             onClick={() => setIsFloorMenuOpen((prev) => !prev)}
             aria-expanded={isFloorMenuOpen}
-            aria-haspopup="menu"
             aria-label={`フロア移動: 現在 ${activeFloor.label} ${activeFloor.name}`}
           >
             <span className="floor-badge">{activeFloor.label}</span>
@@ -604,6 +616,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                     className={shinmiriItems.includes(item.id) ? "nostalgia liked" : "nostalgia"}
                     onClick={() => toggleShinmiri(item.id)}
                     aria-label="しんみりする"
+                    aria-pressed={shinmiriItems.includes(item.id)}
                   >
                     <NostalgiaIcon />
                     <b>{shinmiriCounts[item.id] ?? item.shinmiriCount}</b>
@@ -674,6 +687,7 @@ export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperie
                     <button
                       className={shinmiriItems.includes(selected.id) ? "modal-like liked" : "modal-like"}
                       onClick={() => toggleShinmiri(selected.id)}
+                      aria-pressed={shinmiriItems.includes(selected.id)}
                     >
                       <NostalgiaIcon />
                       <span>しんみり</span>
