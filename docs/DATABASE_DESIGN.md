@@ -119,6 +119,7 @@ erDiagram
 - INSERTは `WITH CHECK (auth.uid() = user_id)` で本人名義を強制する
 - DELETEは `USING (auth.uid() = user_id)` で所有者を照合する。ただし `items` は公開後の取り下げを認めないため、policyもtable権限も与えない
 - `items` の UPDATE は table権限に加え、列単位権限も与えない。残存しうる列単位 UPDATE 権限は `20260822190000_revoke_item_column_update_privileges.sql` で存在する列だけを動的に revoke する
+- 上記の `items` UPDATE/DELETE 禁止は `authenticated` 向けの RLS と GRANT で強制する。`service_role` は RLS を迂回できるが、展示の更新・削除には使わない（アプリにも運営用の更新・削除経路を持たない）
 - `items.user_id` は `users.id` へ `ON DELETE CASCADE` するため、アカウント削除（`auth.users` → `users`）に伴う展示の連鎖削除は、上記 DELETE 禁止の例外として意図的に残す
 - `users` の所有者列は `id`、それ以外の所有者付きtableは `user_id` を使う
 - `comment_likes` の匿名件数は生テーブルを公開せず、集計RPC `get_comment_like_counts` から取得する
