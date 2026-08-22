@@ -87,7 +87,7 @@ sequenceDiagram
 ```mermaid
 stateDiagram-v2
   [*] --> published: 投稿者がフォーム送信
-  published --> [*]: 投稿者が削除
+  published --> [*]: 運営がサーバー側権限で取り下げ
 ```
 
 ## デプロイ単位

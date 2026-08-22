@@ -45,6 +45,7 @@ erDiagram
 | `id` | uuid | PK、`auth.users.id` (ON DELETE CASCADE) |
 | `user_name` | varchar | NOT NULL |
 | `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
+| `updated_at` | timestamptz | NOT NULL DEFAULT `now()` |
 
 生まれ年を持たないため、このtableは表示名のみの公開情報となる。匿名SELECTを許可しても個人情報を露出しない。
 
