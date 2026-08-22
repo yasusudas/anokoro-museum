@@ -44,7 +44,7 @@ erDiagram
 | --- | --- | --- |
 | `id` | uuid | PK、`auth.users.id` (ON DELETE CASCADE) |
 | `user_name` | varchar | NOT NULL |
-| `created_at`, `updated_at` | timestamptz | NOT NULL DEFAULT `now()` |
+| `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
 
 生まれ年を持たないため、このtableは表示名のみの公開情報となる。匿名SELECTを許可しても個人情報を露出しない。
 
@@ -57,16 +57,17 @@ erDiagram
 | `title` | varchar | NOT NULL。Unicode空白を除くtrim後1〜100文字 |
 | `description` | text | NOT NULL。Unicode空白を除くtrim後1〜500文字 |
 | `category` | varchar | NOT NULL。CHECK制約で `おかし` / `ゲーム` / `たべもの` / `ほん` / `できごと` / `ガジェット` / `インターネット` に限定 |
-| `theme` | varchar | 表示テーマ識別子（`gummy`, `watch` など。未設定時はコードでフォールバック） |
 | `image_url` | text | Supabase Storage内の公開画像URL（投稿時は画像添付必須。既存seed等で未指定時はテーマアートへフォールバック） |
 | `year` | int | 展示品の年代（西暦4桁、1900年〜現在年、例: `2004`） |
-| `created_at`, `updated_at` | timestamptz | NOT NULL DEFAULT `now()` |
+| `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
 
 制約・運用:
 
 - `image_url` は額縁に飾る展示写真の公開画像URLを保持する。新規投稿時は画像アップロードが必須となり、初期seed等で未指定の場合はテーマアートを表示する
 - `year` は展示アイテムの年代（流行年や発売年など）を表す
-- `user_id` が `NULL` の行は seed で投入した初期展示を表す。RLSの所有者判定が成立しないため、誰も更新・削除できない
+- `user_id` が `NULL` の行は seed で投入した初期展示を表す
+- 表示テーマは列に持たず、`title` と `category` からアプリ側（`features/exhibits/queries/get-exhibits.ts` の `resolveTheme`）で導出する
+- 公開後の編集を認めないため `updated_at` は持たない。`theme` / `image_path` / `image_alt` / `image_rights_confirmed` / `birth_year_start` / `birth_year_end` は使わなくなったため `20260822180000_drop_unused_item_columns.sql` で削除した
 
 ### `comments`
 
@@ -76,7 +77,7 @@ erDiagram
 | `item_id` | uuid | FK `items.id` (ON DELETE CASCADE)、NOT NULL |
 | `user_id` | uuid | FK `users.id` (ON DELETE CASCADE)、NOT NULL |
 | `content` | text | NOT NULL。CHECK制約でUnicode空白を除くtrim後1〜500文字 |
-| `created_at`, `updated_at` | timestamptz | NOT NULL DEFAULT `now()` |
+| `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
 
 編集を提供しないため `updated_at` を持たない。本人削除は物理削除とする。
 
@@ -87,7 +88,7 @@ erDiagram
 | `id` | uuid | PK、DEFAULT `gen_random_uuid()` |
 | `comment_id` | uuid | FK `comments.id` (ON DELETE CASCADE)、NOT NULL |
 | `user_id` | uuid | FK `users.id` (ON DELETE CASCADE)、NOT NULL |
-| `created_at`, `updated_at` | timestamptz | NOT NULL DEFAULT `now()` |
+| `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
 
 制約: `UNIQUE(comment_id, user_id)`。ログインユーザーは付与・解除でき、匿名ユーザーは件数だけを閲覧する。コメントが物理削除されると、関連するいいねもCASCADEで削除される。
 
@@ -98,7 +99,7 @@ erDiagram
 | `id` | uuid | PK、DEFAULT `gen_random_uuid()` |
 | `item_id` | uuid | FK `items.id` (ON DELETE CASCADE)、NOT NULL |
 | `user_id` | uuid | FK `users.id` (ON DELETE CASCADE)、NOT NULL |
-| `created_at`, `updated_at` | timestamptz | NOT NULL DEFAULT `now()` |
+| `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
 
 制約: `UNIQUE(item_id, user_id)`。1ユーザーにつき1展示1回までをDBレベルで保証する。行を更新しないため `updated_at` を持たない。
 
