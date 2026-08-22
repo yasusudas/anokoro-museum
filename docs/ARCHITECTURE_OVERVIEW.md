@@ -84,12 +84,6 @@ sequenceDiagram
 
 投稿は保存と同時に公開され、以降は投稿者本人でも編集・削除できない。運営にも編集削除は不可。
 
-```mermaid
-stateDiagram-v2
-  [*] --> published: 投稿者がフォーム送信
-  published --> [*]: 運営がサーバー側権限で取り下げ
-```
-
 ## デプロイ単位
 
 - Web: Vercel Preview / Production
