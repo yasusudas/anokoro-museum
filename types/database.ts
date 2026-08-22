@@ -150,6 +150,78 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          actor_user_id: string
+          comment_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          item_id: string
+          read_at: string | null
+          recipient_user_id: string
+          shinmiri_reaction_id: string | null
+        }
+        Insert: {
+          actor_user_id: string
+          comment_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          item_id: string
+          read_at?: string | null
+          recipient_user_id: string
+          shinmiri_reaction_id?: string | null
+        }
+        Update: {
+          actor_user_id?: string
+          comment_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          item_id?: string
+          read_at?: string | null
+          recipient_user_id?: string
+          shinmiri_reaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: true
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_shinmiri_reaction_id_fkey"
+            columns: ["shinmiri_reaction_id"]
+            isOneToOne: true
+            referencedRelation: "shinmiri_reactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shinmiri_reactions: {
         Row: {
           created_at: string

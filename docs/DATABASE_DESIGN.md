@@ -14,6 +14,11 @@ erDiagram
   users ||--o{ comment_likes : likes
   items ||--o{ shinmiri_reactions : receives
   users ||--o{ shinmiri_reactions : reacts
+  users ||--o{ notifications : receives
+  users ||--o{ notifications : acts
+  items ||--o{ notifications : generates
+  comments ||--o| notifications : generates
+  shinmiri_reactions ||--o| notifications : generates
 ```
 
 ## 共通ルール
@@ -35,6 +40,7 @@ erDiagram
 | `comments` | コメント | 投稿と本人による物理削除のみ。編集不可 |
 | `comment_likes` | コメントいいね | 1ユーザー1コメント1件 |
 | `shinmiri_reactions` | しんみり | 1ユーザー1展示1件 |
+| `notifications` | 展示への反応通知 | コメント・しんみりを投稿者へ通知 |
 
 ## 主要列
 
@@ -107,6 +113,22 @@ erDiagram
 
 制約: `UNIQUE(item_id, user_id)`。1ユーザーにつき1展示1回までをDBレベルで保証する。行を更新しないため `updated_at` を持たない。
 
+### `notifications`
+
+| column | type | rule |
+| --- | --- | --- |
+| `id` | uuid | PK、DEFAULT `gen_random_uuid()` |
+| `recipient_user_id` | uuid | 通知先。FK `users.id` (ON DELETE CASCADE)、NOT NULL |
+| `actor_user_id` | uuid | 反応者。FK `users.id` (ON DELETE CASCADE)、NOT NULL |
+| `item_id` | uuid | 対象展示。FK `items.id` (ON DELETE CASCADE)、NOT NULL |
+| `event_type` | varchar | `comment` / `shinmiri` のみ |
+| `comment_id` | uuid | コメント通知だけ設定。FK `comments.id` (ON DELETE CASCADE) |
+| `shinmiri_reaction_id` | uuid | しんみり通知だけ設定。FK `shinmiri_reactions.id` (ON DELETE CASCADE) |
+| `read_at` | timestamptz | NULLなら未読、既読時刻を保持 |
+| `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
+
+コメント・しんみりのINSERT後トリガーが、展示投稿者と反応者が異なる場合だけ通知を作成する。元の反応を物理削除すると通知もCASCADEで削除される。
+
 ## RLS方針
 
 全tableでRLSを有効化する。運営ロールが存在しないため、判定は「匿名 / ログイン済み / 所有者」の3種類だけで済む。
@@ -118,6 +140,7 @@ erDiagram
 | `comments` | ログイン済み | ログイン済み・本人名義 | 不可（編集なし） | 本人 |
 | `comment_likes` | 本人の行のみ | ログイン済み・本人名義 | 不可 | 本人 |
 | `shinmiri_reactions` | ログイン済み | ログイン済み・本人名義 | 不可 | 本人 |
+| `notifications` | 宛先本人 | トリガー経由のみ | 宛先本人（`read_at`のみ） | 不可 |
 
 - INSERTは `WITH CHECK (auth.uid() = user_id)` で本人名義を強制する
 - 匿名の `items` SELECTはseedで共通管理する1F固定UUIDだけを許可し、投稿展示はDB/RLS境界で非公開にする
@@ -150,6 +173,7 @@ RLS有効下ではクライアントから `users` をINSERTできない。`auth
 - `items(category)` / `items(year)` — F-01の絞り込み
 - `comment_likes` は `UNIQUE(comment_id, user_id)` が `comment_id` 先頭の複合indexになるため追加不要
 - `shinmiri_reactions` は `UNIQUE(item_id, user_id)` が `item_id` 先頭の複合indexになるため追加不要
+- `notifications(recipient_user_id, created_at DESC)` — 本人宛て通知の新着順取得
 
 データ量が少ないうちは効果が小さいが、記述コストがほぼ無いため最初から入れる。
 

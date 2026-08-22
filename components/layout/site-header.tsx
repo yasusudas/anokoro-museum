@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Music, Pause, Play, Settings, Volume2 } from "lucide-react";
 
+import { NotificationCenter } from "@/components/notifications/notification-center";
 import { signOutAction } from "@/features/auth/actions/sign-out";
 import type { AuthUser } from "@/features/auth/types";
 import { useBgm } from "@/features/bgm/bgm-context";
@@ -162,6 +163,7 @@ export function SiteHeader({
       {mode !== "brand-only" &&
         (isAuthenticated && currentUser ? (
           <div className="header-actions">
+            <NotificationCenter />
             <div className="account-menu" ref={accountMenuRef}>
               <button
                 className="account-menu-trigger"
