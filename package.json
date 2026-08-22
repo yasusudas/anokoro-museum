@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --test features/comments/domain/comment.test.mjs"
+    "test": "node --experimental-strip-types --test features/auth/domain/next-path.test.mjs features/auth/domain/oauth-callback-error.test.mjs features/comments/domain/comment.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

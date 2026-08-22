@@ -80,9 +80,11 @@ GoogleからSupabase経由で返される認可コードをセッションへ交
 | --- | --- |
 | Method / path | `GET /auth/callback` |
 | 認証 | callback開始前のアプリセッションは不要。Supabaseが発行した一時的な`code`を受け取り、サーバー側でセッション交換する。サービスロールキーは使用しない |
-| Query | `code`（必須、OAuth認可コード）、`next`（任意、同一サイト内の相対パス） |
+| Query | `code`（認可成功時に必須、OAuth認可コード）、`next`（任意、同一サイト内の相対パス）、`error` / `error_description`（プロバイダ側が認可に失敗したときだけ付与） |
 | 成功レスポンス | `307`で`next`へリダイレクト。`next`がない、外部URL、解釈できない値の場合は`/`へ戻す |
-| 失敗レスポンス | `code`がない、またはSupabaseのセッション交換に失敗した場合は、検証済みの`next`を付けて`307 /sign-in?error=oauth_callback&next=...`へリダイレクト |
+| 中断レスポンス | `error=access_denied`（利用者がGoogleの同意画面で中断）の場合は失敗扱いにせず、検証済みの`next`を付けて`307 /sign-in?next=...`へリダイレクトする。`error`は付けないためサインイン画面にエラーは表示しない |
+| 失敗レスポンス | `access_denied`以外の`error`、`code`がない、Supabaseのセッション交換に失敗のいずれかの場合は、検証済みの`next`を付けて`307 /sign-in?error=oauth_callback&next=...`へリダイレクト |
+| エラー値の扱い | プロバイダの`error` / `error_description`を画面へそのまま渡さない。既知の識別子（`access_denied`かそれ以外）へ判定してから、アプリ側の固定コード`oauth_callback`だけをクエリに載せる。原文はサーバーログにのみ残す |
 | セッション | セッション交換成功時にSupabase SSRクライアントが認証Cookieを設定する |
 | 冪等性 | 認可コードは一時的かつ再利用不可のため、同じcallback URLの自動再送で二重ログインや二重データ作成を行わない。失敗後は同じ`code`を再送せず、新しいOAuth認証を開始する |
 | timeout | Route Handler独自のタイムアウトは設定しない。セッション交換はNext.js実行環境とSupabaseクライアントの既定タイムアウトに従い、完了しない場合は失敗として扱う |
@@ -98,11 +100,22 @@ Location: /?exhibit=<exhibit-id>
 Set-Cookie: <Supabase session cookies>
 ```
 
-認可コードがない場合、またはセッション交換に失敗した場合は、次のエラー導線へリダイレクトする。
+利用者がGoogleの同意画面で中断した場合は、エラーを表示せずサインイン画面へ戻す。
 
 ```text
+GET /auth/callback?error=access_denied&error_description=<provider-message>&next=/?exhibit=<exhibit-id>
+
+HTTP/1.1 307 Temporary Redirect
+Location: /sign-in?next=%2F%3Fexhibit%3D%3Cexhibit-id%3E
+```
+
+それ以外のプロバイダ側エラー、認可コードがない場合、セッション交換に失敗した場合は、次のエラー導線へリダイレクトする。
+
+```text
+GET /auth/callback?error=server_error&error_description=<provider-message>&next=/?exhibit=<exhibit-id>
+
 HTTP/1.1 307 Temporary Redirect
 Location: /sign-in?error=oauth_callback&next=%2F%3Fexhibit%3D%3Cexhibit-id%3E
 ```
 
-`next`は相対URLとして解釈した結果のoriginが検証用originと一致する場合だけ採用し、外部サイトへのオープンリダイレクトを許可しない。
+`next`は相対URLとして解釈した結果のoriginがリクエストのoriginと一致する場合だけ採用し、外部サイトへのオープンリダイレクトを許可しない。判定は`features/auth/domain/next-path.ts`の`getSafeNextPath(value, origin)`に集約し、Route Handlerとサインイン画面の両方から同じ実装を使う。

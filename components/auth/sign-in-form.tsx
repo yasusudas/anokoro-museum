@@ -3,6 +3,8 @@
 import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { signInAction } from "@/features/auth/actions/sign-in";
+import { getSafeNextPath } from "@/features/auth/domain/next-path";
+import { OAUTH_CALLBACK_ERROR_CODE } from "@/features/auth/domain/oauth-callback-error";
 import { createClient } from "@/lib/supabase/browser";
 import styles from "./sign-in-form.module.css";
 
@@ -16,18 +18,11 @@ type SignInFormProps = {
   initialError?: string;
 };
 
-function getSafeNextPath() {
-  const next = new URLSearchParams(window.location.search).get("next");
-  if (!next) return "/";
-
-  try {
-    const nextUrl = new URL(next, window.location.origin);
-    if (nextUrl.origin !== window.location.origin) return "/";
-
-    return `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
-  } catch {
-    return "/";
-  }
+function readSafeNextPath() {
+  return getSafeNextPath(
+    new URLSearchParams(window.location.search).get("next"),
+    window.location.origin,
+  );
 }
 
 export function SignInForm({ initialError }: SignInFormProps) {
@@ -37,7 +32,7 @@ export function SignInForm({ initialError }: SignInFormProps) {
   const isPending = isEmailPending || isGooglePending;
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<SignInErrors>(() =>
-    initialError === "oauth_callback"
+    initialError === OAUTH_CALLBACK_ERROR_CODE
       ? { general: "Googleログインに失敗しました。もう一度お試しください" }
       : {},
   );
@@ -48,7 +43,7 @@ export function SignInForm({ initialError }: SignInFormProps) {
     startGoogleTransition(async () => {
       const supabase = createClient();
       const callbackUrl = new URL("/auth/callback", window.location.origin);
-      callbackUrl.searchParams.set("next", getSafeNextPath());
+      callbackUrl.searchParams.set("next", readSafeNextPath());
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -103,7 +98,7 @@ export function SignInForm({ initialError }: SignInFormProps) {
         return;
       }
 
-      router.push(getSafeNextPath());
+      router.push(readSafeNextPath());
       router.refresh();
     });
   }
