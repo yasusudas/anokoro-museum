@@ -14,7 +14,7 @@ const ALLOWED_CATEGORIES = [
   "インターネット",
 ];
 
-const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export async function createExhibitAction(
@@ -38,7 +38,9 @@ export async function createExhibitAction(
   }
 
   const title = String(formData.get("title") ?? "").trim();
-  const description = String(formData.get("description") ?? formData.get("body") ?? "").trim();
+  const description = String(
+    formData.get("description") ?? formData.get("body") ?? formData.get("subtitle") ?? ""
+  ).trim();
   const category = String(formData.get("category") ?? "").trim();
   const rawYear = String(formData.get("year") ?? "").trim();
   const imageFile = formData.get("image");
