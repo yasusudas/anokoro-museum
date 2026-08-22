@@ -72,10 +72,10 @@ const exhibits = [
   {
     id: "052dd450-347a-4166-8b4c-da075e9a796d",
     user_id: dummyUserId,
-    title: "おいでよ どうぶつの森",
-    description: "DSを持ち寄って、友達の村に遊びに行ったりカブを売買したりして通信プレイに夢中になりました。",
+    title: "あつまれ どうぶつの森",
+    description: "無人島でのDIY生活や、オンラインで友達の島に遊びに行くのがおうち時間の定番でした。",
     category: "ゲーム",
-    year: 2005,
+    year: 2020,
     image_url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop&q=80",
     created_at: "2026-08-21T07:07:46.552256+00:00",
   },
