@@ -44,7 +44,8 @@ erDiagram
 | --- | --- | --- |
 | `id` | uuid | PK、`auth.users.id` (ON DELETE CASCADE) |
 | `user_name` | varchar | NOT NULL |
-| `created_at`, `updated_at` | timestamptz | NOT NULL DEFAULT `now()` |
+| `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
+| `updated_at` | timestamptz | NOT NULL DEFAULT `now()` |
 
 生まれ年を持たないため、このtableは表示名のみの公開情報となる。匿名SELECTを許可しても個人情報を露出しない。
 
@@ -57,16 +58,17 @@ erDiagram
 | `title` | varchar | NOT NULL。Unicode空白を除くtrim後1〜100文字 |
 | `description` | text | NOT NULL。Unicode空白を除くtrim後1〜500文字 |
 | `category` | varchar | NOT NULL。CHECK制約で `おかし` / `ゲーム` / `たべもの` / `ほん` / `できごと` / `ガジェット` / `インターネット` に限定 |
-| `theme` | varchar | 表示テーマ識別子（`gummy`, `watch` など。未設定時はコードでフォールバック） |
 | `image_url` | text | Supabase Storage内の公開画像URL（投稿時は画像添付必須。既存seed等で未指定時はテーマアートへフォールバック） |
 | `year` | int | 展示品の年代（西暦4桁、1900年〜現在年、例: `2004`） |
-| `created_at`, `updated_at` | timestamptz | NOT NULL DEFAULT `now()` |
+| `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
 
 制約・運用:
 
 - `image_url` は額縁に飾る展示写真の公開画像URLを保持する。新規投稿時は画像アップロードが必須となり、初期seed等で未指定の場合はテーマアートを表示する
 - `year` は展示アイテムの年代（流行年や発売年など）を表す
-- `user_id` が `NULL` の行は seed で投入した初期展示を表す。RLSの所有者判定が成立しないため、誰も更新・削除できない
+- `user_id` が `NULL` の行は seed で投入した初期展示を表す
+- 表示テーマは列に持たず、`title` と `category` からアプリ側（`features/exhibits/queries/get-exhibits.ts` の `resolveTheme`）で導出する
+- 公開後の編集を認めないため `updated_at` は持たない。`theme` / `image_path` / `image_alt` / `image_rights_confirmed` / `birth_year_start` / `birth_year_end` は使わなくなったため `20260822180000_drop_unused_item_columns.sql` で削除した
 
 ### `comments`
 
@@ -109,13 +111,16 @@ erDiagram
 | table | SELECT | INSERT | UPDATE | DELETE |
 | --- | --- | --- | --- | --- |
 | `users` | 全員 | トリガー経由のみ | 本人 | 不可（`auth.users` 削除にCASCADE） |
-| `items` | 全員 | ログイン済み・本人名義 | 不可（編集なし） | 本人 |
+| `items` | 全員 | ログイン済み・本人名義 | 不可（編集なし） | 不可（投稿者・運営ともに取り下げなし。`auth.users` 削除時の CASCADE による連鎖削除のみ例外） |
 | `comments` | 全員 | ログイン済み・本人名義 | 不可（編集なし） | 本人 |
 | `comment_likes` | 本人の行のみ | ログイン済み・本人名義 | 不可 | 本人 |
 | `shinmiri_reactions` | 全員 | ログイン済み・本人名義 | 不可 | 本人 |
 
 - INSERTは `WITH CHECK (auth.uid() = user_id)` で本人名義を強制する
-- DELETEは `USING (auth.uid() = user_id)` で所有者を照合する
+- DELETEは `USING (auth.uid() = user_id)` で所有者を照合する。ただし `items` は公開後の取り下げを認めないため、policyもtable権限も与えない
+- `items` の UPDATE は table権限に加え、列単位権限も与えない。残存しうる列単位 UPDATE 権限は `20260822190000_revoke_item_column_update_privileges.sql` で存在する列だけを動的に revoke する
+- 上記の `items` UPDATE/DELETE 禁止は `authenticated` 向けの RLS と GRANT で強制する。`service_role` は RLS を迂回できるが、展示の更新・削除には使わない（アプリにも運営用の更新・削除経路を持たない）
+- `items.user_id` は `users.id` へ `ON DELETE CASCADE` するため、アカウント削除（`auth.users` → `users`）に伴う展示の連鎖削除は、上記 DELETE 禁止の例外として意図的に残す
 - `users` の所有者列は `id`、それ以外の所有者付きtableは `user_id` を使う
 - `comment_likes` の匿名件数は生テーブルを公開せず、集計RPC `get_comment_like_counts` から取得する
 - 公開状態（status）を持たないため、SELECTに条件分岐は不要
@@ -158,7 +163,7 @@ MVPでは有効化しない。PRDのMVP対象外にリアルタイム機能が�
 
 | 省略したもの | 影響 |
 | --- | --- |
-| コメントの論理削除・運営による非表示 | 不適切な投稿へ運営が対処する手段がない |
+| コメントの論理削除・運営による展示の取り下げ | 不適切な投稿へ運営が対処する手段を持たない。展示の編集・削除は投稿者・運営ともに行わない |
 | 画像の出典情報 | 出典URLやライセンス情報の管理、利用者への確認操作は行わない |
 | 生まれ年のDB保存 | 端末内の一時保存に留まり、再ログインでは復元されない |
 | 展示のslug | URLは `/exhibits/{uuid}` になる。後からslugを導入すると既存URLが変わる |
