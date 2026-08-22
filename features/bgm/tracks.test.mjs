@@ -14,15 +14,17 @@ assert.equal(offTrack.src, undefined);
 const bgm1 = getBgmTrack("bgm-1");
 assert.equal(bgm1.id, "bgm-1");
 assert.equal(bgm1.name, "陽炎");
-assert.equal(bgm1.src, "/bgm/年の陽炎.mp3");
+assert.equal(bgm1.src, "/bgm/kagerou.mp3");
 
 const bgm2 = getBgmTrack("bgm-2");
 assert.equal(bgm2.id, "bgm-2");
 assert.equal(bgm2.name, "Felt and Wood");
+assert.equal(bgm2.src, "/bgm/felt-and-wood.mp3");
 
 const bgm3 = getBgmTrack("bgm-3");
 assert.equal(bgm3.id, "bgm-3");
 assert.equal(bgm3.name, "Stone Garden");
+assert.equal(bgm3.src, "/bgm/stone-garden.mp3");
 
 const fallback = getBgmTrack("invalid-id");
 assert.equal(fallback.id, "none");
