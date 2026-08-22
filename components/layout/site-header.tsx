@@ -3,10 +3,12 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Settings } from "lucide-react";
+import { Music, Pause, Play, Settings, Volume2 } from "lucide-react";
 
 import { signOutAction } from "@/features/auth/actions/sign-out";
 import type { AuthUser } from "@/features/auth/types";
+import { useBgm } from "@/features/bgm/bgm-context";
+import { BGM_TRACKS } from "@/features/bgm/tracks";
 
 type SiteHeaderProps = {
   currentUser?: AuthUser | null;
@@ -19,6 +21,7 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const { currentTrackId, isPlaying, volume, selectTrack, togglePlay, setVolume } = useBgm();
 
   useEffect(() => {
     if (!isAccountMenuOpen) return;
@@ -90,13 +93,19 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
         </nav>
       )}
 
-      {mode !== "brand-only" &&
-        (currentUser ? (
+      {mode !== "brand-only" && (
+        <div className="header-actions">
+          {!currentUser && (
+            <Link className="login-button" href="/sign-in">
+              ログイン
+            </Link>
+          )}
+
           <div className="account-menu" ref={accountMenuRef}>
             <button
               className="account-menu-trigger"
               type="button"
-              aria-label="アカウントメニューを開く"
+              aria-label="館内設定メニューを開く"
               aria-expanded={isAccountMenuOpen}
               aria-controls="account-menu-panel"
               onClick={() => setIsAccountMenuOpen((isOpen) => !isOpen)}
@@ -105,23 +114,91 @@ export function SiteHeader({ currentUser, mode = "browse", onBrandClick }: SiteH
             </button>
             {isAccountMenuOpen && (
               <div className="account-menu-panel" id="account-menu-panel">
-                <p className="account-menu-user">{currentUser.userName}</p>
-                <button className="account-menu-signout" type="button" onClick={handleSignOut} disabled={isPending}>
-                  {isPending ? "ログアウト中..." : "ログアウト"}
-                </button>
-                {signOutError && (
-                  <p className="account-menu-error" role="alert">
-                    {signOutError}
-                  </p>
+                {currentUser && (
+                  <div className="account-menu-header">
+                    <p className="account-menu-user">{currentUser.userName}</p>
+                  </div>
+                )}
+
+                <div className="bgm-settings-section">
+                  <div className="bgm-settings-title">
+                    <div className="bgm-settings-label">
+                      <Music size={15} aria-hidden="true" />
+                      <span>館内BGM</span>
+                    </div>
+                    {currentTrackId !== "none" && (
+                      <button
+                        type="button"
+                        className="bgm-playback-toggle"
+                        onClick={togglePlay}
+                        aria-label={isPlaying ? "BGMを一時停止" : "BGMを再生"}
+                      >
+                        {isPlaying ? <Pause size={13} /> : <Play size={13} />}
+                        <span>{isPlaying ? "再生中" : "停止中"}</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="bgm-track-list">
+                    {BGM_TRACKS.map((track) => {
+                      const isSelected = track.id === currentTrackId;
+                      return (
+                        <button
+                          key={track.id}
+                          type="button"
+                          className={`bgm-track-item ${isSelected ? "selected" : ""}`}
+                          onClick={() => selectTrack(track.id)}
+                        >
+                          <div className="bgm-track-info">
+                            <span className="bgm-track-name">{track.name}</span>
+                            <span className="bgm-track-desc">{track.description}</span>
+                          </div>
+                          {isSelected && <span className="bgm-track-check">✓</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {currentTrackId !== "none" && (
+                    <div className="bgm-volume-control">
+                      <Volume2 size={14} aria-hidden="true" />
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={volume}
+                        onChange={(e) => setVolume(parseFloat(e.target.value))}
+                        aria-label="BGMの音量"
+                        className="bgm-volume-slider"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {currentUser ? (
+                  <div className="account-menu-footer">
+                    <button className="account-menu-signout" type="button" onClick={handleSignOut} disabled={isPending}>
+                      {isPending ? "ログアウト中..." : "ログアウト"}
+                    </button>
+                    {signOutError && (
+                      <p className="account-menu-error" role="alert">
+                        {signOutError}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="account-menu-footer">
+                    <Link href="/sign-in" className="account-menu-login-link">
+                      ログインして企画展をつくる
+                    </Link>
+                  </div>
                 )}
               </div>
             )}
           </div>
-        ) : (
-          <Link className="login-button" href="/sign-in">
-            ログイン
-          </Link>
-        ))}
+        </div>
+      )}
     </header>
   );
 }
