@@ -84,13 +84,13 @@ async function testShinmiriFlow() {
       .single();
 
     if (fetchError || !existingItem) {
-      console.error("❌ Failed to fetch existing exhibit item:", fetchError?.message);
+      console.error("❌ Failed to fetch test exhibit item:", fetchError?.message);
       process.exitCode = 1;
       return;
     }
 
     targetItemId = existingItem.id;
-    console.log(`📌 Using Existing Exhibit: ${existingItem.title} (${targetItemId})\n`);
+    console.log(`📌 Using Exhibit Item: ${existingItem.title} (${targetItemId})\n`);
   }
 
   try {
