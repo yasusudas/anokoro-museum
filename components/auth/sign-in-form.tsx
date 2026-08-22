@@ -1,13 +1,32 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useTransition, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { signInAction } from "@/features/auth/actions/sign-in";
 
 type SignInErrors = {
   email?: string;
   password?: string;
+  general?: string;
 };
 
+function getSafeNextPath() {
+  const next = new URLSearchParams(window.location.search).get("next");
+  if (!next) return "/";
+
+  try {
+    const nextUrl = new URL(next, window.location.origin);
+    if (nextUrl.origin !== window.location.origin) return "/";
+
+    return `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
+  } catch {
+    return "/";
+  }
+}
+
 export function SignInForm() {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<SignInErrors>({});
 
@@ -31,11 +50,38 @@ export function SignInForm() {
       nextErrors.password = "パスワードは8文字以上で入力してください";
     }
 
-    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
+
+    setErrors({});
+
+    startTransition(async () => {
+      const result = await signInAction(formData);
+
+      if (!result.ok) {
+        setErrors({
+          email: result.error.fieldErrors?.email?.[0],
+          password: result.error.fieldErrors?.password?.[0],
+          general: result.error.message,
+        });
+        return;
+      }
+
+      router.push(getSafeNextPath());
+      router.refresh();
+    });
   }
 
   return (
     <form className="auth-form" onSubmit={handleSubmit} noValidate>
+      {errors.general && (
+        <p className="auth-error" role="alert">
+          {errors.general}
+        </p>
+      )}
+
       <div className="auth-field">
         <label htmlFor="sign-in-email">メールアドレス</label>
         <input
@@ -44,10 +90,15 @@ export function SignInForm() {
           type="email"
           autoComplete="email"
           placeholder="name@example.com"
+          disabled={isPending}
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? "sign-in-email-error" : undefined}
         />
-        {errors.email && <p className="auth-error" id="sign-in-email-error" role="alert">{errors.email}</p>}
+        {errors.email && (
+          <p className="auth-error" id="sign-in-email-error" role="alert">
+            {errors.email}
+          </p>
+        )}
       </div>
 
       <div className="auth-field">
@@ -59,6 +110,7 @@ export function SignInForm() {
             type={showPassword ? "text" : "password"}
             autoComplete="current-password"
             placeholder="8文字以上"
+            disabled={isPending}
             aria-invalid={Boolean(errors.password)}
             aria-describedby={errors.password ? "sign-in-password-error" : undefined}
           />
@@ -67,6 +119,7 @@ export function SignInForm() {
             type="button"
             aria-label={showPassword ? "パスワードを隠す" : "パスワードを表示"}
             aria-pressed={showPassword}
+            disabled={isPending}
             onClick={() => setShowPassword((visible) => !visible)}
           >
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -77,16 +130,15 @@ export function SignInForm() {
           </button>
         </div>
         <span className="auth-field-hint">半角英数字で入力</span>
-        {errors.password && <p className="auth-error" id="sign-in-password-error" role="alert">{errors.password}</p>}
+        {errors.password && (
+          <p className="auth-error" id="sign-in-password-error" role="alert">
+            {errors.password}
+          </p>
+        )}
       </div>
 
-      <label className="auth-check">
-        <input type="checkbox" name="remember" />
-        <span>次回から自動でログインする</span>
-      </label>
-
-      <button className="auth-submit" type="submit">
-        ログイン
+      <button className="auth-submit" type="submit" disabled={isPending}>
+        {isPending ? "ログイン中..." : "ログイン"}
       </button>
     </form>
   );

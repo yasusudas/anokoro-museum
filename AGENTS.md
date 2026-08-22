@@ -18,21 +18,21 @@ Codex / Claude などのAIコーディングエージェントは、このリポ
 | 内容 | パス |
 | --- | --- |
 | 開発ルール全体（Git / コミット / PR / 禁止事項） | `docs/DEVELOPMENT_RULES.md` |
-| コーディング規約（命名・TS・React・CSS・import） | `docs/conventions.md` |
+| コーディング規約（命名・TS・React・CSS・import） | `docs/CONVENTIONS.md` |
 | プロダクト要件（何を・誰のために・なぜ） | `docs/PRD.md` |
-| 機能要件（F-01〜F-09・受け入れ条件） | `docs/FEATURE_REQUIREMENTS.md` |
+| 機能要件（F-01〜F-07・受け入れ条件） | `docs/FEATURE_REQUIREMENTS.md` |
 | 技術方針（スタック・アーキテクチャ・非機能） | `docs/TRD.md` |
 | コード配置と依存方向 | `docs/ARCHITECTURE_GUIDE.md` |
 | API 境界（Server Actions / Route Handlers / Supabase） | `docs/API_DESIGN.md` |
 | DB 設計と RLS | `docs/DATABASE_DESIGN.md` |
 | DB マイグレーション手順 | `docs/MIGRATIONS.md` |
-| 参考資料と採用・不採用の記録 | `docs/REFERENCE_NOTES.md` |
 
 ## よく使うコマンド
 
 ```bash
 npm run dev
 npm run lint
+npm run test
 npm run build
 ```
 
@@ -52,4 +52,14 @@ npm run build
 - 秘密値・service role keyをブラウザへ渡さない。`NEXT_PUBLIC_*` は全利用者から見える前提で扱う。
 - 環境変数を追加・変更した場合は `.env.example` も更新する。
 - 成果物に不要なコメントアウトや説明用コメントを残さない。
-- コミット前に `npm run lint` と `npm run build` を通す（pre-commitフックが同じ内容を実行する）。
+- コミット前に `npm run lint`、`npm run test`、`npm run build` を通す（pre-commitフックが同じ内容を実行する）。
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

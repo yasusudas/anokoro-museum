@@ -1,30 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { CommentThread } from "@/components/comments/comment-thread";
+import type { ExhibitItem } from "@/features/exhibits/types";
+import type { AuthUser } from "@/features/auth/types";
+import { signOutAction } from "@/features/auth/actions/sign-out";
 
-type Exhibit = {
-  id: string;
-  number: string;
-  title: string;
-  subtitle: string;
-  category: string;
-  year: string;
-  description: string;
-  shinmiriCount: number;
-  theme: string;
+type MuseumExperienceProps = {
+  initialExhibits: ExhibitItem[];
+  currentUser?: AuthUser | null;
 };
-
-const exhibits: Exhibit[] = [
-  { id: "himo-q", number: "01", title: "ひもQ", subtitle: "なが〜いグミ、覚えてる？", category: "おかし", year: "2004–2008", description: "遠足の日、ちぎれないように端から大事に食べた、あの長いグミ。友だちと長さを比べるのも定番でした。", shinmiriCount: 248, theme: "gummy" },
-  { id: "yokai", number: "02", title: "妖怪ウォッチ", subtitle: "ともだち、召喚！", category: "ゲーム", year: "2004–2008", description: "放課後になると、みんなで妖怪メダルを見せ合った。あの召喚ソングは今でも口ずさめるかも。", shinmiriCount: 196, theme: "watch" },
-  { id: "tapioca", number: "03", title: "タピオカ", subtitle: "平成最後の放課後ドリンク", category: "たべもの", year: "2002–2007", description: "長い列に並んで、黒糖ミルクを片手に写真を撮った放課後。太いストローも含めて思い出。", shinmiriCount: 174, theme: "tapioca" },
-  { id: "zoro", number: "04", title: "かいけつゾロリ", subtitle: "図書室の人気者", category: "ほん", year: "2000–2009", description: "休み時間の図書室。貸出中なら次の巻を探して、最後のなぞなぞまでしっかり読んだ。", shinmiriCount: 139, theme: "book" },
-  { id: "soran", number: "05", title: "ソーラン節", subtitle: "どっこいしょ、どっこいしょ！", category: "できごと", year: "1998–2009", description: "運動会前、筋肉痛になるまで低い姿勢を練習した。クラス全員の掛け声が揃った瞬間は忘れられない。", shinmiriCount: 121, theme: "soran" },
-];
-
-const categories = ["すべて", "おかし", "ゲーム", "たべもの", "ほん", "できごと"];
 
 function ArrowIcon({ direction = "right" }: { direction?: "left" | "right" }) {
   return (
@@ -37,33 +24,117 @@ function ArrowIcon({ direction = "right" }: { direction?: "left" | "right" }) {
 function NostalgiaIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 20.4s-7-4.3-7-10A4.2 4.2 0 0 1 12 7.3a4.2 4.2 0 0 1 7 3.1c0 5.7-7 10-7 10Z" />
-      <path d="M8.4 11.2c.4-1.1 1.1-1.7 2.1-1.9" />
+      <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21.2l7.8-7.7 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z" />
     </svg>
   );
 }
 
-function ExhibitArt({ theme }: { theme: string }) {
-  if (theme === "gummy") return <div className="art art-gummy"><span className="gummy-line one" /><span className="gummy-line two" /><strong>ひもQ</strong><small>超ひも級！</small></div>;
-  if (theme === "watch") return <div className="art art-watch"><span className="watch-face"><i>✦</i></span><strong>妖怪<br />ウォッチ</strong></div>;
-  if (theme === "tapioca") return <div className="art art-tapioca"><span className="straw" /><span className="cup"><i /><i /><i /><i /><i /><i /></span><strong>TAPIOCA</strong></div>;
-  if (theme === "book") return <div className="art art-book"><span className="book-cover"><b>Z</b><i>かいけつ<br />ゾロリ</i></span><span className="book-shadow" /></div>;
-  return <div className="art art-soran"><span className="sun" /><span className="dancer"><i /><b /></span><strong>ソーラン節</strong></div>;
+function ExhibitArt({ theme, title }: { theme: string; title: string }) {
+  if (theme === "gummy") {
+    return (
+      <div className="art art-gummy">
+        <span className="gummy-line one" />
+        <span className="gummy-line two" />
+        <strong>{title}</strong>
+        <small>超ひも級！</small>
+      </div>
+    );
+  }
+  if (theme === "watch") {
+    return (
+      <div className="art art-watch">
+        <span className="watch-face">
+          <i>✦</i>
+        </span>
+        <strong>{title}</strong>
+      </div>
+    );
+  }
+  if (theme === "tapioca") {
+    return (
+      <div className="art art-tapioca">
+        <span className="straw" />
+        <span className="cup">
+          <i />
+          <i />
+          <i />
+          <i />
+          <i />
+          <i />
+        </span>
+        <strong>{title}</strong>
+      </div>
+    );
+  }
+  if (theme === "book") {
+    return (
+      <div className="art art-book">
+        <span className="book-cover">
+          <b>Z</b>
+          <i>{title}</i>
+        </span>
+        <span className="book-shadow" />
+      </div>
+    );
+  }
+  return (
+    <div className="art art-soran">
+      <span className="sun" />
+      <span className="dancer">
+        <i />
+        <b />
+      </span>
+      <strong>{title}</strong>
+    </div>
+  );
 }
 
-export function MuseumExperience() {
+export function MuseumExperience({ initialExhibits, currentUser }: MuseumExperienceProps) {
   const corridorRef = useRef<HTMLDivElement>(null);
+  const modalCloseRef = useRef<HTMLButtonElement>(null);
+  const searchParams = useSearchParams();
+  const requestedExhibitId = searchParams.get("exhibit");
+  const requestedExhibit = requestedExhibitId
+    ? initialExhibits.find((item) => item.id === requestedExhibitId) ?? null
+    : null;
+  const isRequestedExhibitMissing = Boolean(requestedExhibitId) && !requestedExhibit;
   const [activeCategory, setActiveCategory] = useState("すべて");
-  const [selected, setSelected] = useState<Exhibit | null>(null);
+  const [selected, setSelected] = useState<ExhibitItem | null>(() => requestedExhibit);
   const [shinmiriItems, setShinmiriItems] = useState<string[]>([]);
   const [showGuide, setShowGuide] = useState(true);
-  const visible = activeCategory === "すべて" ? exhibits : exhibits.filter((item) => item.category === activeCategory);
+  const [isPending, startTransition] = useTransition();
+
+  const [signOutError, setSignOutError] = useState<string | null>(null);
+
+  const exhibits = initialExhibits;
+
+  // カテゴリ一覧を動的に生成
+  const categories = useMemo(() => {
+    const defaultCategories = ["すべて", "おかし", "ゲーム", "たべもの", "ほん", "できごと"];
+    const itemCategories = exhibits.map((e) => e.category).filter(Boolean);
+    const set = new Set([...defaultCategories, ...itemCategories]);
+    return Array.from(set);
+  }, [exhibits]);
+
+  const visible =
+    activeCategory === "すべて"
+      ? exhibits
+      : exhibits.filter((item) => item.category === activeCategory);
+
   const move = useCallback((direction: number) => {
     corridorRef.current?.scrollBy({
       left: direction * Math.min(window.innerWidth * 0.72, 760),
       behavior: "smooth",
     });
   }, []);
+
+  const closeModal = useCallback(() => {
+    setSelected(null);
+  }, []);
+
+  const handleOpenExhibit = (item: ExhibitItem) => {
+    setSelected(item);
+  };
 
   useEffect(() => {
     const corridor = corridorRef.current;
@@ -77,6 +148,13 @@ export function MuseumExperience() {
     };
 
     const arrows = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && selected) {
+        event.preventDefault();
+        closeModal();
+        return;
+      }
+
+      if (selected) return;
       if (event.key === "ArrowRight") move(1);
       if (event.key === "ArrowLeft") move(-1);
     };
@@ -88,15 +166,50 @@ export function MuseumExperience() {
       corridor.removeEventListener("wheel", horizontalWheel);
       window.removeEventListener("keydown", arrows);
     };
-  }, [move]);
+  }, [closeModal, move, selected]);
+
+  useEffect(() => {
+    if (selected) modalCloseRef.current?.focus();
+  }, [selected]);
 
   const toggleShinmiri = (id: string) =>
-    setShinmiriItems((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+    setShinmiriItems((current) =>
+      current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
+    );
+
+  const handleSignOut = () => {
+    setSignOutError(null);
+    startTransition(async () => {
+      const result = await signOutAction();
+      if (result && !result.ok) {
+        setSignOutError(result.error.message || "ログアウトに失敗しました。もう一度お試しください。");
+      }
+    });
+  };
+
+  if (isRequestedExhibitMissing) {
+    return (
+      <main className="museum-shell">
+        <section className="end-panel" role="alert" aria-labelledby="exhibit-not-found-title">
+          <span>EXHIBIT NOT FOUND</span>
+          <h2 id="exhibit-not-found-title">展示が見つかりません</h2>
+          <p>指定された展示は削除されたか、存在しません。</p>
+          <Link className="end-panel-link" href="/">
+            展示を見に戻る
+          </Link>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="museum-shell">
       <header className="museum-header">
-        <button className="brand" onClick={() => corridorRef.current?.scrollTo({ left: 0, behavior: "smooth" })} aria-label="入口へ戻る">
+        <button
+          className="brand"
+          onClick={() => corridorRef.current?.scrollTo({ left: 0, behavior: "smooth" })}
+          aria-label="入口へ戻る"
+        >
           <span className="brand-mark">あ</span>
           <span>
             <b>あのころ</b>
@@ -112,9 +225,45 @@ export function MuseumExperience() {
           </Link>
         </nav>
 
-        <Link className="login-button" href="/sign-in">
-          ログイン
-        </Link>
+        {currentUser ? (
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", position: "relative" }}>
+            <span style={{ fontSize: "0.875rem", color: "var(--fg-muted, #888)" }}>
+              {currentUser.userName}
+            </span>
+            <button
+              className="login-button"
+              onClick={handleSignOut}
+              disabled={isPending}
+              style={{ background: "transparent", border: "1px solid currentColor" }}
+            >
+              {isPending ? "..." : "ログアウト"}
+            </button>
+            {signOutError && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "100%",
+                  right: 0,
+                  marginTop: "0.5rem",
+                  padding: "0.5rem 0.75rem",
+                  background: "rgba(220, 50, 50, 0.9)",
+                  color: "#fff",
+                  fontSize: "0.8rem",
+                  borderRadius: "4px",
+                  whiteSpace: "nowrap",
+                  zIndex: 10,
+                }}
+                role="alert"
+              >
+                {signOutError}
+              </div>
+            )}
+          </div>
+        ) : (
+          <Link className="login-button" href="/sign-in">
+            ログイン
+          </Link>
+        )}
       </header>
 
       <section className="controls" aria-label="展示の絞り込み">
@@ -150,9 +299,19 @@ export function MuseumExperience() {
           <section className="gallery" aria-live="polite">
             {visible.map((item) => (
               <article className="exhibit" key={item.id}>
-                <button className="frame" onClick={() => setSelected(item)} aria-label={`${item.title}の詳細を見る`}>
+                <button className="frame" onClick={() => handleOpenExhibit(item)} aria-label={`${item.title}の詳細を見る`}>
                   <span className="frame-inner">
-                    <ExhibitArt theme={item.theme} />
+                    {item.imageUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={item.imageUrl}
+                        alt={item.title}
+                        className="frame-photo"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <ExhibitArt theme={item.theme} title={item.title} />
+                    )}
                   </span>
                 </button>
                 <div className="exhibit-label">
@@ -160,9 +319,13 @@ export function MuseumExperience() {
                   <div>
                     <h2>{item.title}</h2>
                     <p>{item.subtitle}</p>
-                    <small>{item.year} 生まれの記憶</small>
+                    <small>{item.year ? `${item.year} 年の記憶` : "あのころの記憶"}</small>
                   </div>
-                  <button className={shinmiriItems.includes(item.id) ? "nostalgia liked" : "nostalgia"} onClick={() => toggleShinmiri(item.id)} aria-label="しんみりする">
+                  <button
+                    className={shinmiriItems.includes(item.id) ? "nostalgia liked" : "nostalgia"}
+                    onClick={() => toggleShinmiri(item.id)}
+                    aria-label="しんみりする"
+                  >
                     <NostalgiaIcon />
                     <b>{item.shinmiriCount + (shinmiriItems.includes(item.id) ? 1 : 0)}</b>
                     <small>しんみり</small>
@@ -173,7 +336,8 @@ export function MuseumExperience() {
             <article className="end-panel">
               <span>YOUR MEMORY</span>
               <h2>
-                あなたの「あのころ」も<br />
+                あなたの「あのころ」も
+                <br />
                 展示しませんか？
               </h2>
               <p>誰かにとっては、忘れられない思い出かもしれません。</p>
@@ -198,42 +362,68 @@ export function MuseumExperience() {
       </div>
 
       {selected && (
-        <div className="modal-backdrop" onMouseDown={() => setSelected(null)}>
-          <section className="detail-modal" role="dialog" aria-modal="true" aria-label={`${selected.title}の展示詳細`} onMouseDown={(event) => event.stopPropagation()}>
-            <button className="modal-close" onClick={() => setSelected(null)} aria-label="閉じる">
-              ×
+        <div className="modal-backdrop" onMouseDown={closeModal}>
+          <section
+            className="detail-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${selected.title}の展示詳細`}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <button ref={modalCloseRef} className="modal-close" onClick={closeModal} aria-label="閉じる">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
             </button>
-            <div className="modal-art">
-              <div className="frame modal-frame">
-                <span className="frame-inner">
-                  <ExhibitArt theme={selected.theme} />
-                </span>
+            <div className="modal-main">
+              <div className="modal-art">
+                <div className="frame modal-frame">
+                  <span className="frame-inner">
+                    {selected.imageUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={selected.imageUrl} alt={selected.title} className="frame-photo" />
+                    ) : (
+                      <ExhibitArt theme={selected.theme} title={selected.title} />
+                    )}
+                  </span>
+                </div>
+              </div>
+              <div className="modal-content">
+                <p className="eyebrow">
+                  EXHIBIT {selected.number} · {selected.category}
+                </p>
+                <div className="modal-title-row">
+                  <div>
+                    <h2>{selected.title}</h2>
+                    <p className="modal-subtitle">{selected.subtitle}</p>
+                  </div>
+                  <button
+                    className={shinmiriItems.includes(selected.id) ? "modal-like liked" : "modal-like"}
+                    onClick={() => toggleShinmiri(selected.id)}
+                  >
+                    <NostalgiaIcon />
+                    <span>しんみり</span>
+                    <b>{selected.shinmiriCount + (shinmiriItems.includes(selected.id) ? 1 : 0)}</b>
+                  </button>
+                </div>
+                <p className="modal-memory">{selected.description}</p>
+                <div className="memory-tag">
+                  {selected.year ? (
+                    <>主に <b>{selected.year}年</b> の記憶</>
+                  ) : (
+                    <><b>あのころ</b> の記憶</>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="modal-content">
-              <p className="eyebrow">
-                EXHIBIT {selected.number} · {selected.category}
-              </p>
-              <h2>{selected.title}</h2>
-              <p className="modal-subtitle">{selected.subtitle}</p>
-              <p className="modal-memory">{selected.description}</p>
-              <div className="memory-tag">
-                主に <b>{selected.year}年生まれ</b> の記憶
-              </div>
-              <button className={shinmiriItems.includes(selected.id) ? "modal-like liked" : "modal-like"} onClick={() => toggleShinmiri(selected.id)}>
-                <NostalgiaIcon />しんみりした <b>{selected.shinmiriCount + (shinmiriItems.includes(selected.id) ? 1 : 0)}</b>
-              </button>
-              <div className="thread-preview">
-                <span>みんなの思い出</span>
-                <p>「これ、学校帰りによく友達と話してたなあ…」</p>
-                <button>思い出を読む →</button>
-              </div>
-            </div>
+            <aside className="modal-comments" aria-label="コメント欄">
+              <CommentThread key={selected.id} itemId={selected.id} />
+            </aside>
           </section>
         </div>
       )}
 
-      {showGuide && (
+      {showGuide && !selected && (
         <div className="guide-toast">
           <span>← →</span>
           <div>

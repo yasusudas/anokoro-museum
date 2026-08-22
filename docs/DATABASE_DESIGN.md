@@ -1,6 +1,6 @@
 # データベース設計
 
-Supabase PostgreSQLの設計意図を管理する。サークル内ハッカソン用プロダクトのため開発スピードを最優先とし、テーブル結合を最小限に抑えたフラットでシンプルな構成を採用する。運営ロール・展示審査・モデレーションは意図的に持たない（[スコープ外の記録](#スコープ外の記録)）。
+Supabase PostgreSQLの設計意図を管理する。サークル内ハッカソン用プロダクトのため開発スピードを最優先とし、テーブル結合を最小限に抑えたフラットでシンプルな構成を採用する。
 
 ## ER図
 
@@ -24,7 +24,7 @@ erDiagram
 - 時刻: `timestamptz`。更新される可能性のあるtableだけ `updated_at` を持つ
 - ユーザー参照: `auth.users(id)` を起点としたUUID外部キー
 - **RLSはtable作成と同じmigrationで有効化する。** 無効のままPreview / Productionへ出さない
-- 生まれ年（F-01）はDBで管理しない。クライアント側の一時保存のみとする
+- 生まれ年はDBで管理しない。クライアント側の一時保存のみとする
 
 ## テーブル一覧
 
@@ -54,25 +54,19 @@ erDiagram
 | --- | --- | --- |
 | `id` | uuid | PK、DEFAULT `gen_random_uuid()` |
 | `user_id` | uuid | FK `users.id` (ON DELETE CASCADE)、NULL可 |
-| `title` | varchar | NOT NULL。Unicode空白を除くtrim後が1文字以上 |
-| `description` | text | NOT NULL。Unicode空白を除くtrim後が1文字以上 |
-| `category` | varchar | NOT NULL。CHECK制約で `おかし` / `ゲーム` / `たべもの` / `ほん` / `できごと` に限定 |
-| `theme` | varchar | NOT NULL。表示テーマ識別子（`gummy`, `watch` など） |
-| `image_path` | text | NOT NULL。Supabase Storageのオブジェクトキー。外部URLは保存しない |
-| `image_alt` | text | NOT NULL。Unicode空白を除くtrim後が1文字以上 |
-| `image_rights_confirmed` | boolean | NOT NULLかつ`true`。投稿者の権利確認を必須にする |
-| `birth_year_start` | int | NOT NULL。1900年以上で、日本時間の現在年以下 |
-| `birth_year_end` | int | NOT NULL。開始年以上で、日本時間の現在年以下 |
+| `title` | varchar | NOT NULL。Unicode空白を除くtrim後1〜100文字 |
+| `description` | text | NOT NULL。Unicode空白を除くtrim後1〜500文字 |
+| `category` | varchar | NOT NULL。CHECK制約で `おかし` / `ゲーム` / `たべもの` / `ほん` / `できごと` / `ガジェット` / `インターネット` に限定 |
+| `theme` | varchar | 表示テーマ識別子（`gummy`, `watch` など。未設定時はコードでフォールバック） |
+| `image_url` | text | Supabase Storage内の公開画像URL（投稿時は画像添付必須。既存seed等で未指定時はテーマアートへフォールバック） |
+| `year` | int | 展示品の年代（西暦4桁、1900年〜現在年、例: `2004`） |
 | `created_at`, `updated_at` | timestamptz | NOT NULL DEFAULT `now()` |
 
-制約:
+制約・運用:
 
-- `image_path` と `image_alt` は空文字・空白だけを拒否する
-- `CHECK (image_rights_confirmed)` により、権利確認済みの画像だけを保存する
-- `CHECK (birth_year_start >= 1900)` と、INSERT / UPDATE時に日本時間の現在年を検査するtriggerにより、対象生まれ年を1900年から現在年までに限定する
+- `image_url` は額縁に飾る展示写真の公開画像URLを保持する。新規投稿時は画像アップロードが必須となり、初期seed等で未指定の場合はテーマアートを表示する
+- `year` は展示アイテムの年代（流行年や発売年など）を表す
 - `user_id` が `NULL` の行は seed で投入した初期展示を表す。RLSの所有者判定が成立しないため、誰も更新・削除できない
-
-`birth_year_start` / `birth_year_end` は**主に記憶を共有する来場者の生まれ年の範囲**であり、展示自体が流行した年ではない。F-01で端末内に保持する来場者自身の生まれ年とは別の概念である。
 
 ### `comments`
 
@@ -115,16 +109,15 @@ erDiagram
 | table | SELECT | INSERT | UPDATE | DELETE |
 | --- | --- | --- | --- | --- |
 | `users` | 全員 | トリガー経由のみ | 本人 | 不可（`auth.users` 削除にCASCADE） |
-| `items` | 全員 | ログイン済み・本人名義 | 本人 | 本人 |
+| `items` | 全員 | ログイン済み・本人名義 | 不可（編集なし） | 本人 |
 | `comments` | 全員 | ログイン済み・本人名義 | 不可（編集なし） | 本人 |
 | `comment_likes` | 本人の行のみ | ログイン済み・本人名義 | 不可 | 本人 |
 | `shinmiri_reactions` | 全員 | ログイン済み・本人名義 | 不可 | 本人 |
 
 - INSERTは `WITH CHECK (auth.uid() = user_id)` で本人名義を強制する
-- UPDATE / DELETEは `USING (auth.uid() = user_id)` で所有者を照合する
+- DELETEは `USING (auth.uid() = user_id)` で所有者を照合する
 - `users` の所有者列は `id`、それ以外の所有者付きtableは `user_id` を使う
 - `comment_likes` の匿名件数は生テーブルを公開せず、集計RPC `get_comment_like_counts` から取得する
-- `items` のUPDATEは `title`、`description`、分類・画像・年代列だけに限定し、主キー・所有者・作成日時・更新日時は変更できない
 - 公開状態（status）を持たないため、SELECTに条件分岐は不要
 
 ## `users` の自動作成
@@ -136,12 +129,12 @@ RLS有効下ではクライアントから `users` をINSERTできない。`auth
 
 ## `updated_at` の更新
 
-`users` と `items` に `BEFORE UPDATE` トリガーを設定し、`now()` を代入する。`comments`、`comment_likes`、`shinmiri_reactions` は更新しないため不要。
+`users` に `BEFORE UPDATE` トリガーを設定し、`now()` を代入する。`items`、`comments`、`comment_likes`、`shinmiri_reactions` は更新しないため不要。
 
 ## インデックス
 
 - `comments(item_id, created_at DESC)` — 展示詳細のコメント取得
-- `items(category)` / `items(birth_year_start, birth_year_end)` — F-02の絞り込み
+- `items(category)` / `items(year)` — F-01の絞り込み
 - `comment_likes` は `UNIQUE(comment_id, user_id)` が `comment_id` 先頭の複合indexになるため追加不要
 - `shinmiri_reactions` は `UNIQUE(item_id, user_id)` が `item_id` 先頭の複合indexになるため追加不要
 
@@ -165,10 +158,8 @@ MVPでは有効化しない。PRDのMVP対象外にリアルタイム機能が�
 
 | 省略したもの | 影響 |
 | --- | --- |
-| 運営 / モデレーターのロール | 権限判定が「本人かどうか」だけになる |
-| 展示の公開状態（`status`）と審査フロー | 投稿は即時公開される |
 | コメントの論理削除・運営による非表示 | 不適切な投稿へ運営が対処する手段がない |
-| 画像の出典情報 | 出典URLやライセンス情報の管理は行わず、`image_rights_confirmed` による投稿者の自己申告だけを必須にする |
-| 生まれ年のDB保存 | F-01は端末内の一時保存に留まり、再ログインでは復元されない |
+| 画像の出典情報 | 出典URLやライセンス情報の管理、利用者への確認操作は行わない |
+| 生まれ年のDB保存 | 端末内の一時保存に留まり、再ログインでは復元されない |
 | 展示のslug | URLは `/exhibits/{uuid}` になる。後からslugを導入すると既存URLが変わる |
 | コメントの論理削除 | 物理削除のため、後から論理削除へ移行してもデータを復元できない |

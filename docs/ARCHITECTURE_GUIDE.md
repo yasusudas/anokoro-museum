@@ -66,7 +66,7 @@ docs/
 
 ### 公開展示一覧
 
-`app/page.tsx` は薄く保ち、表示の中心を `components/museum/museum-experience.tsx` に置く。routeを分割する段階では `app/(museum)/page.tsx` がsearch paramsを解釈し、`features/exhibits/infrastructure/find-published-exhibits.ts` を呼ぶ。年代との関連度計算が複雑になったら `domain` へ移し、横移動は `components/museum/exhibit-corridor.tsx` に分離する。
+`app/page.tsx` は薄く保ち、表示の中心を `components/museum/museum-experience.tsx` に置く。routeを分割する段階では `app/(museum)/page.tsx` がsearch paramsを解釈し、`features/exhibits/infrastructure/find-published-exhibits.ts` を呼ぶ。横移動は `components/museum/exhibit-corridor.tsx` に分離する。
 
 ### 認証導線
 
@@ -82,7 +82,7 @@ UI → Server Action → applicationの `toggle-shinmiri` → repository。重�
 
 ### 展示投稿
 
-投稿画面をページとして切るなら `app/(museum)/items/new/page.tsx` に置き、ページ側はルートとcompositionのみを担当する。モーダルで出すなら再利用UIは `components/forms/` か `components/museum/` に寄せる。フォーム入力をServer Actionで検証し、画像をStorageへアップロードしてから展示をDBへ保存する。DB保存に失敗した場合はアップロード済みオブジェクトを削除し、孤立ファイルを残さない。画像、代替テキスト、権利確認が揃った時点で保存・公開する。
+投稿画面は `app/(museum)/exhibits/new/page.tsx` に置き、ページ側はルートとcompositionのみを担当する。再利用UIは `components/forms/` か `components/museum/` に寄せる。名前、説明、カテゴリ、画像ファイル、流行った年代をServer Actionで検証し、画像がJPEG、PNG、WebPのいずれか、かつ5MB以下の場合だけSupabase Storageへアップロードする。その後、Storage内の公開画像URLを `items.image_url` に設定して展示をDBへ保存・公開する。DB保存に失敗した場合はアップロード済みオブジェクトを削除し、孤立ファイルを残さない。
 
 ## 段階的導入
 
