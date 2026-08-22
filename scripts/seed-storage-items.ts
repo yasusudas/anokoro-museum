@@ -95,20 +95,32 @@ const mockExhibits = [
 async function seedStorageItems() {
   console.log("🚀 Starting Supabase Storage Upload & DB Seeding...\n");
 
-  const testEmail = `seed_uploader_${Date.now()}@anokoro.local`;
-  const testPassword = "password123!";
+  const seedEmail = "seed_uploader@anokoro.local";
+  const seedPassword = "SeedPassword123!";
 
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email: testEmail,
-    password: testPassword,
+  const signInResult = await supabase.auth.signInWithPassword({
+    email: seedEmail,
+    password: seedPassword,
   });
 
-  if (authError || !authData.user || !authData.session) {
-    console.error("❌ Authentication error:", authError?.message ?? "Session not created");
+  let user = signInResult.data.user;
+  let session = signInResult.data.session;
+
+  if (!user || !session) {
+    const signUpResult = await supabase.auth.signUp({
+      email: seedEmail,
+      password: seedPassword,
+    });
+    user = signUpResult.data.user;
+    session = signUpResult.data.session;
+  }
+
+  if (!user || !session) {
+    console.error("❌ Authentication error: Session not created");
     return;
   }
 
-  const userId = authData.user.id;
+  const userId = user.id;
   console.log(`✅ Authenticated as seed uploader (UID: ${userId})\n`);
 
   const imagesDir = path.join(process.cwd(), "public/mock-images");

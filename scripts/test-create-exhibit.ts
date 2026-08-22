@@ -20,21 +20,33 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 async function testExhibitRegistration() {
   console.log("🧪 Starting Exhibit Registration Test...\n");
 
-  const testEmail = `tester_${Date.now()}@anokoro.local`;
-  const testPassword = "password123!";
+  const testEmail = "test_runner@anokoro.local";
+  const testPassword = "TestRunnerPassword123!";
 
-  const { data: authData, error: authError } = await supabase.auth.signUp({
+  const signInResult = await supabase.auth.signInWithPassword({
     email: testEmail,
     password: testPassword,
   });
 
-  if (authError || !authData.user || !authData.session) {
-    console.error("❌ Authentication failed:", authError?.message ?? "Session not created");
+  let user = signInResult.data.user;
+  let session = signInResult.data.session;
+
+  if (!user || !session) {
+    const signUpResult = await supabase.auth.signUp({
+      email: testEmail,
+      password: testPassword,
+    });
+    user = signUpResult.data.user;
+    session = signUpResult.data.session;
+  }
+
+  if (!user || !session) {
+    console.error("❌ Authentication failed: Session not created");
     return;
   }
-  console.log(`✅ Authenticated! User ID: ${authData.user.id}\n`);
+  console.log(`✅ Authenticated! User ID: ${user.id}\n`);
 
-  const userId = authData.user.id;
+  const userId = user.id;
 
   const mockItem = {
     title: "たまごっち (テスト登録)",
@@ -57,50 +69,75 @@ async function testExhibitRegistration() {
   const contentType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
   const fileName = `${userId}/${Date.now()}_test_${crypto.randomUUID()}.${ext}`;
 
-  const { data: uploadData, error: uploadError } = await supabase.storage
-    .from("exhibits")
-    .upload(fileName, fileBuffer, {
-      contentType,
-      upsert: false,
-    });
+  let uploadedStoragePath: string | null = null;
+  let insertedItemId: string | null = null;
 
-  if (uploadError || !uploadData) {
-    console.error("❌ Storage upload failed:", uploadError?.message);
-    return;
+  try {
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("exhibits")
+      .upload(fileName, fileBuffer, {
+        contentType,
+        upsert: false,
+      });
+
+    if (uploadError || !uploadData) {
+      console.error("❌ Storage upload failed:", uploadError?.message);
+      return;
+    }
+
+    uploadedStoragePath = uploadData.path;
+
+    const { data: publicData } = supabase.storage.from("exhibits").getPublicUrl(uploadedStoragePath);
+    const imageUrl = publicData.publicUrl;
+    console.log(`✅ Storage upload succeeded! Public URL: ${imageUrl}\n`);
+
+    const { data: newItem, error: insertError } = await supabase
+      .from("items")
+      .insert({
+        user_id: userId,
+        title: mockItem.title,
+        description: mockItem.description,
+        category: mockItem.category,
+        year: mockItem.year,
+        image_url: imageUrl,
+      })
+      .select("id, title, category, year, image_url, created_at")
+      .single();
+
+    if (insertError || !newItem) {
+      console.error("❌ DB insert failed:", insertError?.message);
+      return;
+    }
+
+    insertedItemId = newItem.id;
+
+    console.log(`✅ DB insert succeeded!`);
+    console.log(`   ID: ${newItem.id}`);
+    console.log(`   Title: ${newItem.title}`);
+    console.log(`   Category: ${newItem.category} / Year: ${newItem.year}`);
+    console.log(`   Image URL: ${newItem.image_url}`);
+    console.log(`   Created At: ${newItem.created_at}\n`);
+  } finally {
+    if (insertedItemId) {
+      const { error: deleteDbError } = await supabase.from("items").delete().eq("id", insertedItemId);
+      if (deleteDbError) {
+        console.error("⚠️ Failed to clean up test DB item:", deleteDbError.message);
+      } else {
+        console.log("🧹 Test DB item cleaned up.");
+      }
+    }
+
+    if (uploadedStoragePath) {
+      const { error: deleteStorageError } = await supabase.storage
+        .from("exhibits")
+        .remove([uploadedStoragePath]);
+      if (deleteStorageError) {
+        console.error("⚠️ Failed to clean up test storage object:", deleteStorageError.message);
+      } else {
+        console.log("🧹 Test storage image cleaned up.");
+      }
+    }
   }
-
-  const { data: publicData } = supabase.storage.from("exhibits").getPublicUrl(uploadData.path);
-  const imageUrl = publicData.publicUrl;
-  console.log(`✅ Storage upload succeeded! Public URL: ${imageUrl}\n`);
-
-  const { data: newItem, error: insertError } = await supabase
-    .from("items")
-    .insert({
-      user_id: userId,
-      title: mockItem.title,
-      description: mockItem.description,
-      category: mockItem.category,
-      year: mockItem.year,
-      image_url: imageUrl,
-    })
-    .select("id, title, category, year, image_url, created_at")
-    .single();
-
-  if (insertError || !newItem) {
-    console.error("❌ DB insert failed:", insertError?.message);
-    return;
-  }
-
-  console.log(`✅ DB insert succeeded!`);
-  console.log(`   ID: ${newItem.id}`);
-  console.log(`   Title: ${newItem.title}`);
-  console.log(`   Category: ${newItem.category} / Year: ${newItem.year}`);
-  console.log(`   Image URL: ${newItem.image_url}`);
-  console.log(`   Created At: ${newItem.created_at}\n`);
-
-  // テスト用レコードをクリーンアップ
-  await supabase.from("items").delete().eq("id", newItem.id);
-  console.log("🧹 Test item cleaned up.");
 
   console.log("🎉 Exhibit Registration Test Complete!");
 }
