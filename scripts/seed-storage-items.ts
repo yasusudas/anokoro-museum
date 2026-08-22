@@ -118,22 +118,22 @@ const mockExhibits = [
 async function seedStorageItems() {
   console.log("🚀 Starting Supabase Storage Upload & DB Seeding...\n");
 
-  // exhibits バケットの確認・作成
-  const { data: buckets } = await supabase.storage.listBuckets();
-  const bucketExists = buckets?.some((b) => b.name === "exhibits");
-  if (!bucketExists) {
-    console.log("📦 Creating 'exhibits' storage bucket...");
-    const { error: bucketError } = await supabase.storage.createBucket("exhibits", {
-      public: true,
-      fileSizeLimit: 5242880,
-      allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
-    });
-    if (bucketError) {
-      console.warn("⚠️ createBucket note (might require service role key):", bucketError.message);
-    } else {
-      console.log("✅ 'exhibits' bucket created!");
-    }
+  // 認証用テストユーザーの作成/ログイン
+  const testEmail = `seed_uploader_${Date.now()}@anokoro.local`;
+  const testPassword = "password123!";
+
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email: testEmail,
+    password: testPassword,
+  });
+
+  if (authError || !authData.user) {
+    console.error("❌ Authentication error:", authError?.message);
+    return;
   }
+
+  const userId = authData.user.id;
+  console.log(`✅ Authenticated as seed uploader (UID: ${userId})\n`);
 
   const imagesDir = path.join(process.cwd(), "public/mock-images");
 
@@ -146,7 +146,7 @@ async function seedStorageItems() {
       if (fs.existsSync(localFilePath)) {
         const fileBuffer = fs.readFileSync(localFilePath);
         const ext = item.imageFileName.split(".").pop() || "jpg";
-        const storagePath = `mock/${item.id}.${ext}`;
+        const storagePath = `${userId}/mock_${item.id}.${ext}`;
         const contentType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
 
         // Supabase Storage にアップロード
