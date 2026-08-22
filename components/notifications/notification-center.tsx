@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { Bell, Heart, MessageCircle, X } from "lucide-react";
 
 import {
@@ -21,6 +21,7 @@ function formatNotificationDate(createdAt: string) {
 export function NotificationCenter() {
   const dialogRef = useRef<HTMLElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const isOpenRef = useRef(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [notifications, setNotifications] = useState<NotificationView[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -28,16 +29,44 @@ export function NotificationCenter() {
   const [isPending, startTransition] = useTransition();
   const unreadCount = notifications.filter((notification) => !notification.isRead).length;
 
-  useEffect(() => {
+  const markUnreadNotificationsRead = useCallback((notificationItems: NotificationView[]) => {
+    const unreadIds = new Set(
+      notificationItems
+        .filter((notification) => !notification.isRead)
+        .map((notification) => notification.id),
+    );
+
+    setNotifications(notificationItems.map((notification) => (
+      unreadIds.has(notification.id) ? { ...notification, isRead: true } : notification
+    )));
+
+    if (unreadIds.size === 0) return;
+
     startTransition(async () => {
-      const result = await getNotificationsAction();
-      if (result.ok) {
-        setNotifications(result.data);
-      } else {
+      const result = await markNotificationsReadAction();
+      if (!result.ok) {
+        setNotifications((current) => current.map((notification) => (
+          unreadIds.has(notification.id) ? { ...notification, isRead: false } : notification
+        )));
         setErrorMessage(result.error.message);
       }
     });
   }, []);
+
+  useEffect(() => {
+    startTransition(async () => {
+      const result = await getNotificationsAction();
+      if (result.ok) {
+        if (isOpenRef.current) {
+          markUnreadNotificationsRead(result.data);
+        } else {
+          setNotifications(result.data);
+        }
+      } else {
+        setErrorMessage(result.error.message);
+      }
+    });
+  }, [markUnreadNotificationsRead]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -46,6 +75,7 @@ export function NotificationCenter() {
     closeRef.current?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        isOpenRef.current = false;
         setIsOpen(false);
         return;
       }
@@ -75,22 +105,14 @@ export function NotificationCenter() {
   }, [isOpen]);
 
   const handleOpen = () => {
+    isOpenRef.current = true;
     setIsOpen(true);
-    if (unreadCount === 0) return;
+    markUnreadNotificationsRead(notifications);
+  };
 
-    const unreadIds = new Set(
-      notifications.filter((notification) => !notification.isRead).map((notification) => notification.id),
-    );
-    setNotifications((current) => current.map((notification) => ({ ...notification, isRead: true })));
-    startTransition(async () => {
-      const result = await markNotificationsReadAction();
-      if (!result.ok) {
-        setNotifications((current) => current.map((notification) => (
-          unreadIds.has(notification.id) ? { ...notification, isRead: false } : notification
-        )));
-        setErrorMessage(result.error.message);
-      }
-    });
+  const handleClose = () => {
+    isOpenRef.current = false;
+    setIsOpen(false);
   };
 
   return (
@@ -109,7 +131,7 @@ export function NotificationCenter() {
       </button>
 
       {isOpen && (
-        <div className="notification-backdrop" onMouseDown={() => setIsOpen(false)}>
+        <div className="notification-backdrop" onMouseDown={handleClose}>
           <section
             ref={dialogRef}
             className="notification-dialog"
@@ -124,7 +146,7 @@ export function NotificationCenter() {
                 <span>お知らせ</span>
                 <h2 id="notification-title">あなたの展示への反応</h2>
               </div>
-              <button ref={closeRef} type="button" aria-label="通知を閉じる" onClick={() => setIsOpen(false)}>
+              <button ref={closeRef} type="button" aria-label="通知を閉じる" onClick={handleClose}>
                 <X aria-hidden="true" size={20} />
               </button>
             </header>
