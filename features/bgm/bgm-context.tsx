@@ -61,8 +61,10 @@ export function BgmProvider({ children }: { children: ReactNode }) {
   });
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const playbackRequestIdRef = useRef(0);
 
   const selectTrack = useCallback((trackId: BgmTrackId) => {
+    const requestId = ++playbackRequestIdRef.current;
     setCurrentTrackId(trackId);
     try {
       localStorage.setItem(STORAGE_KEY_TRACK, trackId);
@@ -90,15 +92,21 @@ export function BgmProvider({ children }: { children: ReactNode }) {
     audioRef.current
       .play()
       .then(() => {
-        setIsPlaying(true);
+        if (playbackRequestIdRef.current === requestId) {
+          setIsPlaying(true);
+        }
       })
       .catch((error) => {
-        console.warn("BGM playback blocked by autoplay policy or file missing:", error);
-        setIsPlaying(false);
+        if (playbackRequestIdRef.current === requestId) {
+          console.warn("BGM playback blocked by autoplay policy or file missing:", error);
+          setIsPlaying(false);
+        }
       });
   }, [volume]);
 
   const togglePlay = useCallback(() => {
+    const requestId = ++playbackRequestIdRef.current;
+
     if (currentTrackId === "none") {
       selectTrack("bgm-1");
       return;
@@ -122,11 +130,15 @@ export function BgmProvider({ children }: { children: ReactNode }) {
       audioRef.current
         .play()
         .then(() => {
-          setIsPlaying(true);
+          if (playbackRequestIdRef.current === requestId) {
+            setIsPlaying(true);
+          }
         })
         .catch((error) => {
-          console.warn("BGM playback error:", error);
-          setIsPlaying(false);
+          if (playbackRequestIdRef.current === requestId) {
+            console.warn("BGM playback error:", error);
+            setIsPlaying(false);
+          }
         });
     }
   }, [currentTrackId, isPlaying, selectTrack, volume]);
