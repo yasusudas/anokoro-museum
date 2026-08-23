@@ -429,6 +429,7 @@ export function MuseumExperience({
     <main className="museum-shell">
       <SiteHeader
         currentUser={currentUser}
+        currentFloorId={activeFloorId}
         onBrandClick={() => corridorRef.current?.scrollTo({ left: 0, behavior: "smooth" })}
       />
 
@@ -684,7 +685,13 @@ export function MuseumExperience({
                   <path d="M8 10V7a4 4 0 0 1 8 0v3" />
                 </svg>
                 <p>{currentUser ? "2Fで、みんなの展示を見られます" : "ログインすると2Fの展示を見られます"}</p>
-                <Link href={currentUser ? "/floor/2" : "/sign-in?next=/floor/2"}>
+                <Link
+                  href={
+                    currentUser
+                      ? "/floor/2"
+                      : `/sign-in?next=${encodeURIComponent(getFloorPath(activeFloorId))}`
+                  }
+                >
                   {currentUser ? "2Fを見る" : "ログイン"} <b aria-hidden="true">→</b>
                 </Link>
               </aside>
@@ -704,7 +711,7 @@ export function MuseumExperience({
         </div>
       )}
 
-      {isPreview && !selected && (
+      {activeFloorId === "1F" && !selected && (
         <Link className="floor-up-cta" href={currentUser ? "/floor/2" : "/sign-in?next=/floor/2"}>
           <span><small>NEXT FLOOR</small><b>みんなの思い出を見る</b></span>
           <i>{currentUser ? "2Fへ" : "ログイン"} →</i>
