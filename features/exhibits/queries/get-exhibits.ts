@@ -4,6 +4,7 @@ import type { ExhibitItem } from "../types";
 
 type GetExhibitsOptions = {
   isFirstFloor?: boolean;
+  userId?: string;
 };
 
 const FIRST_FLOOR_EXHIBIT_IDS = [
@@ -41,6 +42,10 @@ export async function getExhibits(options: GetExhibitsOptions = {}): Promise<Exh
 
   if (options.isFirstFloor) {
     itemsQuery = itemsQuery.in("id", FIRST_FLOOR_EXHIBIT_IDS);
+  }
+
+  if (options.userId) {
+    itemsQuery = itemsQuery.eq("user_id", options.userId);
   }
 
   const { data: items, error: itemsError } = await itemsQuery.order("created_at", { ascending: true });

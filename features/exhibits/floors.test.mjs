@@ -91,13 +91,16 @@ console.log("🧪 Testing Museum Floor Filtering Logic...\n");
 
 assert.equal(isFloorId("4F"), true);
 assert.equal(isFloorId("6F"), true);
+assert.equal(isFloorId("B2F"), true);
 assert.equal(isFloorId("7F"), false);
 assert.equal(isFloorId(""), false);
 assert.equal(getFloorPath("1F"), "/floor/1");
 assert.equal(getFloorPath("B1F"), "/floor/b1");
+assert.equal(getFloorPath("B2F"), "/floor/b2");
 assert.equal(getFloorPath("2F"), "/floor/2");
 assert.equal(getFloorPath("4F"), "/floor/4");
 assert.equal(getFloorIdFromPathSegment("b1"), "B1F");
+assert.equal(getFloorIdFromPathSegment("b2"), "B2F");
 assert.equal(getFloorIdFromPathSegment("1"), "1F");
 assert.equal(getFloorIdFromPathSegment("6"), "6F");
 assert.equal(getFloorIdFromPathSegment("B1"), null);
@@ -108,6 +111,17 @@ const b1fItems = filterExhibitsByFloor(testExhibits, "B1F", ["item-1", "item-3"]
 assert.equal(b1fItems.length, 2);
 assert.deepEqual(b1fItems.map((i) => i.id), ["item-1", "item-3"]);
 console.log("✅ B1F filter passed (returns only liked items)");
+
+// B2F（自分の投稿展示）は取得クエリで本人の展示だけに絞り込まれ、投稿日時の古い順に並ぶ
+const b2fInput = [
+  { ...testExhibits[2], createdAt: "2026-08-22T00:00:03Z" },
+  { ...testExhibits[0], createdAt: "2026-08-22T00:00:01Z" },
+  { ...testExhibits[1], createdAt: "2026-08-22T00:00:02Z" },
+];
+const b2fItems = filterExhibitsByFloor(b2fInput, "B2F", []);
+assert.deepEqual(b2fItems.map((i) => i.id), ["item-1", "item-2", "item-3"]);
+assert.deepEqual(b2fInput.map((i) => i.id), ["item-3", "item-1", "item-2"]);
+console.log("✅ B2F filter passed (sorts own exhibits oldest to newest)");
 
 // 2. 2F（〜2009年）
 const f2Items = filterExhibitsByFloor(testExhibits, "2F", []);
