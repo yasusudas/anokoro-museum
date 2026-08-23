@@ -9,7 +9,7 @@ export default function Home() {
       <header className="entrance-header">
         <Link className="entrance-brand" href="/" aria-label="あのころミュージアム トップ">
           <Image src="/site-logo-mark.svg" alt="" width={42} height={42} aria-hidden="true" />
-          <span><b>あのころ</b><small>MUSEUM OF MEMORIES</small></span>
+          <span><b>あのころ</b><small>ミュージアム</small></span>
         </Link>
       </header>
       <Link className="entrance-door" href="/floor/1">
