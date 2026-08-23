@@ -10,10 +10,12 @@ import { signOutAction } from "@/features/auth/actions/sign-out";
 import type { AuthUser } from "@/features/auth/types";
 import { useBgm } from "@/features/bgm/bgm-context";
 import { BGM_TRACKS } from "@/features/bgm/tracks";
+import type { FloorId } from "@/features/exhibits/floors";
 
 type SiteHeaderProps = {
   currentUser?: AuthUser | null;
   loginReturnPath?: string;
+  currentFloorId?: FloorId;
   mode?: "browse" | "create" | "brand-only";
   onBrandClick?: () => void;
 };
@@ -21,6 +23,7 @@ type SiteHeaderProps = {
 export function SiteHeader({
   currentUser,
   loginReturnPath = "/floor/1",
+  currentFloorId,
   mode = "browse",
   onBrandClick,
 }: SiteHeaderProps) {
@@ -143,7 +146,10 @@ export function SiteHeader({
           </Link>
           {mode === "browse" && (
             isAuthenticated ? (
-              <Link className="nav-cta" href="/exhibits/new">
+              <Link
+                className="nav-cta"
+                href={currentFloorId ? `/exhibits/new?from=${currentFloorId}` : "/exhibits/new"}
+              >
                 思い出を展示 <span>＋</span>
               </Link>
             ) : (

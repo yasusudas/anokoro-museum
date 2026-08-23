@@ -19,5 +19,5 @@ export async function signOutAction(): Promise<ActionResult> {
     };
   }
 
-  redirect("/sign-in");
+  redirect("/");
 }
