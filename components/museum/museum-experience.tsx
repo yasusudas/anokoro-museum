@@ -541,6 +541,16 @@ export function MuseumExperience({
                       </Link>
                     </div>
                   )
+                ) : activeFloorId === "B2F" && floorFilteredExhibits.length === 0 ? (
+                  <div className="gallery-empty-content">
+                    <p className="gallery-empty-title">まだ展示品を投稿していません</p>
+                    <p className="gallery-empty-desc">
+                      あなたが投稿した展示品は、この展示室に並びます。
+                    </p>
+                    <Link href="/exhibits/new" className="gallery-empty-action">
+                      展示品を投稿する
+                    </Link>
+                  </div>
                 ) : (
                   <div className="gallery-empty-content">
                     <p className="gallery-empty-title">該当する展示品がありません</p>

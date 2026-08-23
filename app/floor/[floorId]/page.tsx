@@ -35,7 +35,9 @@ export default async function FloorPage({ params }: PageProps<"/floor/[floorId]"
     redirect(`/sign-in?next=${encodeURIComponent(getFloorPath(floorId))}`);
   }
 
-  const exhibits = await getExhibits();
+  const exhibits = floorId === "B2F"
+    ? await getExhibits({ userId: currentUser.id })
+    : await getExhibits();
   return (
     <MuseumExperience
       initialExhibits={exhibits}
