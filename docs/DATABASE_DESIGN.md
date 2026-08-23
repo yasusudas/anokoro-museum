@@ -1,0 +1,202 @@
+# データベース設計
+
+Supabase PostgreSQLの設計意図を管理する。サークル内ハッカソン用プロダクトのため開発スピードを最優先とし、テーブル結合を最小限に抑えたフラットでシンプルな構成を採用する。
+
+## ER図
+
+```mermaid
+erDiagram
+  auth_users ||--|| users : has
+  users ||--o{ items : submits
+  items ||--o{ comments : receives
+  users ||--o{ comments : writes
+  comments ||--o{ comment_likes : receives
+  users ||--o{ comment_likes : likes
+  items ||--o{ shinmiri_reactions : receives
+  users ||--o{ shinmiri_reactions : reacts
+  users ||--o{ notifications : receives
+  users ||--o{ notifications : acts
+  items ||--o{ notifications : generates
+  comments ||--o| notifications : generates
+  shinmiri_reactions ||--o| notifications : generates
+```
+
+## 共通ルール
+
+- table / column / constraint: `snake_case`
+- 展示品を表すDB tableは `items` に固定する。アプリケーション層・UI・URLの用語は `exhibit` 系で統一し、DB列名の `item_id` とは区別する
+- 主キー: UUIDの `id`（`gen_random_uuid()`。拡張機能が不要なため `uuid_generate_v4()` は使わない）
+- 時刻: `timestamptz`。更新される可能性のあるtableだけ `updated_at` を持つ
+- ユーザー参照: `auth.users(id)` を起点としたUUID外部キー
+- **RLSはtable作成と同じmigrationで有効化する。** 無効のままPreview / Productionへ出さない
+- 生まれ年はDBで管理しない。クライアント側の一時保存のみとする
+
+## テーブル一覧
+
+| table | 役割 | 備考 |
+| --- | --- | --- |
+| `users` | ユーザー情報 | Authと連動。表示名のみを保持し、個人情報を持たない |
+| `items` | 展示品本体 | 画像・カテゴリを別テーブルにせず直接保持 |
+| `comments` | コメント | 投稿と本人による物理削除のみ。編集不可 |
+| `comment_likes` | コメントいいね | 1ユーザー1コメント1件 |
+| `shinmiri_reactions` | しんみり | 1ユーザー1展示1件 |
+| `notifications` | 展示への反応通知 | コメント・しんみりを投稿者へ通知 |
+
+## 主要列
+
+### `users`
+
+| column | type | rule |
+| --- | --- | --- |
+| `id` | uuid | PK、`auth.users.id` (ON DELETE CASCADE) |
+| `user_name` | varchar | NOT NULL |
+| `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
+| `updated_at` | timestamptz | NOT NULL DEFAULT `now()` |
+
+生まれ年を持たないため、このtableは表示名のみの公開情報となる。匿名SELECTを許可しても個人情報を露出しない。
+
+### `items`
+
+| column | type | rule |
+| --- | --- | --- |
+| `id` | uuid | PK、DEFAULT `gen_random_uuid()` |
+| `user_id` | uuid | FK `users.id` (ON DELETE CASCADE)、NULL可 |
+| `title` | varchar | NOT NULL、UNIQUE。Unicode空白を除くtrim後1〜40文字。`items_title_length_check`でDB側も上限を保証 |
+| `description` | text | NOT NULL。Unicode空白を除くtrim後1〜500文字 |
+| `category` | varchar | NOT NULL。CHECK制約で `食べ物` / `テレビ` / `アニメ` / `ゲーム` / `音楽` / `本` / `出来事` / `その他` に限定。アプリ側の正規定義は `features/exhibits/categories.ts` |
+| `image_url` | text | Supabase Storageの公開画像URL。投稿時は画像添付必須 |
+| `year` | int | 展示品の年代（西暦4桁、1900年〜現在年、例: `2004`） |
+| `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
+
+制約・運用:
+
+- `image_url` は額縁に飾る展示写真を保持する。表示用画像はSupabase Storageで管理し、リポジトリのpublic配下には置かない
+- 過去にpublic配下を参照していた展示は `20260822230000_migrate_local_exhibit_images_to_storage.sql` で既存Storageオブジェクトの公開URLへ移行する
+- `title` の文字数はPostgreSQLの `char_length`（Unicodeコードポイント単位）で検証し、`items_title_length_check`により40文字を超える値をDBでも拒否する
+- `items_title_key` により同じタイトルの同時投稿もDBで拒否し、展示名の一意性を保証する
+- `year` は展示アイテムの年代（流行年や発売年など）を表す
+- `user_id` のNULL許容は既存のDB管理展示との互換性のために残す。新規投稿は認証ユーザーのUUIDを必須とする
+- 展示本文と画像の正はSupabase Database / Storageとし、ローカルseedや表示用モックは管理しない
+- 公開後の編集を認めないため `updated_at` は持たない。`theme` / `image_path` / `image_alt` / `image_rights_confirmed` / `birth_year_start` / `birth_year_end` は使わなくなったため `20260822180000_drop_unused_item_columns.sql` で削除した
+
+### `comments`
+
+| column | type | rule |
+| --- | --- | --- |
+| `id` | uuid | PK、DEFAULT `gen_random_uuid()` |
+| `item_id` | uuid | FK `items.id` (ON DELETE CASCADE)、NOT NULL |
+| `user_id` | uuid | FK `users.id` (ON DELETE CASCADE)、NOT NULL |
+| `content` | text | NOT NULL。CHECK制約でUnicode空白を除くtrim後1〜500文字 |
+| `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
+
+編集を提供しないため `updated_at` を持たない。本人削除は物理削除とする。
+
+### `comment_likes`
+
+| column | type | rule |
+| --- | --- | --- |
+| `id` | uuid | PK、DEFAULT `gen_random_uuid()` |
+| `comment_id` | uuid | FK `comments.id` (ON DELETE CASCADE)、NOT NULL |
+| `user_id` | uuid | FK `users.id` (ON DELETE CASCADE)、NOT NULL |
+| `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
+
+制約: `UNIQUE(comment_id, user_id)`。ログインユーザーは付与・解除でき、匿名ユーザーは件数だけを閲覧する。コメントが物理削除されると、関連するいいねもCASCADEで削除される。
+
+### `shinmiri_reactions`
+
+| column | type | rule |
+| --- | --- | --- |
+| `id` | uuid | PK、DEFAULT `gen_random_uuid()` |
+| `item_id` | uuid | FK `items.id` (ON DELETE CASCADE)、NOT NULL |
+| `user_id` | uuid | FK `users.id` (ON DELETE CASCADE)、NOT NULL |
+| `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
+
+制約: `UNIQUE(item_id, user_id)`。1ユーザーにつき1展示1回までをDBレベルで保証する。行を更新しないため `updated_at` を持たない。
+
+### `notifications`
+
+| column | type | rule |
+| --- | --- | --- |
+| `id` | uuid | PK、DEFAULT `gen_random_uuid()` |
+| `recipient_user_id` | uuid | 通知先。FK `users.id` (ON DELETE CASCADE)、NOT NULL |
+| `actor_user_id` | uuid | 反応者。FK `users.id` (ON DELETE CASCADE)、NOT NULL |
+| `item_id` | uuid | 対象展示。FK `items.id` (ON DELETE CASCADE)、NOT NULL |
+| `event_type` | varchar | `comment` / `shinmiri` のみ |
+| `comment_id` | uuid | コメント通知だけ設定。FK `comments.id` (ON DELETE CASCADE) |
+| `shinmiri_reaction_id` | uuid | しんみり通知だけ設定。FK `shinmiri_reactions.id` (ON DELETE CASCADE) |
+| `read_at` | timestamptz | NULLなら未読、既読時刻を保持 |
+| `created_at` | timestamptz | NOT NULL DEFAULT `now()` |
+
+コメント・しんみりのINSERT後トリガーが、展示投稿者と反応者が異なる場合だけ通知を作成する。元の反応を物理削除すると通知もCASCADEで削除される。
+
+## RLS方針
+
+全tableでRLSを有効化する。運営ロールが存在しないため、判定は「匿名 / ログイン済み / 所有者」の3種類だけで済む。
+
+| table | SELECT | INSERT | UPDATE | DELETE |
+| --- | --- | --- | --- | --- |
+| `users` | 全員 | トリガー経由のみ | 本人 | 不可（`auth.users` 削除にCASCADE） |
+| `items` | 匿名は1F固定展示のみ、ログイン済みは全件 | ログイン済み・本人名義 | 不可（編集なし） | 不可（投稿者・運営ともに取り下げなし。`auth.users` 削除時の CASCADE による連鎖削除のみ例外） |
+| `comments` | ログイン済み | ログイン済み・本人名義 | 不可（編集なし） | 本人 |
+| `comment_likes` | 本人の行のみ | ログイン済み・本人名義 | 不可 | 本人 |
+| `shinmiri_reactions` | ログイン済み | ログイン済み・本人名義 | 不可 | 本人 |
+| `notifications` | 宛先本人 | トリガー経由のみ | 宛先本人（`read_at`のみ） | 不可 |
+
+- INSERTは `WITH CHECK (auth.uid() = user_id)` で本人名義を強制する
+- 匿名の `items` SELECTはseedで共通管理する1F固定UUIDだけを許可し、投稿展示はDB/RLS境界で非公開にする
+- `comments` と `shinmiri_reactions` のSELECTは認証済みに限定し、URLやSupabase APIの直接呼び出しでも匿名閲覧を許可しない
+- DELETEは `USING (auth.uid() = user_id)` で所有者を照合する。ただし `items` は公開後の取り下げを認めないため、policyもtable権限も与えない
+- `items` の UPDATE は table権限に加え、列単位権限も与えない。残存しうる列単位 UPDATE 権限は `20260822190000_revoke_item_column_update_privileges.sql` で存在する列だけを動的に revoke する
+- 上記の `items` UPDATE/DELETE 禁止は `authenticated` 向けの RLS と GRANT で強制する。`service_role` は RLS を迂回できるが、展示の更新・削除には使わない（アプリにも運営用の更新・削除経路を持たない）
+- `items.user_id` は `users.id` へ `ON DELETE CASCADE` するため、アカウント削除（`auth.users` → `users`）に伴う展示の連鎖削除は、上記 DELETE 禁止の例外として意図的に残す
+- `users` の所有者列は `id`、それ以外の所有者付きtableは `user_id` を使う
+- `comment_likes` の匿名件数は生テーブルを公開せず、集計RPC `get_comment_like_counts` から取得する
+- 公開状態（status）を持たないため、SELECTに条件分岐は不要
+
+## `users` の自動作成
+
+RLS有効下ではクライアントから `users` をINSERTできない。`auth.users` へのINSERTに対する `SECURITY DEFINER` トリガーを唯一の作成経路とする。
+
+- `user_name` は `auth.users.raw_user_meta_data` から `user_name` → `display_name` → `full_name` → `name` の順に、前後空白を除いて空でない最初の値を採用する。いずれも無い場合はメールアドレスを使わず、`あのころの来場者-` + UUID由来の16進8文字というランダムな既定名を生成する
+- メールアドレス登録では自前の登録フォームが渡す `user_name` / `display_name` を使う。GoogleなどのOAuthではproviderが `full_name` / `name` を入れるため、この2つを見ないと全員がランダムな既定名になる
+- `full_name` / `name` を参照していなかった時期に作られたユーザーは、`20260822140000_fix_oauth_user_name_fallback.sql` のバックフィルで救済する。ランダム既定名の形式（`^あのころの来場者-[0-9a-f]{8}$`）に完全一致する行だけを更新するため、利用者が自分で付けた名前は上書きしない
+- アプリ側の `features/auth/queries/get-current-user.ts` も、`users` 行が無い場合のフォールバックを同じ優先順に揃える
+- トリガーが無いと、サインアップ直後の投稿・コメントが外部キー違反で失敗する
+
+## `updated_at` の更新
+
+`users` に `BEFORE UPDATE` トリガーを設定し、`now()` を代入する。`items`、`comments`、`comment_likes`、`shinmiri_reactions` は更新しないため不要。
+
+## インデックス
+
+- `comments(item_id, created_at DESC)` — 展示詳細のコメント取得
+- `items(category)` / `items(year)` — F-01の絞り込み
+- `comment_likes` は `UNIQUE(comment_id, user_id)` が `comment_id` 先頭の複合indexになるため追加不要
+- `shinmiri_reactions` は `UNIQUE(item_id, user_id)` が `item_id` 先頭の複合indexになるため追加不要
+- `notifications(recipient_user_id, created_at DESC)` — 本人宛て通知の新着順取得
+
+データ量が少ないうちは効果が小さいが、記述コストがほぼ無いため最初から入れる。
+
+## しんみり件数の取得
+
+`items` に非正規化したカウント列を持たせず、`shinmiri_reactions` を集計する。一覧では展示ごとに問い合わせず、`item_id` ごとの件数を1クエリでまとめて取得する。
+
+## コメントいいね件数の取得
+
+`comments` に非正規化したカウント列を持たせず、`get_comment_like_counts` RPCで集計する。生のいいね行を匿名へ公開せず、`comment_id` と件数だけを返す。
+
+## Realtime
+
+MVPでは有効化しない。PRDのMVP対象外にリアルタイム機能が含まれ、コメント・しんみりの反映はServer Actionと再検証で足りるため（[API_DESIGN.md](./API_DESIGN.md)）。
+
+## スコープ外の記録
+
+サークル内ハッカソン用途のため、以下を意図的に持たない。不特定多数へ公開する場合は再検討する。
+
+| 省略したもの | 影響 |
+| --- | --- |
+| コメントの論理削除・運営による展示の取り下げ | 不適切な投稿へ運営が対処する手段を持たない。展示の編集・削除は投稿者・運営ともに行わない |
+| 画像の出典情報 | 出典URLやライセンス情報の管理、利用者への確認操作は行わない |
+| 生まれ年のDB保存 | 端末内の一時保存に留まり、再ログインでは復元されない |
+| 展示のslug | URLは `/exhibits/{uuid}` になる。後からslugを導入すると既存URLが変わる |
+| コメントの論理削除 | 物理削除のため、後から論理削除へ移行してもデータを復元できない |
