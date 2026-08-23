@@ -720,7 +720,8 @@ export function MuseumExperience({
       {showGuide && !selected && (
         <div className="guide-toast" aria-label="展示の移動方法">
           <span aria-hidden="true">← →</span>
-          <small>マウスホイールや矢印キーで移動</small>
+          <small className="guide-copy-desktop">マウスホイールや矢印キーで移動</small>
+          <small className="guide-copy-mobile">横にスワイプして移動</small>
         </div>
       )}
 

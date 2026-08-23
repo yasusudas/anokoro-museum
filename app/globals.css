@@ -3038,3 +3038,335 @@ button:focus-visible {
     width: 100%
   }
 }
+
+.guide-copy-mobile {
+  display: none;
+}
+
+/* Smartphone portrait layout. Desktop landscape keeps the base styles above. */
+@media (max-width: 700px) {
+  .museum-shell {
+    min-height: 0;
+  }
+
+  .museum-header {
+    height: 60px;
+    padding: 0 12px;
+  }
+
+  .brand {
+    gap: 0;
+  }
+
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+  }
+
+  .brand > span {
+    display: none;
+  }
+
+  .login-button {
+    min-height: 40px;
+    padding: 8px 12px;
+  }
+
+  .notification-trigger,
+  .account-menu-trigger {
+    width: 40px;
+    height: 40px;
+  }
+
+  .account-menu-panel {
+    position: fixed;
+    top: 66px;
+    right: 12px;
+    width: min(280px, calc(100vw - 24px));
+  }
+
+  .notification-backdrop {
+    align-items: end;
+    padding: 12px;
+  }
+
+  .notification-dialog {
+    width: 100%;
+    max-height: calc(100dvh - 24px);
+  }
+
+  .notification-dialog-header {
+    padding: 20px 18px 14px;
+  }
+
+  .notification-list {
+    padding-inline: 18px;
+  }
+
+  .controls {
+    height: 106px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 7px;
+    padding: 8px 12px;
+  }
+
+  .floor-selector-container {
+    width: 100%;
+  }
+
+  .floor-selector-button {
+    width: 100%;
+    min-height: 42px;
+    padding: 5px 10px;
+  }
+
+  .floor-badge {
+    font-size: 19px;
+    padding-right: 9px;
+  }
+
+  .floor-info small {
+    display: none;
+  }
+
+  .floor-info b {
+    margin-top: 0;
+  }
+
+  .floor-dropdown-menu {
+    right: 0;
+    width: 100%;
+    max-height: calc(100dvh - 178px);
+    overflow-y: auto;
+  }
+
+  .category-tabs {
+    position: relative;
+    right: auto;
+    left: auto;
+    width: 100%;
+    justify-content: flex-start;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 0 1px 3px;
+    transform: none;
+    scrollbar-width: none;
+  }
+
+  .category-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .category-tabs button {
+    flex: 0 0 auto;
+    min-height: 32px;
+    padding: 6px 12px;
+  }
+
+  .corridor-wrap {
+    height: calc(100dvh - 166px);
+    min-height: 0;
+  }
+
+  .exhibit {
+    width: 100vw;
+    min-width: 100vw;
+    padding-bottom: 2vh;
+  }
+
+  .frame {
+    width: clamp(190px, 56vw, 220px);
+    height: clamp(214px, 32dvh, 250px);
+    margin-bottom: 46px;
+  }
+
+  .exhibit-label {
+    bottom: 24px;
+    width: calc(100vw - 52px);
+    min-height: 78px;
+    grid-template-columns: minmax(0, 1fr) 52px;
+    gap: 9px;
+    padding: 10px 12px;
+  }
+
+  .exhibit-label h2 {
+    height: 38.4px;
+    min-height: 38.4px;
+    font-size: 16px;
+  }
+
+  .nostalgia {
+    gap: 5px;
+    padding-left: 8px;
+  }
+
+  .scroll-arrow {
+    top: 34%;
+    width: 40px;
+    height: 40px;
+  }
+
+  .corridor-scrollbar {
+    width: 46%;
+  }
+
+  .guide-toast {
+    right: 12px;
+    bottom: 78px;
+    left: 12px;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+    padding: 11px 13px;
+  }
+
+  .guide-copy-desktop {
+    display: none;
+  }
+
+  .guide-copy-mobile {
+    display: block;
+  }
+
+  .floor-up-cta {
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  .floor-up-cta small {
+    display: none;
+  }
+
+  .modal-backdrop {
+    padding: 0;
+  }
+
+  .detail-modal {
+    width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    border: 0;
+  }
+
+  .modal-close {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    width: 42px;
+    height: 42px;
+    margin: 0;
+    border: 1px solid rgba(245, 235, 220, .28);
+    background: rgba(39, 32, 26, .72);
+  }
+
+  .modal-main {
+    padding: 0;
+  }
+
+  .modal-art {
+    height: min(42dvh, 330px);
+    padding: 54px 20px 20px;
+  }
+
+  .modal-frame {
+    width: min(54vw, 210px);
+    height: min(30dvh, 236px);
+    margin: 0;
+  }
+
+  .modal-content {
+    padding: 22px 20px 28px;
+  }
+
+  .modal-content > .eyebrow {
+    margin-bottom: 14px;
+  }
+
+  .modal-title-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .modal-title-frame {
+    height: auto;
+    min-height: 58px;
+  }
+
+  .modal-title-frame h2 {
+    transform: none;
+  }
+
+  .modal-actions {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0;
+  }
+
+  .modal-memory {
+    margin-top: 18px;
+    font-size: 13px;
+  }
+
+  .modal-comments {
+    min-height: 420px;
+    padding: 28px 20px;
+  }
+
+  .preview-invitation {
+    min-height: 300px;
+    padding: 28px 20px;
+  }
+
+  .comment-menu-trigger {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .end-panel {
+    width: 100vw;
+    min-width: 100vw;
+    padding: 16vh 28px 0;
+  }
+
+  .auth-viewport,
+  .post-shell {
+    height: calc(100dvh - 60px);
+    min-height: calc(100dvh - 60px);
+  }
+
+  .auth-viewport {
+    padding: 12px;
+  }
+
+  .auth-intro,
+  .auth-panel {
+    padding: 22px 18px;
+  }
+
+  .auth-field input,
+  .post-field input,
+  .post-field select,
+  .post-field textarea {
+    font-size: 16px;
+  }
+
+  .post-shell {
+    align-items: start;
+    padding: 12px;
+  }
+
+  .post-panel {
+    padding: 24px 16px;
+  }
+
+  .post-field-row {
+    grid-template-columns: 1fr;
+  }
+}
