@@ -122,7 +122,16 @@ export function filterExhibitsByFloor(
   }
 
   if (floorId === "B2F") {
-    return exhibits;
+    return [...exhibits].sort((left, right) => {
+      const leftCreatedAt = Date.parse(left.createdAt);
+      const rightCreatedAt = Date.parse(right.createdAt);
+
+      if (!Number.isFinite(leftCreatedAt) || !Number.isFinite(rightCreatedAt)) {
+        return 0;
+      }
+
+      return leftCreatedAt - rightCreatedAt;
+    });
   }
 
   if (floorId === "1F") {

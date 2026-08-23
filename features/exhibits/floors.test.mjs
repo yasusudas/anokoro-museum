@@ -112,11 +112,16 @@ assert.equal(b1fItems.length, 2);
 assert.deepEqual(b1fItems.map((i) => i.id), ["item-1", "item-3"]);
 console.log("✅ B1F filter passed (returns only liked items)");
 
-// B2F（自分の投稿展示）は取得クエリで本人の展示だけに絞り込まれるため、渡された展示をそのまま表示する
-const b2fItems = filterExhibitsByFloor(testExhibits, "B2F", []);
-assert.equal(b2fItems.length, testExhibits.length);
-assert.deepEqual(b2fItems.map((i) => i.id), testExhibits.map((i) => i.id));
-console.log("✅ B2F filter passed (preserves own exhibits returned by the query)");
+// B2F（自分の投稿展示）は取得クエリで本人の展示だけに絞り込まれ、投稿日時の古い順に並ぶ
+const b2fInput = [
+  { ...testExhibits[2], createdAt: "2026-08-22T00:00:03Z" },
+  { ...testExhibits[0], createdAt: "2026-08-22T00:00:01Z" },
+  { ...testExhibits[1], createdAt: "2026-08-22T00:00:02Z" },
+];
+const b2fItems = filterExhibitsByFloor(b2fInput, "B2F", []);
+assert.deepEqual(b2fItems.map((i) => i.id), ["item-1", "item-2", "item-3"]);
+assert.deepEqual(b2fInput.map((i) => i.id), ["item-3", "item-1", "item-2"]);
+console.log("✅ B2F filter passed (sorts own exhibits oldest to newest)");
 
 // 2. 2F（〜2009年）
 const f2Items = filterExhibitsByFloor(testExhibits, "2F", []);
