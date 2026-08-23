@@ -1,6 +1,6 @@
 import type { ExhibitItem } from "./types";
 
-export type FloorId = "B1F" | "1F" | "2F" | "3F" | "4F" | "5F" | "6F";
+export type FloorId = "B2F" | "B1F" | "1F" | "2F" | "3F" | "4F" | "5F" | "6F";
 
 export type FloorDefinition = {
   id: FloorId;
@@ -67,13 +67,21 @@ export const MUSEUM_FLOORS: FloorDefinition[] = [
     id: "B1F",
     label: "B1F",
     era: "企画展",
-    name: "自分だけの展示室",
+    name: "スキの展示室",
     description: "あなたが「しんみり」した展示品",
+  },
+  {
+    id: "B2F",
+    label: "B2F",
+    era: "寄贈品展示",
+    name: "寄贈品の展示室",
+    description: "あなたが投稿した展示品",
   },
 ];
 
 const floorIdByPathSegment: Readonly<Record<string, FloorId>> = {
   b1: "B1F",
+  b2: "B2F",
   "1": "1F",
   "2": "2F",
   "3": "3F",
@@ -87,8 +95,8 @@ export function isFloorId(value: string): value is FloorId {
 }
 
 export function getFloorPath(floorId: FloorId): string {
-  return floorId === "B1F"
-    ? "/floor/b1"
+  return floorId === "B1F" || floorId === "B2F"
+    ? `/floor/${floorId.toLowerCase().replace("f", "")}`
     : `/floor/${floorId.replace("F", "")}`;
 }
 
@@ -111,6 +119,19 @@ export function filterExhibitsByFloor(
   if (floorId === "B1F") {
     const shinmiriSet = new Set(shinmiriItemIds);
     return exhibits.filter((item) => shinmiriSet.has(item.id));
+  }
+
+  if (floorId === "B2F") {
+    return [...exhibits].sort((left, right) => {
+      const leftCreatedAt = Date.parse(left.createdAt);
+      const rightCreatedAt = Date.parse(right.createdAt);
+
+      if (!Number.isFinite(leftCreatedAt) || !Number.isFinite(rightCreatedAt)) {
+        return 0;
+      }
+
+      return leftCreatedAt - rightCreatedAt;
+    });
   }
 
   if (floorId === "1F") {

@@ -282,6 +282,7 @@ export function MuseumExperience({
     if (!corridor) return;
 
     const horizontalWheel = (event: WheelEvent) => {
+      setShowGuide(false);
       if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
         event.preventDefault();
         corridor.scrollLeft += event.deltaY;
@@ -303,8 +304,10 @@ export function MuseumExperience({
       }
 
       if (selected) return;
-      if (event.key === "ArrowRight") move(1);
-      if (event.key === "ArrowLeft") move(-1);
+      if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+        setShowGuide(false);
+        move(event.key === "ArrowRight" ? 1 : -1);
+      }
     };
 
     corridor.addEventListener("wheel", horizontalWheel, { passive: false });
@@ -430,6 +433,7 @@ export function MuseumExperience({
     <main className="museum-shell">
       <SiteHeader
         currentUser={currentUser}
+        currentFloorId={activeFloorId}
         onBrandClick={() => corridorRef.current?.scrollTo({ left: 0, behavior: "smooth" })}
       />
 
@@ -542,6 +546,16 @@ export function MuseumExperience({
                       </Link>
                     </div>
                   )
+                ) : activeFloorId === "B2F" && floorFilteredExhibits.length === 0 ? (
+                  <div className="gallery-empty-content">
+                    <p className="gallery-empty-title">まだ展示品を投稿していません</p>
+                    <p className="gallery-empty-desc">
+                      あなたが投稿した展示品は、この展示室に並びます。
+                    </p>
+                    <Link href="/exhibits/new" className="gallery-empty-action">
+                      展示品を投稿する
+                    </Link>
+                  </div>
                 ) : (
                   <div className="gallery-empty-content">
                     <p className="gallery-empty-title">該当する展示品がありません</p>
@@ -685,7 +699,13 @@ export function MuseumExperience({
                   <path d="M8 10V7a4 4 0 0 1 8 0v3" />
                 </svg>
                 <p>{currentUser ? "2Fで、みんなの展示を見られます" : "ログインすると2Fの展示を見られます"}</p>
-                <Link href={currentUser ? "/floor/2" : "/sign-in?next=/floor/2"}>
+                <Link
+                  href={
+                    currentUser
+                      ? "/floor/2"
+                      : `/sign-in?next=${encodeURIComponent(getFloorPath(activeFloorId))}`
+                  }
+                >
                   {currentUser ? "2Fを見る" : "ログイン"} <b aria-hidden="true">→</b>
                 </Link>
               </aside>
@@ -705,7 +725,7 @@ export function MuseumExperience({
         </div>
       )}
 
-      {isPreview && !selected && (
+      {activeFloorId === "1F" && !selected && (
         <Link className="floor-up-cta" href={currentUser ? "/floor/2" : "/sign-in?next=/floor/2"}>
           <span><small>NEXT FLOOR</small><b>みんなの思い出を見る</b></span>
           <i>{currentUser ? "2Fへ" : "ログイン"} →</i>
