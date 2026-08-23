@@ -3055,7 +3055,7 @@ button:focus-visible {
   }
 
   .brand {
-    gap: 0;
+    gap: 8px;
   }
 
   .brand-mark {
@@ -3063,8 +3063,15 @@ button:focus-visible {
     height: 34px;
   }
 
-  .brand > span {
-    display: none;
+  .brand b {
+    font-size: 15px;
+    letter-spacing: .16em;
+  }
+
+  .brand small {
+    margin-top: 2px;
+    font-size: 8px;
+    letter-spacing: .22em;
   }
 
   .login-button {
