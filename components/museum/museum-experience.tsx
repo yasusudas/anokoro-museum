@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type RefObject } from "react";
 import { ChevronDown, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -15,6 +15,7 @@ import {
   getFloorDefinition,
   getFloorPath,
 } from "@/features/exhibits/floors";
+import { sortExhibitsByYear } from "@/features/exhibits/sort";
 import type { ExhibitItem } from "@/features/exhibits/types";
 import type { AuthUser } from "@/features/auth/types";
 import { toggleShinmiriAction } from "@/features/exhibits/actions/toggle-shinmiri";
@@ -244,7 +245,7 @@ export function MuseumExperience({
     startMuseumBgm();
   }, [currentUser, startMuseumBgm]);
 
-  const exhibits = initialExhibits;
+  const exhibits = useMemo(() => sortExhibitsByYear(initialExhibits), [initialExhibits]);
 
   const categories = ["すべて", ...EXHIBIT_CATEGORIES] as const;
 
