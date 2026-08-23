@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Analytics } from "@vercel/analytics/next";
+import { Analytics } from "@vercel/analytics/react";
 import { BgmProvider } from "@/features/bgm/bgm-context";
 import "./globals.css";
 
@@ -12,9 +12,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ja">
       <body>
-        {children}
-        <Analytics />
-        <BgmProvider>{children}</BgmProvider>
+        <BgmProvider>
+          {children}
+          <Analytics />
+        </BgmProvider>
       </body>
     </html>
   );

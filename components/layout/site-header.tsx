@@ -43,7 +43,6 @@ export function SiteHeader({
     currentTrackId,
     isPlaying,
     volume,
-    stopMuseumBgm,
     selectTrack,
     togglePlay,
     setVolume,
@@ -121,7 +120,7 @@ export function SiteHeader({
 
   const handleSignOut = () => {
     setSignOutError(null);
-    stopMuseumBgm();
+    selectTrack("none");
     startTransition(async () => {
       const result = await signOutAction();
       if (result && !result.ok) {

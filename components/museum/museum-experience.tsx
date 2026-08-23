@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CommentThread } from "@/components/comments/comment-thread";
 import { SiteHeader } from "@/components/layout/site-header";
-import { useBgm } from "@/features/bgm/bgm-context";
 import { EXHIBIT_CATEGORIES } from "@/features/exhibits/categories";
 import {
   type FloorId,
@@ -210,7 +209,6 @@ export function MuseumExperience({
   isPreview = false,
 }: MuseumExperienceProps) {
   const router = useRouter();
-  const { startMuseumBgm } = useBgm();
   const corridorRef = useRef<HTMLDivElement>(null);
   const modalCloseRef = useRef<HTMLButtonElement>(null);
   const floorMenuRef = useRef<HTMLDivElement>(null);
@@ -238,11 +236,6 @@ export function MuseumExperience({
   const [scrollProgress, setScrollProgress] = useState(0);
   const [canScroll, setCanScroll] = useState(false);
   const [, startTransition] = useTransition();
-
-  useEffect(() => {
-    if (!currentUser) return;
-    startMuseumBgm();
-  }, [currentUser, startMuseumBgm]);
 
   const exhibits = initialExhibits;
 

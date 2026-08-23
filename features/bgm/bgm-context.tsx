@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getBgmTrack, MUSEUM_DEFAULT_TRACK_ID } from "./tracks";
+import { getBgmTrack } from "./tracks";
 import type { BgmContextValue, BgmTrackId } from "./types";
 
 const STORAGE_KEY_TRACK = "anokoro_bgm_track";
@@ -19,8 +19,6 @@ const defaultContextValue: BgmContextValue = {
   currentTrackId: "none",
   isPlaying: false,
   volume: 0.4,
-  startMuseumBgm: () => {},
-  stopMuseumBgm: () => {},
   selectTrack: () => {},
   togglePlay: () => {},
   setVolume: () => {},
@@ -64,14 +62,10 @@ export function BgmProvider({ children }: { children: ReactNode }) {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playbackRequestIdRef = useRef(0);
-  const autoplayCleanupRef = useRef<(() => void) | null>(null);
-  const hasStartedMuseumBgmRef = useRef(false);
   const volumeRef = useRef(volume);
 
   const selectTrack = useCallback((trackId: BgmTrackId) => {
     const requestId = ++playbackRequestIdRef.current;
-    autoplayCleanupRef.current?.();
-    autoplayCleanupRef.current = null;
     setCurrentTrackId(trackId);
     try {
       localStorage.setItem(STORAGE_KEY_TRACK, trackId);
@@ -107,45 +101,9 @@ export function BgmProvider({ children }: { children: ReactNode }) {
         if (playbackRequestIdRef.current === requestId) {
           console.warn("BGM playback blocked by autoplay policy or file missing:", error);
           setIsPlaying(false);
-
-          const resumePlayback = () => {
-            autoplayCleanupRef.current?.();
-            autoplayCleanupRef.current = null;
-            if (playbackRequestIdRef.current !== requestId || !audioRef.current) return;
-
-            audioRef.current
-              .play()
-              .then(() => {
-                if (playbackRequestIdRef.current === requestId) setIsPlaying(true);
-              })
-              .catch((playbackError) => {
-                if (playbackRequestIdRef.current === requestId) {
-                  console.warn("BGM playback error:", playbackError);
-                }
-              });
-          };
-          const removeAutoplayListeners = () => {
-            window.removeEventListener("pointerdown", resumePlayback);
-            window.removeEventListener("keydown", resumePlayback);
-          };
-
-          autoplayCleanupRef.current = removeAutoplayListeners;
-          window.addEventListener("pointerdown", resumePlayback, { once: true });
-          window.addEventListener("keydown", resumePlayback, { once: true });
         }
       });
   }, []);
-
-  const startMuseumBgm = useCallback(() => {
-    if (hasStartedMuseumBgmRef.current) return;
-    hasStartedMuseumBgmRef.current = true;
-    selectTrack(MUSEUM_DEFAULT_TRACK_ID);
-  }, [selectTrack]);
-
-  const stopMuseumBgm = useCallback(() => {
-    hasStartedMuseumBgmRef.current = false;
-    selectTrack("none");
-  }, [selectTrack]);
 
   const togglePlay = useCallback(() => {
     const requestId = ++playbackRequestIdRef.current;
@@ -206,7 +164,6 @@ export function BgmProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     return () => {
-      autoplayCleanupRef.current?.();
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
@@ -220,8 +177,6 @@ export function BgmProvider({ children }: { children: ReactNode }) {
         currentTrackId,
         isPlaying,
         volume,
-        startMuseumBgm,
-        stopMuseumBgm,
         selectTrack,
         togglePlay,
         setVolume,

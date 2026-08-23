@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { BGM_TRACKS, MUSEUM_DEFAULT_TRACK_ID, getBgmTrack } from "./tracks.ts";
+import { BGM_TRACKS, getBgmTrack } from "./tracks.ts";
 
 console.log("🧪 Testing BGM Track Definitions...");
 
@@ -20,7 +20,6 @@ const bgm2 = getBgmTrack("bgm-2");
 assert.equal(bgm2.id, "bgm-2");
 assert.equal(bgm2.name, "Felt and Wood");
 assert.equal(bgm2.src, "/bgm/felt-and-wood.mp3");
-assert.equal(MUSEUM_DEFAULT_TRACK_ID, bgm2.id);
 
 const bgm3 = getBgmTrack("bgm-3");
 assert.equal(bgm3.id, "bgm-3");
