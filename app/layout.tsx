@@ -12,9 +12,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ja">
       <body>
-        {children}
-        <Analytics />
         <BgmProvider>{children}</BgmProvider>
+        <Analytics />
       </body>
     </html>
   );

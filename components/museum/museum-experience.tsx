@@ -281,6 +281,7 @@ export function MuseumExperience({
     if (!corridor) return;
 
     const horizontalWheel = (event: WheelEvent) => {
+      setShowGuide(false);
       if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
         event.preventDefault();
         corridor.scrollLeft += event.deltaY;
@@ -302,8 +303,10 @@ export function MuseumExperience({
       }
 
       if (selected) return;
-      if (event.key === "ArrowRight") move(1);
-      if (event.key === "ArrowLeft") move(-1);
+      if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+        setShowGuide(false);
+        move(event.key === "ArrowRight" ? 1 : -1);
+      }
     };
 
     corridor.addEventListener("wheel", horizontalWheel, { passive: false });
