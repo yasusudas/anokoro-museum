@@ -1,0 +1,55 @@
+.screen {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at center, rgba(169, 128, 59, 0.08), transparent 32%),
+    var(--paper);
+}
+
+.status {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+}
+
+.orbit {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  animation: orbit 1.15s linear infinite;
+}
+
+.dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gold);
+  transform: rotate(calc(var(--dot-index) * 45deg)) translateY(-22px);
+  transform-origin: 0 0;
+  opacity: calc(0.3 + var(--dot-index) * 0.09);
+}
+
+.label {
+  margin: 0;
+  padding-left: 0.18em;
+  color: #675747;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+}
+
+@keyframes orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit {
+    animation-duration: 2.4s;
+  }
+}
