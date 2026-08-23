@@ -67,14 +67,14 @@ export const MUSEUM_FLOORS: FloorDefinition[] = [
     id: "B1F",
     label: "B1F",
     era: "企画展",
-    name: "自分だけの展示室",
+    name: "スキの展示室",
     description: "あなたが「しんみり」した展示品",
   },
   {
     id: "B2F",
     label: "B2F",
-    era: "投稿展示",
-    name: "自分の展示室",
+    era: "寄贈品展示",
+    name: "寄贈品の展示室",
     description: "あなたが投稿した展示品",
   },
 ];
