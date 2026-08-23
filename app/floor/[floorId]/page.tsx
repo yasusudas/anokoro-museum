@@ -26,7 +26,7 @@ export default async function FloorPage({ params }: PageProps<"/floor/[floorId]"
         initialExhibits={exhibits}
         initialFloorId={floorId}
         currentUser={currentUser}
-        isPreview
+        isPreview={!currentUser}
       />
     );
   }

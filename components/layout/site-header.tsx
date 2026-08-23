@@ -10,10 +10,12 @@ import { signOutAction } from "@/features/auth/actions/sign-out";
 import type { AuthUser } from "@/features/auth/types";
 import { useBgm } from "@/features/bgm/bgm-context";
 import { BGM_TRACKS } from "@/features/bgm/tracks";
+import type { FloorId } from "@/features/exhibits/floors";
 
 type SiteHeaderProps = {
   currentUser?: AuthUser | null;
   loginReturnPath?: string;
+  currentFloorId?: FloorId;
   mode?: "browse" | "create" | "brand-only";
   onBrandClick?: () => void;
 };
@@ -21,6 +23,7 @@ type SiteHeaderProps = {
 export function SiteHeader({
   currentUser,
   loginReturnPath = "/floor/1",
+  currentFloorId,
   mode = "browse",
   onBrandClick,
 }: SiteHeaderProps) {
@@ -33,6 +36,9 @@ export function SiteHeader({
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const isAuthenticated = Boolean(currentUser?.id);
+  const exhibitCreationPath = currentFloorId
+    ? `/exhibits/new?from=${currentFloorId}`
+    : "/exhibits/new";
   const {
     currentTrackId,
     isPlaying,
@@ -143,7 +149,10 @@ export function SiteHeader({
           </Link>
           {mode === "browse" && (
             isAuthenticated ? (
-              <Link className="nav-cta" href="/exhibits/new">
+              <Link
+                className="nav-cta"
+                href={exhibitCreationPath}
+              >
                 思い出を展示 <span>＋</span>
               </Link>
             ) : (
@@ -276,7 +285,9 @@ export function SiteHeader({
               ×
             </button>
             <h2 id="auth-gate-title">ログインが必要です</h2>
-            <Link href="/sign-in?next=/exhibits/new">ログインする <b aria-hidden="true">→</b></Link>
+            <Link href={`/sign-in?next=${encodeURIComponent(exhibitCreationPath)}`}>
+              ログインする <b aria-hidden="true">→</b>
+            </Link>
           </section>
         </div>
       )}

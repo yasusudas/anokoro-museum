@@ -11,7 +11,11 @@ import { EXHIBIT_CATEGORIES } from "@/features/exhibits/categories";
 type FieldName = "title" | "category" | "year" | "description" | "image";
 type FieldErrors = Partial<Record<FieldName, string>>;
 
-export function MemoryPostForm() {
+type MemoryPostFormProps = {
+  returnPath: string;
+};
+
+export function MemoryPostForm({ returnPath }: MemoryPostFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [title, setTitle] = useState("");
@@ -176,7 +180,7 @@ export function MemoryPostForm() {
           return;
         }
 
-        router.push("/");
+        router.push(returnPath);
         router.refresh();
       } catch {
         setGeneralError("展示の投稿処理中にエラーが発生しました。時間をおいて再試行してください。");
